@@ -28,7 +28,10 @@
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F @zalem/backend dev",
     "dev:setup": "turbo -F @zalem/backend dev:setup",
-    "check": "oxlint && oxfmt --write"
+    "lint": "oxlint",
+    "format": "oxfmt --write",
+    "format:check": "oxfmt --check",
+    "check": "oxlint && oxfmt --check"
   },
   "dependencies": {
     "@zalem/env": "workspace:*",
@@ -37,8 +40,8 @@
   },
   "devDependencies": {
     "@zalem/config": "workspace:*",
-    "oxfmt": "^0.26.0",
-    "oxlint": "^1.41.0",
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.51.0",
     "turbo": "^2.8.12",
     "typescript": "^5"
   },
