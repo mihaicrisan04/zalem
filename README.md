@@ -1,101 +1,54 @@
 # zalem
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Convex, and more.
+turborepo monorepo with bun workspaces.
 
-## Features
+## stack
 
-- **TypeScript** - For type safety and improved developer experience
-- **Next.js** - Full-stack React framework
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
-- **Convex** - Reactive backend-as-a-service platform
-- **Authentication** - Clerk
-- **Oxlint** - Oxlint + Oxfmt (linting & formatting)
-- **Turborepo** - Optimized monorepo build system
+- **apps/web** — Next.js 16, React Compiler, Clerk auth, Tailwind v4
+- **packages/backend** — Convex (schema, functions, auth in `convex/`)
+- **packages/ui** — shared shadcn/ui components + optics design system
+- **packages/env** — type-safe env validation (`@t3-oss/env-nextjs`)
+- **packages/config** — shared tsconfig base
 
-## Getting Started
-
-First, install the dependencies:
+## setup
 
 ```bash
 bun install
+bun run dev:setup     # configure Convex project
 ```
 
-## Convex Setup
+copy env vars from `packages/backend/.env.local` to `apps/web/.env`, set `CLERK_PUBLISHABLE_KEY` there too. see [Convex + Clerk docs](https://docs.convex.dev/auth/clerk) for auth setup.
 
-This project uses Convex as a backend. You'll need to set up Convex before running the app:
+## dev
 
 ```bash
-bun run dev:setup
+bun run dev           # start everything
+bun run dev:web       # just the web app (port 3001)
+bun run dev:server    # just Convex
 ```
 
-Follow the prompts to create a new Convex project and connect it to your application.
+## lint & format
 
-Copy environment variables from `packages/backend/.env.local` to `apps/*/.env`.
-
-### Clerk Authentication Setup
-
-- Follow the guide: [Convex + Clerk](https://docs.convex.dev/auth/clerk)
-- Set `CLERK_JWT_ISSUER_DOMAIN` in Convex Dashboard
-- Set `CLERK_PUBLISHABLE_KEY` in `apps/*/.env`
-
-Then, run the development server:
+uses oxlint + oxfmt (not eslint/prettier).
 
 ```bash
-bun run dev
+bun run check         # lint + format check
+bun run lint          # oxlint only
+bun run format        # oxfmt --write
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-Your app will connect to the Convex cloud backend automatically.
+## shared UI
 
-## UI Customization
-
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
-
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
-
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
+add shadcn primitives to the shared package:
 
 ```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
+npx shadcn@latest add <component> -c packages/ui
 ```
 
-Import shared components like this:
+import them as:
 
 ```tsx
 import { Button } from "@zalem/ui/components/button";
 ```
 
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-## Git Hooks and Formatting
-
-- Format and lint fix: `bun run check`
-
-## Project Structure
-
-```
-zalem/
-├── apps/
-│   ├── web/         # Frontend application (Next.js)
-├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── backend/     # Convex backend functions and schema
-│   │   ├── convex/    # Convex functions and schema
-│   │   └── .env.local # Convex environment variables
-```
-
-## Available Scripts
-
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:setup`: Setup and configure your Convex project
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run check`: Run Oxlint and Oxfmt
+app-specific components go in `apps/web/src/components`.
