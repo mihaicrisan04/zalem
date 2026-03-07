@@ -2,8 +2,10 @@
   "extends": "@zalem/config/tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "outDir": "dist",
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": [],
     "paths": {
       "@zalem/ui/*": ["./src/*"]
     }

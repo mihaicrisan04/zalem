@@ -2,7 +2,7 @@
 
 import { useAuth } from "@clerk/nextjs";
 import { env } from "@zalem/env/web";
-import { Toaster } from "@zalem/ui/components/sonner";
+import { Toaster } from "@zalem/ui/components/optics/sonner";
 import { ConvexReactClient } from "convex/react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 

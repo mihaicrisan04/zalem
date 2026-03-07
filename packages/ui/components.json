@@ -11,14 +11,16 @@
     "prefix": ""
   },
   "iconLibrary": "lucide",
+  "menuColor": "default",
+  "menuAccent": "subtle",
   "aliases": {
     "components": "@zalem/ui/components",
     "utils": "@zalem/ui/lib/utils",
-    "hooks": "@zalem/ui/hooks",
+    "ui": "@zalem/ui/components",
     "lib": "@zalem/ui/lib",
-    "ui": "@zalem/ui/components"
+    "hooks": "@zalem/ui/hooks"
   },
-  "menuColor": "default",
-  "menuAccent": "subtle",
-  "registries": {}
+  "registries": {
+    "@optics": "https://optics.agusmayol.com.ar/r/{name}.json"
+  }
 }
