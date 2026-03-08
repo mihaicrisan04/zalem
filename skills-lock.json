@@ -96,6 +96,11 @@
       "sourceType": "github",
       "computedHash": "91c02eb706f046fb9d6a061efbb96496e4be751b5b14c283cf82baaa50f3a985"
     },
+    "shadcn-baseui": {
+      "source": "thunderboltdev/shadcn-baseui",
+      "sourceType": "github",
+      "computedHash": "380e7185d6bf13195fbedd8b1c59a0e11805357a62737ee35857887217055444"
+    },
     "turborepo": {
       "source": "vercel/turborepo",
       "sourceType": "github",
