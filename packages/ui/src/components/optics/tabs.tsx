@@ -103,7 +103,7 @@ function isAutoMode(props = {}) {
 	return !props.mode || props.mode === "auto-height";
 }
 
-function PrimitiveTabsPanels(props = {}) {
+function PrimitiveTabsPanels(props: React.ComponentProps<"div"> = {}) {
 	const { value } = useTabs();
 
 	if (isAutoMode(props)) {
@@ -212,8 +212,8 @@ function TabsTab({ className = "", value = "", ...props }: any) {
 
 // Aliases for backward compatibility
 const TabsTrigger = TabsTab;
-const TabsPanels = PrimitiveTabsPanels; // Original name was TabsPanels in previous version, but let's keep it consistent
-const TabsContents = PrimitiveTabsPanels;
+const TabsPanels: React.FC<React.ComponentProps<"div">> = PrimitiveTabsPanels;
+const TabsContents: React.FC<React.ComponentProps<"div">> = PrimitiveTabsPanels;
 const TabsPanel = ({ className = "", ...props }) => (
 	<PrimitiveTabsPanel
 		className={cn("flex-1 outline-none", className)}
