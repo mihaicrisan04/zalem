@@ -45,10 +45,17 @@ what to include:
 - human-AI trust and explainability
 - proactive vs reactive AI assistance
 - behavior signals as proxies for user intent
+- **production AI shopping assistants — Amazon Rufus as a case study:**
+  - architecture (multi-model routing, RAG pipeline, streaming + hydration)
+  - documented accuracy problems (32% accuracy, 28% price hallucination, review fabrication)
+  - user trust issues (83% self-serving, intrusiveness complaints)
+  - feature evolution timeline (reactive first, proactive added 10 months later)
+  - Amazon's COSMO knowledge graph for product enrichment
+  - this section positions the thesis as addressing real, documented production failures, not hypothetical concerns
 
 good ending for this chapter:
 
-> existing systems either focus on recommendation quality or conversational AI, but fewer works address timing, trust, and non-intrusive assistance in a unified practical architecture.
+> existing systems either focus on recommendation quality or conversational AI, but fewer works address timing, trust, and non-intrusive assistance in a unified practical architecture. production systems like Amazon Rufus demonstrate that even at massive scale, factual accuracy, review grounding, and user trust remain unsolved challenges.
 
 ---
 

@@ -421,6 +421,21 @@ negative or mixed results are acceptable if analyzed honestly.
 
 ---
 
+## additional evaluation angle: accuracy vs production systems
+
+an optional but powerful evaluation angle is comparing your system's factual accuracy against documented Rufus benchmarks:
+
+| metric | Amazon Rufus (documented) | zalem (measured) |
+|--------|--------------------------|------------------|
+| price accuracy in AI output | 72% (28% hallucination) | target: 100% (hydrated from live data, never generated) |
+| recommendation accuracy | 32% | measure via Hit Rate@5 on held-out data |
+| review summary theme accuracy | fabricates themes | measure via post-generation theme verification |
+| self-serving bias | 83% | 0% (no inventory to favor) |
+
+this isn't a direct apples-to-apples comparison (different scale, different data), but it positions the architectural guardrails as concrete quality improvements. a supervisor will find this compelling because it shows you studied a real system, identified measurable failure modes, and designed solutions.
+
+---
+
 ## validity threats
 
 you should explicitly mention:
@@ -430,6 +445,7 @@ you should explicitly mention:
 - limited product categories
 - novelty effect from AI features
 - participant bias if many users are peers or technically literate
+- Rufus comparison is architectural, not a controlled experiment (different scale, data, and user base)
 
 this does not weaken the thesis if you state it clearly.
 

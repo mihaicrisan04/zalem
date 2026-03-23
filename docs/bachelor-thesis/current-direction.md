@@ -20,18 +20,20 @@ it will sound too implementation-heavy and too product-like.
 
 if you pitch it as:
 
-> a human-centered AI decision-support system for e-commerce
+> a human-centered AI decision-support system for e-commerce that addresses documented failures of production systems like Amazon Rufus
 
 it becomes a much stronger CS thesis because it now includes:
 
 - system architecture
 - recommendation design
-- review-grounded explanation design
+- review-grounded explanation design (addressing Rufus's most-criticized feature)
+- output validation to prevent hallucination (addressing Rufus's 28% price hallucination rate)
 - comparison support for decision-making
 - LLM integration strategy
 - HCI / trust
 - evaluation
 - performance and cost tradeoffs
+- competitive benchmarking against a real production system ($12B, 300M users)
 
 ---
 

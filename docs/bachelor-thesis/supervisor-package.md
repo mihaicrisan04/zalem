@@ -27,11 +27,11 @@ this thesis investigates how an AI shopping assistant can be designed to be usef
 
 ## final abstract
 
-large language models are increasingly used in consumer applications, including e-commerce, where they promise personalized guidance, product explanations, and conversational support. despite this potential, many AI shopping assistants struggle with trust, transparency, and appropriate timing. this thesis investigates how an AI shopping assistant can be designed to be useful without becoming intrusive. the proposed system is a trustworthy shopping assistant built on top of a classical recommendation backbone, lightweight user-behavior signals, review-grounded LLM summaries, and an AI-assisted comparison layer.
+large language models are increasingly used in consumer applications, including e-commerce, where they promise personalized guidance, product explanations, and conversational support. despite this potential, production AI shopping assistants — including Amazon's Rufus, the largest such system with over 300 million users — exhibit documented issues with recommendation accuracy, factual hallucination, review misrepresentation, and user-perceived intrusiveness. this thesis investigates how an AI shopping assistant can be designed to address these specific failure modes while remaining useful, trustworthy, and non-intrusive.
 
-the implementation includes an e-commerce prototype with product browsing, search, cart functionality, recommendation slots, a review-summary feature, and a comparison-oriented advisor interface. the recommendation layer combines classical methods such as co-occurrence and content-based similarity, while the assistant summarizes customer reviews, compares similar products, and generates grounded natural-language explanations. the interaction model is reactive-first: the system may indicate that advice is available, but the user must actively request it. this design is intended to improve user trust and reduce unnecessary AI calls.
+the proposed system is built on a classical recommendation backbone combined with lightweight user-behavior signals, review-grounded LLM summaries, and an AI-assisted comparison layer. key architectural decisions include an output validation layer that prevents hallucination of product data, review summaries that explicitly surface conflicting opinions with counts, and a reactive-first interaction model where users control when AI assistance is invoked. the recommendation layer combines co-occurrence and content-based similarity methods, while the LLM layer generates grounded explanations, summarizes customer reviews, and produces structured product comparisons.
 
-the thesis evaluates the system through offline recommendation metrics, runtime and cost measurements, and a small user study comparing shopping with and without AI assistance. the main objective is to assess whether review-grounded, user-initiated AI support can improve shopping confidence, comparison quality, and perceived usefulness while preserving a sense of control. the work contributes a practical architecture and design recommendations for trustworthy AI integration in e-commerce systems.
+the thesis evaluates the system through offline recommendation metrics, runtime and cost measurements, and a small user study comparing shopping with and without AI assistance. the main objective is to assess whether review-grounded, user-initiated AI support can improve shopping confidence, comparison quality, and perceived usefulness while preserving a sense of control. the work contributes a practical architecture, quality guardrails informed by analysis of production systems, and design recommendations for trustworthy AI integration in e-commerce.
 
 ---
 
@@ -44,9 +44,18 @@ current AI shopping assistants often have one or more of these issues:
 - they provide generic advice with weak grounding
 - they increase complexity and cost without clear measurable benefit
 
+these are not hypothetical concerns. Amazon's Rufus — the largest production AI shopping assistant (300M+ users, ~$12B incremental sales) — demonstrates them concretely:
+- **32% recommendation accuracy** (matching actual "best products")
+- **28% price hallucination rate** when prices appear in generated text
+- **83% self-serving recommendations** (favoring Amazon-owned products)
+- review summarization that fabricates themes and hides conflicting opinions
+- user complaints about intrusiveness ("Rufus makes me hate shopping on Amazon")
+
 the thesis problem is therefore:
 
 > how can an AI shopping assistant be designed to provide useful, explainable, and timely support while preserving user trust and maintaining acceptable system cost and latency?
+
+specifically, this thesis addresses the documented shortcomings of production systems like Amazon Rufus through architectural guardrails: output validation against live product data, review summaries that surface conflicting opinions with counts, and a reactive-first interaction model that avoids the intrusiveness users report with proactive assistants.
 
 ---
 
@@ -88,11 +97,12 @@ realistic and defensible contributions for a bachelor thesis:
 
 1. a working e-commerce prototype with a hybrid recommendation architecture
 2. a reactive-first AI advisor design for non-intrusive assistance
-3. a review-grounded summarization mechanism for purchase validation
-4. an AI-assisted comparison flow for similar products
-5. a behavior-driven readiness mechanism based on lightweight browsing signals
-6. an empirical evaluation of recommendation quality, trust, usefulness, latency, and cost
-7. practical design recommendations for trustworthy AI shopping assistance
+3. an output validation layer that prevents LLM hallucination of product data (addressing documented 28% hallucination rate in Amazon Rufus)
+4. a review-grounded summarization mechanism that explicitly surfaces conflicting opinions (addressing Rufus's most-criticized feature)
+5. an AI-assisted comparison flow for similar products
+6. a behavior-driven readiness mechanism based on lightweight browsing signals
+7. an empirical evaluation of recommendation quality, trust, usefulness, latency, and cost
+8. practical design recommendations for trustworthy AI shopping assistance, benchmarked against documented failures of production systems
 
 ---
 
@@ -120,11 +130,18 @@ the system uses a two-stage architecture:
 - behavior signals are used only to infer readiness, not to auto-fire advice
 - advisor appears as an optional, user-controlled assistance surface
 
+### quality guardrails (informed by Amazon Rufus analysis)
+
+- **output validation layer** — post-generation verification that every productId exists and claimed attributes match the database. the LLM never generates prices, ratings, or specs — these are hydrated from live data
+- **review conflict surfacing** — summaries explicitly present divided opinions with counts instead of hiding behind majority sentiment
+- **formalized model routing** — different query types route to different models based on complexity/latency/cost tradeoffs
+
 ### implementation posture
 
 - artifact-first but evaluation-driven
 - full-stack prototype with measurable behavior
 - practical engineering choices over theoretical novelty
+- architectural decisions benchmarked against documented failures of Amazon Rufus
 
 ---
 
@@ -225,7 +242,7 @@ instruments:
 
 ### motivation
 
-large language models are increasingly integrated into consumer-facing applications, including e-commerce. however, many AI shopping assistants are either overly proactive, poorly timed, or insufficiently grounded in real recommendation logic. as a result, they risk being perceived as intrusive or untrustworthy. this thesis explores whether a more human-centered design, based on reactive-first interaction and grounded recommendations, can provide meaningful decision support without harming the user experience.
+large language models are increasingly integrated into consumer-facing applications, including e-commerce. however, even the most prominent production systems exhibit serious quality issues. Amazon's Rufus — the largest AI shopping assistant with 300M+ users — has a documented 32% recommendation accuracy rate, a 28% price hallucination rate, and widespread user complaints about intrusiveness and fabricated review themes. these are not edge cases but structural problems arising from architectural choices. this thesis explores whether a more human-centered design, based on reactive-first interaction, output validation, and grounded review summarization, can address these documented failure modes while providing meaningful decision support.
 
 ### objective
 
@@ -247,7 +264,7 @@ the thesis will evaluate the system at three levels: recommendation quality, sys
 
 ### expected contribution
 
-the thesis is expected to contribute a practical architecture for trustworthy AI shopping assistance, a working prototype, and empirical findings on trust, usefulness, and intrusiveness in LLM-assisted e-commerce interaction.
+the thesis is expected to contribute a practical architecture for trustworthy AI shopping assistance with quality guardrails informed by analysis of production systems, a working prototype, and empirical findings on trust, usefulness, and intrusiveness in LLM-assisted e-commerce interaction.
 
 ---
 
@@ -255,11 +272,13 @@ the thesis is expected to contribute a practical architecture for trustworthy AI
 
 if you are discussing this with a supervisor, the key points to emphasize are:
 
-1. this is **not** just an app build
-2. the app is the artifact; the thesis is the design and evaluation
-3. the topic is modern because it addresses trustworthy LLM integration, not just LLM usage
-4. the work combines software systems, recommender design, and HCI
-5. the scope is realistic for a bachelor thesis because it avoids heavy model training and complex math
+1. this is **not** just an app build — the app is the artifact, the thesis is the design and evaluation
+2. the topic is modern because it addresses trustworthy LLM integration, not just LLM usage
+3. the work combines software systems, recommender design, and HCI
+4. the scope is realistic for a bachelor thesis because it avoids heavy model training and complex math
+5. **the project is benchmarked against Amazon Rufus** — the largest production AI shopping assistant (300M+ users, $12B sales). Rufus has documented accuracy problems (32%), hallucination (28% price errors), and user trust issues. this thesis directly addresses those failure modes with concrete architectural solutions
+6. the reactive-first interaction model is backed by academic research (CHI 2024) and validated by Amazon's own feature timeline (they launched reactive-only, added proactive "Help Me Decide" 10 months later)
+7. the evaluation plan has three layers (offline metrics, system performance, user study) — stronger than typical bachelor theses that only evaluate one dimension
 
 ---
 

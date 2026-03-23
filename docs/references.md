@@ -65,6 +65,40 @@ papers, studies, engineering blogs, and market research used to inform the zalem
 | 7 | [AI Shopping Behavior Data](https://digiday.com/marketing/how-consumers-are-using-ai-to-shop-in-2025-by-the-numbers/) — Digiday | 80% validate after AI session, 47% want review summarization | shapes feature prioritization |
 | 8 | [Shopify AI Orders Up 15x](https://www.techtic.com/blog/shopify-winter-2026-editions-ai-commerce/) — Techtic | 15x growth since Jan 2025 | growth trajectory for AI commerce |
 | 9 | [Conversational Commerce: $290B in 2025](https://neuwark.com/blog/conversational-commerce-2026-ai-replacing-shopping-cart) — Neuwark | up from $41B in 2021 | market context |
+| 10 | [Rufus on pace for $10B](https://fortune.com/2025/11/02/amazon-rufus-ai-shopping-assistant-chatbot-10-billion-sales-monetization/) — Fortune | $10B pace, attribution model details | Rufus financial trajectory |
+| 11 | [OpenAI agentic shopping](https://www.cnbc.com/2026/03/20/open-ai-agentic-shopping-etsy-shopify-walmart-amazon.html) — CNBC | OpenAI building shopping into ChatGPT with Shopify/Walmart | competitive landscape |
+
+---
+
+## Amazon Rufus — engineering & architecture
+
+| # | title / source | key data | relevance |
+|---|---------------|----------|-----------|
+| 1 | [Technology behind Rufus](https://www.amazon.science/blog/the-technology-behind-amazons-genai-powered-shopping-assistant-rufus) — Amazon Science | query planner, model router, multi-source RAG, streaming + hydration | core architecture reference |
+| 2 | [Scaling Rufus with 80K chips for Prime Day](https://aws.amazon.com/blogs/machine-learning/scaling-rufus-the-amazon-generative-ai-powered-conversational-shopping-assistant-with-over-80000-aws-inferentia-and-aws-trainium-chips-for-prime-day/) — AWS Blog | 3M tokens/min, P99 <1s TTFT, infrastructure details | scale reference |
+| 3 | [Rufus on Bedrock](https://aws.amazon.com/blogs/machine-learning/how-rufus-scales-conversational-shopping-experiences-to-millions-of-amazon-customers-with-amazon-bedrock/) — AWS Blog | migration to managed serving, 6x dev velocity | managed AI infrastructure patterns |
+| 4 | [Parallel decoding for Prime Day](https://aws.amazon.com/blogs/machine-learning/how-rufus-doubled-their-inference-speed-and-handled-prime-day-traffic-with-aws-ai-chips-and-parallel-decoding/) — AWS Blog | 2x speed via speculative decoding | inference optimization |
+| 5 | [How We Built Rufus](https://spectrum.ieee.org/amazon-rufus) — IEEE Spectrum | engineering overview from Trishul Chilimbi | architecture decisions and tradeoffs |
+| 6 | [COSMO Knowledge Graphs](https://www.amazon.science/blog/building-commonsense-knowledge-graphs-to-aid-product-recommendation) — Amazon Science | LLM-built commonsense knowledge graph, 60% relevance improvement | product enrichment inspiration |
+| 7 | [Rufus Under the Hood](https://dejan.ai/blog/rufus/) — Dejan.ai | independent architecture analysis | third-party technical teardown |
+| 8 | [Scaling Rufus to 250M Users](https://www.zenml.io/llmops-database/scaling-an-ai-powered-conversational-shopping-assistant-to-250-million-users) — ZenML | MLOps perspective | deployment patterns |
+
+## Amazon Rufus — accuracy & criticism
+
+| # | title / source | key data | relevance |
+|---|---------------|----------|-----------|
+| 1 | [Rufus is often wrong](https://www.consumeraffairs.com/news/amazons-ai-shopping-assistant-rufus-is-often-wrong-110724.html) — ConsumerAffairs | 32% accuracy, 83% self-serving | accuracy benchmark we should beat |
+| 2 | [Amazon's Shopping AI Is Confidently Wrong](https://www.marketplacepulse.com/articles/amazons-shopping-ai-is-confidently-wrong) — Marketplace Pulse | 28% price hallucination, fabricated specs | validates our hydration-over-generation approach |
+| 3 | [Bad Rufus: Amazon Chatbot Gone Wrong](https://www.lasso.security/blog/amazon-chatbot-gone-wrong) — Lasso Security | security and trust issues | cautionary tales for system prompt design |
+| 4 | [Rufus Patent Blueprint](https://sellersessions.com/rufus-the-blueprint/) — Seller Sessions | semantic similarity model, click training data, visual label tagging | patent analysis |
+
+## Amazon Rufus — additional academic papers
+
+| # | title | venue | relevance |
+|---|-------|-------|-----------|
+| 1 | [COOKIE: Conversational Recommendation over Knowledge Graphs](https://arxiv.org/abs/2008.09237) | arXiv | conversational recommendation on Amazon data |
+| 2 | G-Refer: Graph Retrieval-Augmented LLMs for Explainable Recommendation | ACM Web Conference 2025 | graph RAG for explainable recs |
+| 3 | [GNN for Product Recommendation on Amazon Co-purchase Graph](https://arxiv.org/abs/2508.14059) | arXiv | LightGCN, GraphSAGE, GAT evaluation |
 
 ---
 
@@ -84,3 +118,8 @@ these numbers come up repeatedly across the docs and inform major design decisio
 | AI assistant market CAGR | 27% through 2035 | InsightAce | market tailwind for the project |
 | Rufus purchase completion lift | 60% higher | Amazon | benchmark for engaged-user conversion lift |
 | cart recovery via AI chat | 35% vs 5-15% email | industry aggregate | justifies cart cross-sell as an LLM-powered slot |
+| Rufus accuracy | 32% (matching "best products") | ConsumerAffairs | our opportunity — beat this with output validation |
+| Rufus price hallucination | 28% of prices are wrong | Marketplace Pulse | never let LLM generate prices — hydrate from live data |
+| Rufus self-serving bias | 83% recommend Amazon-owned products | ConsumerAffairs | cautionary tale for "advisor not salesperson" |
+| COSMO relevance improvement | 60% macro F1 improvement | Amazon Science | product enrichment with implicit use cases pays off |
+| Rufus feature priority | reactive first, proactive ("Help Me Decide") added 10 months later | Amazon timeline | validates reactive-first approach |

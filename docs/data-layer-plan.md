@@ -45,6 +45,8 @@ erDiagram
         boolean isDeal
         number dealExpiresAt "optional"
         number purchaseCount "denormalized"
+        string[] useCases "LLM-enriched, optional"
+        string[] goodFor "LLM-enriched, optional"
         number discountPercent "precomputed, optional"
         float64[] embedding "vector, optional"
     }
@@ -175,6 +177,9 @@ export default defineSchema({
     isDeal: v.boolean(),
     dealExpiresAt: v.optional(v.number()),
     purchaseCount: v.number(),       // denormalized, for trending/popular sort
+    // ── enrichment fields (inspired by Amazon COSMO knowledge graph, see docs/rufus-research.md) ──
+    useCases: v.optional(v.array(v.string())),  // e.g., ["gaming", "office", "travel"] — generated via batch LLM during seed
+    goodFor: v.optional(v.array(v.string())),   // e.g., ["typing comfort", "quiet environments"] — generated via batch LLM during seed
     // ── scale fields (see docs/scale-considerations.md) ──
     discountPercent: v.optional(v.number()), // precomputed: (originalPrice - price) / originalPrice * 100
     embedding: v.optional(v.array(v.float64())), // product embedding for vector similarity search
@@ -623,6 +628,7 @@ the seed action calls internal mutations in batches to avoid transaction limits.
 seed.run (action)
   → seed._insertCategories (internal mutation)
   → seed._insertProductsBatch (internal mutation, called N times)
+  → seed._enrichProducts (action — batch LLM call to generate useCases + goodFor from title/description/category, uses Flash-Lite)
   → seed._insertReviewsBatch (internal mutation)
   → seed._generateOrders (internal mutation, batched)
   → seed._computeCoOccurrences (internal mutation)

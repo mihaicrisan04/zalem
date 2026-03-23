@@ -53,7 +53,32 @@ for a store with 10K daily visitors, the realistic call volume is ~18K LLM calls
 
 this means ~30-40% of visitors will trigger an LLM call, not 100%. estimated: **5,000-8,000 calls/day for 10K visitors**.
 
-### 4. multimodal is not worth it at runtime
+### 4. output validation is critical (from Rufus research)
+
+Amazon Rufus has a **32% accuracy rate** and **28% price hallucination rate**. the root cause: the LLM generates factual product data (prices, specs, ratings) instead of referencing live data. our architecture should enforce a strict boundary:
+
+- **the LLM never generates factual product data** — it outputs `productId` references that the client hydrates with live Convex data
+- **post-generation validation** — after the agent responds, verify every `productId` exists and strip any price/rating/spec claims from free-text output
+- **review summary verification** — check that themes claimed in the summary actually appear in the review corpus
+
+this is the single biggest quality advantage we can have over Rufus.
+
+### 5. formalized model routing (from Rufus research)
+
+Amazon uses a real-time model router that selects among multiple models per query. we should formalize this instead of ad-hoc "use Flash-Lite for simple stuff":
+
+| query type | model | thinking level | rationale |
+|-----------|-------|---------------|-----------|
+| review summarization (batch) | Flash-Lite | none | offline, high volume, simple extraction |
+| quick product Q&A | Flash-Lite | minimal | fast, cheap, factual lookup |
+| comparison | Flash | medium | needs reasoning about tradeoffs |
+| personalized advice | Flash | medium | needs context integration |
+| multi-turn conversation | Flash | medium | needs conversation coherence |
+| homepage hero recommendation | Flash-Lite | minimal | simple re-ranking, speed matters |
+
+implement as a `selectModel(queryType)` function in `ai.ts`.
+
+### 6. multimodal is not worth it at runtime
 
 sending product images to the LLM at recommendation time adds 40% latency and 5x cost. text attributes contain enough semantic info for re-ranking. **use multimodal offline** to pre-compute visual embeddings and enrich metadata, not at runtime.
 
@@ -382,14 +407,22 @@ app/layout.tsx (or a top-level client layout wrapper)
 on the product detail page, inside or directly above the reviews tab:
 - show an AI-generated summary only when there are enough reviews to support it
 - structure it as:
-  - what buyers like
-  - common complaints
+  - what buyers like (with count, e.g., "38 of 47 reviewers")
+  - common complaints (with count)
+  - **divided opinions** — explicitly surface conflicts when reviews are split (e.g., "most love the feel, but 9 report key wobble after 6+ months")
   - best for
   - confidence / number of reviews analyzed
-- optionally include 2-3 representative review snippets or topic counts for grounding
+- include 2-3 representative review snippets for grounding (linked to actual reviews)
 - generated in batch, not on every page load
 
-this is a **core** AI surface because it grounds the assistant in real customer feedback and directly supports trust.
+**critical lesson from Rufus:** Amazon's review summarization is their most-criticized feature. Rufus oversimplifies, fabricates themes, and misattributes sentiment. our review summaries must:
+1. always include counts so users can gauge significance
+2. surface conflicting opinions instead of hiding them behind majority sentiment
+3. link to actual reviews so users can verify claims
+4. run a post-generation validation step that checks claimed themes against the review corpus (string matching / semantic similarity)
+5. never invent themes that don't appear in actual reviews
+
+this is a **core** AI surface because it grounds the assistant in real customer feedback and directly supports trust. it's also our biggest opportunity to demonstrably outperform Rufus in the thesis evaluation.
 
 ### 5. compare mode (core decision-support surface)
 
@@ -577,18 +610,20 @@ no latency constraint, high value, and can use batch API (50% discount). after a
 |------|------|------------|
 | 1 | system prompt + few-shot examples design | — |
 | 2 | `@convex-dev/agent` setup + Gemini integration via `@ai-sdk/google` | step 1 |
-| 3 | agent tools: `searchProducts`, `getRecommendations`, `getProductDetails`, `getCartContents`, `getReviewSummary`, `compareProducts` | phases 2, 3, 4 |
-| 4 | advisor sidebar UI (persistent sidebar + floating button + agent thread streaming) | step 2 |
+| 2a | `selectModel()` routing function (Flash vs Flash-Lite per query type) | step 2 |
+| 3 | agent tools: `searchProducts`, `getRecommendations`, `getProductDetails`, `getCartContents`, `getReviewSummary`, `compareProducts` — configure for **parallel execution** where possible | phases 2, 3, 4 |
+| 3a | output validation layer — post-generation productId verification + factual claim stripping | step 3 |
+| 4 | advisor sidebar UI (persistent sidebar + floating button + agent thread streaming + **product card hydration from live Convex data**) | step 2 |
 | 5 | question chips (attribute-based, no LLM) | — |
 | 6 | readiness indicator (behavior-triggered UI) | phase 4 |
-| 7 | review summarization (batch, Flash-Lite) | phase 2 reviews |
-| 8 | compare mode | steps 3, 4 |
+| 7 | review summarization (batch, Flash-Lite) — **with conflict surfacing, count grounding, and post-generation theme verification** | phase 2 reviews |
+| 8 | compare mode (structured table from product data + AI narrative from LLM) | steps 3, 4 |
 | 9 | rate limiting via `@convex-dev/rate-limiter` (integrated into agent) | step 2 |
 | 10 | feedback collection + adviceFeedback table | step 4 |
 | 11 | cart cross-sell banner | step 2 |
 | 12 | exit intent nudge | step 6 |
 
-steps 1, 5 can start immediately. steps 2-8 are the core implementation. steps 9-12 are supporting and follow-on additions.
+steps 1, 5 can start immediately. steps 2-8 are the core implementation (2a, 3a are Rufus-informed quality additions). steps 9-12 are supporting and follow-on additions.
 
 ---
 

@@ -22,6 +22,13 @@ UI-first approach: design the store experience first, then build the data layer 
 
 **AI priorities:** review summarization and AI-assisted comparison are core features, not extras. the assistant should help users validate products by summarizing what buyers actually say and by comparing similar options in a structured, grounded way.
 
+**Rufus-informed principles (from `docs/rufus-research.md`):**
+- **the LLM never generates factual product data** — prices, ratings, stock, specs are always hydrated from live Convex data, never from LLM output. Amazon's Rufus has a 28% price hallucination rate; we avoid this entirely
+- **output validation layer** — post-generation, verify every productId exists and claimed attributes match. Rufus has 32% accuracy; we can beat this with guardrails
+- **review summaries must surface conflicts** — don't just show majority sentiment. explicitly surface divided opinions with counts ("38 love it, 9 report issues after 6 months"). Rufus's biggest criticism is fabricating and oversimplifying review themes
+- **formalized model routing** — different query types route to different models (Flash-Lite for batch/simple, Flash for reasoning). inspired by Rufus's multi-model router
+- **product enrichment with implicit use cases** — add `useCases` and `goodFor` fields during seed, inspired by Amazon's COSMO knowledge graph (60% relevance improvement)
+
 **auth boundary:** anonymous users can browse, search, and see readiness signals (client-side). cart, favorites, orders, reviews, and LLM advisor calls require Clerk authentication. no anonymous carts. see `docs/data-layer-plan.md` § auth & session model for the full matrix.
 
 ### detailed plans per phase
@@ -29,6 +36,7 @@ UI-first approach: design the store experience first, then build the data layer 
 - `docs/data-layer-plan.md` — Convex schema, queries, mutations, indexes (phase 2)
 - `docs/recommendations-plan.md` — algorithm selection, scoring, cold-start (phase 3)
 - `docs/ai-integration-plan.md` — LLM selection, UX, business case, architecture (phases 5-7)
+- `docs/rufus-research.md` — Amazon Rufus deep dive: architecture, features, failures, and actionable lessons for zalem (cross-cutting)
 - `docs/scale-considerations.md` — what breaks at 10K+ products and architectural fixes (cross-cutting)
 - `docs/architecture-research.md` — Convex components, monorepo strategy, service boundaries (cross-cutting)
 - `docs/deployment-plan.md` — Vercel + Convex + Clerk production deployment guide

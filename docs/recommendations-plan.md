@@ -53,12 +53,16 @@ at ~200 products, computing 1 vs 199 with simple arithmetic takes <1ms. at 10K+ 
 **similarity formula:**
 ```
 similarity(A, B) =
-    0.35 × sameCategory(A, B)                    // 1 or 0
-  + 0.25 × jaccardTags(A, B)                     // |shared| / |union|, 0-1
-  + 0.15 × sameBrand(A, B)                       // 1 or 0
-  + 0.15 × priceProximity(A, B)                  // 1 - min(|pA-pB| / maxRange, 1)
+    0.25 × sameCategory(A, B)                    // 1 or 0
+  + 0.20 × jaccardTags(A, B)                     // |shared| / |union|, 0-1
+  + 0.15 × jaccardUseCases(A, B)                 // |shared| / |union|, 0-1 (from LLM-enriched useCases field, see rufus-research.md)
+  + 0.10 × jaccardGoodFor(A, B)                  // |shared| / |union|, 0-1 (from LLM-enriched goodFor field)
+  + 0.10 × sameBrand(A, B)                       // 1 or 0
+  + 0.10 × priceProximity(A, B)                  // 1 - min(|pA-pB| / maxRange, 1)
   + 0.10 × ratingProximity(A, B)                 // 1 - |rA-rB| / 4
 ```
+
+note: `useCases` and `goodFor` are generated during seed via batch LLM (Flash-Lite). inspired by Amazon's COSMO knowledge graph which achieved 60% improvement in product relevance by capturing implicit relationships (e.g., "slip-resistant shoes" → relevant for "pregnant women"). even with simple string arrays, this gives the similarity engine context that pure attribute matching misses.
 
 #### 3. trending / popular
 
