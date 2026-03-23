@@ -1,0 +1,8 @@
+alright and now with the this phase done, lets think about the last phase and how we can integrate a fast intelligent llm with this setup and a very nice ux to interfact with the user and what advantages this could have for a respective bussines that has a store like this.
+do a comprehensive reserach, if i have forgoeten something or i have not thought about something please tell it to me and take it into account into the reserach, if i am mistaken correct me direclty dont listen to me if i say something wrong or call it out if my plan is not the right one and there is a bettter one.
+this plan sohuld also include a little business analysis and why this would make sense for a business.
+reaserach this very very throughly as this is the core of the application
+
+---
+
+> AI ran 3 parallel research agents (LLM integration architecture, AI shopping UX patterns, business ROI analysis). Created `docs/ai-integration-plan.md` — the most comprehensive doc yet. Key corrections to original plan: (1) proactive-first is risky, switch to reactive-first with smart proactive signals based on trust data (41% don't trust AI assistants); (2) AI should help decide, not help buy (80% of shoppers use AI for validation); (3) only 4 of 7 recommendation slots actually need an LLM; (4) skip multimodal at runtime (40% slower, 5x cost). Added 6 features not in original plan: feedback loop, compare mode, review summarization, question chips, post-purchase recs, privacy-by-design. Business case: ~$525/month cost, ~$15,000/month incremental profit (28x ROI) at 10K daily visitors. Selected Gemini 3 Flash as primary model ($0.0021/request).
