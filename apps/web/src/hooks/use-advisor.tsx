@@ -6,10 +6,14 @@ import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { api } from "@zalem/backend/convex/_generated/api";
 
+const DEFAULT_WIDTH = 400;
+
 type AdvisorState = {
   isOpen: boolean;
   threadId: string | null;
   isLoading: boolean;
+  sidebarWidth: number;
+  setSidebarWidth: (width: number) => void;
   open: (question?: string) => void;
   close: () => void;
   sendMessage: (question: string) => void;
@@ -27,6 +31,7 @@ export function useAdvisor() {
 export function AdvisorProvider({ children }: { children: React.ReactNode }) {
   const { isSignedIn } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH);
   const [threadId, setThreadId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
     return sessionStorage.getItem("zalem_advisor_thread") ?? null;
@@ -56,7 +61,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
           setThreadId(result.threadId);
           sessionStorage.setItem("zalem_advisor_thread", result.threadId);
         }
-      } catch (e) {
+      } catch {
         toast.error("Failed to get advice. Please try again.");
       } finally {
         setIsLoading(false);
@@ -82,6 +87,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
   const close = useCallback(() => {
     setIsOpen(false);
     setPendingQuestion(null);
+    setSidebarWidth(DEFAULT_WIDTH);
   }, []);
 
   return (
@@ -90,6 +96,8 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
         isOpen,
         threadId,
         isLoading,
+        sidebarWidth,
+        setSidebarWidth,
         open,
         close,
         sendMessage,

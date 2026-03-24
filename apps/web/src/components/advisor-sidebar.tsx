@@ -18,7 +18,6 @@ import {
 import { useAdvisor } from "@/hooks/use-advisor";
 
 const MIN_WIDTH = 340;
-const DEFAULT_WIDTH = 400;
 const DISMISS_THRESHOLD = 200;
 
 const SUGGESTIONS = [
@@ -28,11 +27,18 @@ const SUGGESTIONS = [
 ];
 
 export function AdvisorSidebar() {
-  const { isOpen, close, threadId, isLoading, sendMessage, pendingQuestion } = useAdvisor();
+  const {
+    isOpen,
+    close,
+    threadId,
+    isLoading,
+    sendMessage,
+    pendingQuestion,
+    sidebarWidth,
+    setSidebarWidth,
+  } = useAdvisor();
   const [input, setInput] = useState("");
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
-  const sidebarRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const messagesResult = useUIMessages(
@@ -55,19 +61,17 @@ export function AdvisorSidebar() {
     }
   }, [pendingQuestion, isOpen]);
 
-  // max width: 1/3 of screen
   const getMaxWidth = useCallback(() => {
     return Math.floor(window.innerWidth / 3);
   }, []);
 
-  // resize handle
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       setIsResizing(true);
 
       const startX = e.clientX;
-      const startWidth = width;
+      const startWidth = sidebarWidth;
 
       const handleMouseMove = (e: MouseEvent) => {
         const delta = startX - e.clientX;
@@ -75,10 +79,9 @@ export function AdvisorSidebar() {
         const maxWidth = getMaxWidth();
 
         if (newWidth < DISMISS_THRESHOLD) {
-          // will dismiss on mouse up
-          setWidth(Math.max(0, newWidth));
+          setSidebarWidth(Math.max(0, newWidth));
         } else {
-          setWidth(Math.max(MIN_WIDTH, Math.min(maxWidth, newWidth)));
+          setSidebarWidth(Math.max(MIN_WIDTH, Math.min(maxWidth, newWidth)));
         }
       };
 
@@ -89,13 +92,10 @@ export function AdvisorSidebar() {
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
 
-        // dismiss if dragged past threshold
-        if (sidebarRef.current) {
-          const currentWidth = sidebarRef.current.offsetWidth;
-          if (currentWidth < DISMISS_THRESHOLD) {
-            close();
-            setWidth(DEFAULT_WIDTH);
-          }
+        // check current width from state via closure won't work, read from DOM
+        const sidebar = document.querySelector("[data-advisor-sidebar]");
+        if (sidebar && sidebar.clientWidth < DISMISS_THRESHOLD) {
+          close();
         }
       };
 
@@ -104,7 +104,7 @@ export function AdvisorSidebar() {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [width, getMaxWidth, close],
+    [sidebarWidth, getMaxWidth, close, setSidebarWidth],
   );
 
   const handleSubmit = () => {
@@ -116,13 +116,13 @@ export function AdvisorSidebar() {
 
   return (
     <aside
-      ref={sidebarRef}
+      data-advisor-sidebar
       className={cn(
-        "bg-background relative flex h-full shrink-0 flex-col border-l",
+        "bg-background fixed top-0 right-0 z-40 flex h-svh flex-col border-l",
         !isResizing && "transition-[width,opacity] duration-300 ease-out",
         isOpen ? "" : "w-0 overflow-hidden opacity-0",
       )}
-      style={isOpen ? { width: `${width}px` } : undefined}
+      style={isOpen ? { width: `${sidebarWidth}px` } : undefined}
     >
       {/* resize handle */}
       <div
@@ -131,7 +131,7 @@ export function AdvisorSidebar() {
       />
 
       {/* header */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
+      <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <Sparkles className="text-primary size-4" />
           <span className="text-sm font-semibold">Shopping Advisor</span>
@@ -145,7 +145,7 @@ export function AdvisorSidebar() {
       </div>
 
       {/* messages */}
-      <ScrollArea className="flex-1" maskHeight={20}>
+      <ScrollArea className="min-h-0 flex-1" maskHeight={20}>
         <div className="flex flex-col gap-4 p-4">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12">
@@ -209,12 +209,13 @@ export function AdvisorSidebar() {
       </ScrollArea>
 
       {/* input */}
-      <div className="border-t p-3">
+      <div className="shrink-0 border-t p-3">
         <PromptInput
           value={input}
           onValueChange={setInput}
           onSubmit={handleSubmit}
           isLoading={isLoading}
+          maxHeight={120}
         >
           <PromptInputTextarea placeholder="Ask anything..." />
           <PromptInputActions className="justify-end">
