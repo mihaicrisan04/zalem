@@ -19,26 +19,29 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
     hasCartItems: cartCount > 0,
   });
 
-  // defer Base UI components until after hydration to suppress
-  // ID mismatch warnings from auto-generated base-ui IDs
-  if (!mounted) {
-    return (
-      <div className="flex min-h-svh flex-col">
-        <div className="h-16 border-b" />
-        <div className="border-b py-3" />
-        <main className="flex-1">{children}</main>
-      </div>
-    );
-  }
-
   return (
     <BehaviorTrackerContext value={tracker}>
       <div className="flex min-h-svh flex-col">
-        <StoreHeader />
-        <CategoryNav />
+        {/* defer Base UI components until after hydration to suppress
+            ID mismatch warnings from auto-generated base-ui IDs */}
+        {mounted ? (
+          <>
+            <StoreHeader />
+            <CategoryNav />
+          </>
+        ) : (
+          <>
+            <div className="h-16 border-b" />
+            <div className="border-b py-3" />
+          </>
+        )}
         <main className="flex-1">{children}</main>
-        <StoreFooter />
-        <AdvisorButton shouldPulse={readiness.shouldPulseAdvisor} />
+        {mounted && (
+          <>
+            <StoreFooter />
+            <AdvisorButton shouldPulse={readiness.shouldPulseAdvisor} />
+          </>
+        )}
       </div>
     </BehaviorTrackerContext>
   );

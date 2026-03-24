@@ -90,46 +90,45 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
 
   return (
     <div className="space-y-8">
-      {/* aggregate rating + write button row */}
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-        {/* aggregate */}
-        {aggregate && aggregate.total > 0 && (
-          <div className="grid max-w-md gap-6 sm:grid-cols-[160px_1fr]">
-            <div className="flex flex-col items-center justify-center rounded-xl border p-5">
-              <span className="text-5xl font-bold tracking-tight">
-                {aggregate.average.toFixed(1)}
-              </span>
-              <div className="mt-2">
-                <StarRating defaultValue={Math.round(aggregate.average)} size="sm" disabled />
-              </div>
-              <p className="text-muted-foreground mt-2 text-sm">
-                {aggregate.total} {aggregate.total === 1 ? "review" : "reviews"}
-              </p>
+      {/* aggregate rating */}
+      {aggregate && aggregate.total > 0 && (
+        <div className="grid max-w-lg gap-6 sm:grid-cols-[160px_1fr]">
+          <div className="flex flex-col items-center justify-center rounded-xl border p-5">
+            <span className="text-5xl font-bold tracking-tight">
+              {aggregate.average.toFixed(1)}
+            </span>
+            <div className="mt-2">
+              <StarRating defaultValue={Math.round(aggregate.average)} size="sm" disabled />
             </div>
-
-            <div className="flex flex-col justify-center gap-2">
-              {[5, 4, 3, 2, 1].map((star) => {
-                const count = aggregate.distribution[star - 1];
-                const pct = aggregate.total > 0 ? (count / aggregate.total) * 100 : 0;
-                return (
-                  <div key={star} className="flex items-center gap-2.5">
-                    <span className="text-muted-foreground w-3 text-right text-xs">{star}</span>
-                    <StarRating defaultValue={1} totalStars={1} size="sm" disabled />
-                    <div className="bg-muted h-2 w-full max-w-32 overflow-hidden rounded-full">
-                      <div
-                        className="h-full rounded-full bg-yellow-400 transition-all duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="text-muted-foreground w-6 text-right text-xs">{count}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {aggregate.total} {aggregate.total === 1 ? "review" : "reviews"}
+            </p>
           </div>
-        )}
 
-        {/* write review dialog trigger */}
+          <div className="flex flex-col justify-center gap-2.5">
+            {[5, 4, 3, 2, 1].map((star) => {
+              const count = aggregate.distribution[star - 1];
+              const pct = aggregate.total > 0 ? (count / aggregate.total) * 100 : 0;
+              return (
+                <div key={star} className="flex items-center gap-3">
+                  <span className="text-muted-foreground w-4 text-right text-sm">{star}</span>
+                  <StarRating defaultValue={1} totalStars={1} size="sm" disabled />
+                  <div className="bg-muted h-2.5 flex-1 overflow-hidden rounded-full">
+                    <div
+                      className="h-full rounded-full bg-yellow-400 transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <span className="text-muted-foreground w-8 text-right text-xs">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* write review dialog trigger */}
+      <div>
         {isSignedIn && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger
