@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@zalem/ui/components/optics/tooltip";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
@@ -121,13 +122,15 @@ export function AdvisorSidebar() {
         className="absolute top-0 -left-1 z-10 h-full w-2 cursor-col-resize"
       />
 
-      {/* close — appears on sidebar hover */}
-      <button
+      {/* close */}
+      <Button
+        variant="raised"
+        size="icon"
+        className="absolute top-2.5 right-2.5 z-20 size-7"
         onClick={close}
-        className="absolute top-2.5 right-2.5 z-20 cursor-pointer rounded-full p-1 opacity-0 transition-opacity group-hover/sidebar:opacity-60 hover:!opacity-100"
       >
-        <X className="text-muted-foreground size-3.5" />
-      </button>
+        <X className="size-3.5" />
+      </Button>
 
       {/* messages */}
       <ScrollArea className="min-h-0 flex-1" maskHeight={20}>
@@ -206,14 +209,20 @@ export function AdvisorSidebar() {
         >
           <PromptInputTextarea placeholder="Ask anything..." rows={1} />
           <PromptInputActions className="justify-between">
-            <Button
-              size="icon"
-              variant="ghost"
-              className="text-muted-foreground size-8 shrink-0"
-              title="New chat"
-            >
-              <MessageSquarePlus className="size-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="text-muted-foreground size-8 shrink-0"
+                  >
+                    <MessageSquarePlus className="size-4" />
+                  </Button>
+                }
+              />
+              <TooltipContent side="top">New chat</TooltipContent>
+            </Tooltip>
             <Button
               size="icon"
               variant="ghost"
