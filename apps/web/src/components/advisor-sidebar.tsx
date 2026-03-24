@@ -122,21 +122,25 @@ export function AdvisorSidebar() {
       />
 
       {/* floating controls */}
-      <button
-        className="text-muted-foreground hover:text-foreground hover:bg-accent absolute top-3 left-3 z-20 cursor-pointer rounded-md p-1.5 transition-colors"
+      <Button
+        variant="raised"
+        size="icon"
+        className="absolute top-3 left-3 z-20 size-8"
         title="New chat"
       >
         <MessageSquarePlus className="size-4" />
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="raised"
+        size="icon"
+        className="absolute top-3 right-3 z-20 size-8"
         onClick={close}
-        className="text-muted-foreground hover:text-foreground hover:bg-accent absolute top-3 right-3 z-20 cursor-pointer rounded-md p-1.5 transition-colors"
       >
         <X className="size-4" />
-      </button>
+      </Button>
 
       {/* messages */}
-      <ScrollArea className="min-h-0 flex-1" maskHeight={20}>
+      <ScrollArea className="min-h-0 flex-1" maskHeight={48}>
         <div className="flex flex-col gap-4 p-4">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12">
