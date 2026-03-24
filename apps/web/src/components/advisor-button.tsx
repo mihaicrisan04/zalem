@@ -7,17 +7,15 @@ import { cn } from "@zalem/ui/lib/utils";
 
 export function AdvisorButton({ shouldPulse = false }: { shouldPulse?: boolean }) {
   return (
-    <div className="fixed right-6 bottom-6 z-40">
-      {/* soft glow ring behind the button */}
-      {shouldPulse && (
-        <div className="bg-primary/20 absolute inset-0 -m-1 animate-[advisor-glow_3s_ease-in-out_infinite] rounded-full" />
+    <div
+      className={cn(
+        "fixed right-6 bottom-6 z-40 transition-transform",
+        shouldPulse && "animate-[breathe_4s_ease-in-out_infinite]",
       )}
+    >
       <Button
         size="lg"
-        className={cn(
-          "relative h-12 gap-2 rounded-full px-5 text-sm shadow-lg transition-shadow",
-          shouldPulse && "shadow-primary/25 shadow-xl",
-        )}
+        className="h-12 gap-2 rounded-full px-5 text-sm shadow-lg"
         onClick={() => {
           toast.info("AI advisor coming in phase 6", {
             description:
@@ -25,23 +23,14 @@ export function AdvisorButton({ shouldPulse = false }: { shouldPulse?: boolean }
           });
         }}
       >
-        <Sparkles
-          className={cn(
-            "size-5",
-            shouldPulse && "animate-[advisor-sparkle_2s_ease-in-out_infinite]",
-          )}
-        />
+        <Sparkles className="size-5" />
         Ask advisor
       </Button>
 
       <style>{`
-        @keyframes advisor-glow {
-          0%, 100% { opacity: 0; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.15); }
-        }
-        @keyframes advisor-sparkle {
-          0%, 100% { opacity: 1; transform: rotate(0deg); }
-          50% { opacity: 0.7; transform: rotate(15deg); }
+        @keyframes breathe {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.06); opacity: 0.85; }
         }
       `}</style>
     </div>

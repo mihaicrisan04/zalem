@@ -207,7 +207,12 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
             onClick={() => scrollToSection("reviews")}
             className="flex items-center gap-2 hover:opacity-80"
           >
-            <StarRating defaultValue={Math.round(product.rating)} size="sm" disabled />
+            <StarRating
+              defaultValue={Math.round(product.rating)}
+              size="sm"
+              disabled
+              className="!opacity-100 [&_button]:!cursor-default"
+            />
             <span className="text-muted-foreground text-sm">
               {product.rating.toFixed(1)} ({product.reviewCount} reviews)
             </span>

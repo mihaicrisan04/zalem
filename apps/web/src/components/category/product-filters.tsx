@@ -114,7 +114,12 @@ export function ProductFilters({
                 currentMinRating === rating ? "bg-accent font-medium" : ""
               }`}
             >
-              <StarRating defaultValue={rating} size="sm" disabled />
+              <StarRating
+                defaultValue={rating}
+                size="sm"
+                disabled
+                className="!opacity-100 [&_button]:!cursor-default"
+              />
               <span>& up</span>
             </button>
           ))}
