@@ -109,9 +109,13 @@ function PromptInputTextarea({
 }: PromptInputTextareaProps) {
   const { value, setValue, maxHeight, onSubmit, disabled, textareaRef } = usePromptInput();
 
+  const hasMounted = useRef(false);
+
   const adjustHeight = useCallback(
     (el: HTMLTextAreaElement | null) => {
       if (!el || disableAutosize) return;
+      // only resize if element has visible width (not mid-transition)
+      if (el.offsetWidth === 0) return;
       el.style.height = "auto";
       const scrollH = el.scrollHeight;
       if (typeof maxHeight === "number") {
@@ -127,9 +131,14 @@ function PromptInputTextarea({
     (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
   };
 
+  // only auto-size after first value change, not on mount
   useLayoutEffect(() => {
+    if (!hasMounted.current) {
+      hasMounted.current = true;
+      return;
+    }
     adjustHeight(textareaRef.current);
-  }, [value, maxHeight, disableAutosize, adjustHeight]);
+  }, [value, adjustHeight]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     adjustHeight(e.target);
