@@ -1,11 +1,13 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@zalem/ui/components/optics/button";
 import { cn } from "@zalem/ui/lib/utils";
+import { useAdvisor } from "@/hooks/use-advisor";
 
 export function AdvisorButton({ shouldPulse = false }: { shouldPulse?: boolean }) {
+  const { open } = useAdvisor();
+
   return (
     <div
       className={cn(
@@ -19,12 +21,7 @@ export function AdvisorButton({ shouldPulse = false }: { shouldPulse?: boolean }
           "h-12 gap-2 rounded-full px-5 text-sm shadow-lg transition-shadow",
           shouldPulse && "shadow-primary/30 shadow-xl",
         )}
-        onClick={() => {
-          toast.info("AI advisor coming in phase 6", {
-            description:
-              "The shopping advisor will help you compare products, summarize reviews, and make better decisions.",
-          });
-        }}
+        onClick={() => open()}
       >
         <Sparkles className="size-5" />
         Ask advisor

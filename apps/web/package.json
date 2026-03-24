@@ -9,11 +9,13 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.5",
+    "@convex-dev/agent": "^0.6.1",
     "@zalem/backend": "workspace:*",
     "@zalem/env": "workspace:*",
     "@zalem/ui": "workspace:*",
     "babel-plugin-react-compiler": "^1.0.0",
     "convex": "catalog:",
+    "convex-helpers": "^0.1.114",
     "dotenv": "catalog:",
     "lucide-react": "catalog:",
     "motion": "^12.38.0",

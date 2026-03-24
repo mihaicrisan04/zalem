@@ -4,6 +4,8 @@ import { StoreHeader } from "@/components/store-header";
 import { CategoryNav } from "@/components/category-nav";
 import { StoreFooter } from "@/components/store-footer";
 import { AdvisorButton } from "@/components/advisor-button";
+import { AdvisorSidebar } from "@/components/advisor-sidebar";
+import { AdvisorProvider } from "@/hooks/use-advisor";
 import { useBehaviorTracker, BehaviorTrackerContext } from "@/hooks/use-behavior-tracker";
 import { useReadinessSignals } from "@/hooks/use-readiness-signals";
 import { useMounted } from "@/hooks/use-mounted";
@@ -21,28 +23,29 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
 
   return (
     <BehaviorTrackerContext value={tracker}>
-      <div className="flex min-h-svh flex-col">
-        {/* defer Base UI components until after hydration to suppress
-            ID mismatch warnings from auto-generated base-ui IDs */}
-        {mounted ? (
-          <>
-            <StoreHeader />
-            <CategoryNav />
-          </>
-        ) : (
-          <>
-            <div className="h-16 border-b" />
-            <div className="border-b py-3" />
-          </>
-        )}
-        <main className="flex-1">{children}</main>
-        {mounted && (
-          <>
-            <StoreFooter />
-            <AdvisorButton shouldPulse={readiness.shouldPulseAdvisor} />
-          </>
-        )}
-      </div>
+      <AdvisorProvider>
+        <div className="flex min-h-svh flex-col">
+          {mounted ? (
+            <>
+              <StoreHeader />
+              <CategoryNav />
+            </>
+          ) : (
+            <>
+              <div className="h-16 border-b" />
+              <div className="border-b py-3" />
+            </>
+          )}
+          <main className="flex-1">{children}</main>
+          {mounted && (
+            <>
+              <StoreFooter />
+              <AdvisorButton shouldPulse={readiness.shouldPulseAdvisor} />
+              <AdvisorSidebar />
+            </>
+          )}
+        </div>
+      </AdvisorProvider>
     </BehaviorTrackerContext>
   );
 }
