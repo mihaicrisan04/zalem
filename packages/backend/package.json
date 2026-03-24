@@ -9,7 +9,10 @@
     "dev:setup": "convex dev --configure --until-success"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.53",
+    "@convex-dev/agent": "^0.6.1",
     "@faker-js/faker": "^10.4.0",
+    "ai": "^6.0.138",
     "convex": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:"
