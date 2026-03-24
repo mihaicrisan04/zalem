@@ -151,14 +151,9 @@ function PromptInputTextarea({
       onChange={handleChange}
       onKeyDown={handleKeyDown}
       className={cn(
-        "text-foreground max-h-[--prompt-max-height] w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground [field-sizing:content]",
+        "text-foreground h-[38px] w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground",
         className,
       )}
-      style={
-        {
-          "--prompt-max-height": typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
-        } as React.CSSProperties
-      }
       rows={1}
       disabled={disabled}
       {...props}
