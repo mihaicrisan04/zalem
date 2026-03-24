@@ -13,6 +13,7 @@ import { Button } from "@zalem/ui/components/optics/button";
 import { Badge } from "@zalem/ui/components/optics/badge";
 import { Separator } from "@zalem/ui/components/optics/separator";
 import { Spinner } from "@zalem/ui/components/optics/spinner";
+import { StarRating } from "@zalem/ui/components/optics/star-rating";
 import { cn } from "@zalem/ui/lib/utils";
 import { ProductRow } from "@/components/product-row";
 import { ReviewSection } from "./review-section";
@@ -52,8 +53,9 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
   const [hoveredImage, setHoveredImage] = useState<number | null>(null);
   const displayedImage = hoveredImage ?? selectedImage;
 
-  // sticky tab nav — tracks which section is in view
+  // sticky tab nav — scoped to the sections container
   const [activeSection, setActiveSection] = useState<SectionId>("description");
+  const sectionsContainerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<SectionId, HTMLElement | null>>({
     description: null,
     specifications: null,
@@ -85,7 +87,7 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
   const scrollToSection = useCallback((section: SectionId) => {
     const el = sectionRefs.current[section];
     if (el) {
-      const top = el.getBoundingClientRect().top + window.scrollY - 100;
+      const top = el.getBoundingClientRect().top + window.scrollY - 120;
       window.scrollTo({ top, behavior: "smooth" });
     }
   }, []);
@@ -160,7 +162,7 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
 
       {/* main content: gallery + info */}
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* image gallery — carousel with hover preview */}
+        {/* image gallery */}
         <div>
           <div className="bg-muted relative aspect-square overflow-hidden rounded-xl">
             <Image
@@ -173,7 +175,7 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
             />
           </div>
           {product.images.length > 1 && (
-            <div className="mt-3 flex gap-2 overflow-x-auto">
+            <div className="mt-3 flex gap-2 overflow-x-auto pt-1 pb-1">
               {product.images.map((img, i) => (
                 <button
                   key={i}
@@ -203,10 +205,10 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
           {/* rating */}
           <button
             onClick={() => scrollToSection("reviews")}
-            className="text-muted-foreground flex items-center gap-2 text-sm hover:underline"
+            className="flex items-center gap-2 hover:opacity-80"
           >
-            <span className="text-yellow-500">{"★".repeat(Math.round(product.rating))}</span>
-            <span>
+            <StarRating defaultValue={Math.round(product.rating)} size="sm" disabled />
+            <span className="text-muted-foreground text-sm">
               {product.rating.toFixed(1)} ({product.reviewCount} reviews)
             </span>
           </button>
@@ -269,82 +271,87 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
         </div>
       </div>
 
-      {/* sticky section nav */}
-      <div className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-16 z-20 -mx-4 mt-12 border-b backdrop-blur">
-        <div className="container mx-auto flex px-4">
-          {SECTION_IDS.map((section) => (
-            <button
-              key={section}
-              onClick={() => scrollToSection(section)}
-              className={cn(
-                "border-b-2 px-5 py-3 text-sm font-medium capitalize transition-colors",
-                activeSection === section
-                  ? "text-primary border-primary"
-                  : "text-muted-foreground hover:text-foreground border-transparent",
-              )}
-            >
-              {section}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* all sections rendered — scroll through them */}
-      <div className="mt-8 space-y-16">
-        {/* description */}
-        <section
-          ref={(el) => {
-            sectionRefs.current.description = el;
-          }}
-          data-section="description"
-        >
-          <h2 className="mb-4 text-lg font-bold">Description</h2>
-          <p className="text-muted-foreground max-w-prose leading-relaxed">{product.description}</p>
-        </section>
-
-        {/* specifications */}
-        <section
-          ref={(el) => {
-            sectionRefs.current.specifications = el;
-          }}
-          data-section="specifications"
-        >
-          <h2 className="mb-4 text-lg font-bold">Specifications</h2>
-          {product.specifications ? (
-            <div className="bg-muted/30 max-w-xl overflow-hidden rounded-lg border">
-              {Object.entries(product.specifications).map(([key, value], i) => (
-                <div
-                  key={key}
-                  className={cn("flex px-4 py-3 text-sm", i % 2 === 0 ? "bg-muted/20" : "")}
-                >
-                  <span className="text-muted-foreground w-44 shrink-0 font-medium">{key}</span>
-                  <span>{value}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm">No specifications available.</p>
-          )}
-        </section>
-
-        {/* reviews */}
-        <section
-          ref={(el) => {
-            sectionRefs.current.reviews = el;
-          }}
-          data-section="reviews"
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold">Reviews ({product.reviewCount})</h2>
-            {readiness.activeChips.find((c) => c.type === "review_engagement") && (
-              <QuestionChip
-                chip={readiness.activeChips.find((c) => c.type === "review_engagement")!}
-                onDismiss={readiness.dismissChip}
-              />
-            )}
+      {/* sections container — sticky nav is scoped to this */}
+      <div ref={sectionsContainerRef} className="relative mt-12">
+        {/* sticky section nav — stays within the sections container */}
+        <div className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-16 z-20 -mx-4 border-b backdrop-blur">
+          <div className="container mx-auto flex px-4">
+            {SECTION_IDS.map((section) => (
+              <button
+                key={section}
+                onClick={() => scrollToSection(section)}
+                className={cn(
+                  "border-b-2 px-5 py-3 text-sm font-medium capitalize transition-colors",
+                  activeSection === section
+                    ? "text-primary border-primary"
+                    : "text-muted-foreground hover:text-foreground border-transparent",
+                )}
+              >
+                {section}
+              </button>
+            ))}
           </div>
-          <ReviewSection productId={product._id} />
-        </section>
+        </div>
+
+        {/* all sections rendered */}
+        <div className="mt-8 space-y-16">
+          {/* description */}
+          <section
+            ref={(el) => {
+              sectionRefs.current.description = el;
+            }}
+            data-section="description"
+          >
+            <h2 className="mb-4 text-lg font-bold">Description</h2>
+            <p className="text-muted-foreground max-w-prose leading-relaxed">
+              {product.description}
+            </p>
+          </section>
+
+          {/* specifications */}
+          <section
+            ref={(el) => {
+              sectionRefs.current.specifications = el;
+            }}
+            data-section="specifications"
+          >
+            <h2 className="mb-4 text-lg font-bold">Specifications</h2>
+            {product.specifications ? (
+              <div className="bg-muted/30 max-w-xl overflow-hidden rounded-lg border">
+                {Object.entries(product.specifications).map(([key, value], i) => (
+                  <div
+                    key={key}
+                    className={cn("flex px-4 py-3 text-sm", i % 2 === 0 ? "bg-muted/20" : "")}
+                  >
+                    <span className="text-muted-foreground w-44 shrink-0 font-medium">{key}</span>
+                    <span>{value}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">No specifications available.</p>
+            )}
+          </section>
+
+          {/* reviews */}
+          <section
+            ref={(el) => {
+              sectionRefs.current.reviews = el;
+            }}
+            data-section="reviews"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-lg font-bold">Reviews ({product.reviewCount})</h2>
+              {readiness.activeChips.find((c) => c.type === "review_engagement") && (
+                <QuestionChip
+                  chip={readiness.activeChips.find((c) => c.type === "review_engagement")!}
+                  onDismiss={readiness.dismissChip}
+                />
+              )}
+            </div>
+            <ReviewSection productId={product._id} />
+          </section>
+        </div>
       </div>
 
       {/* frequently bought together */}

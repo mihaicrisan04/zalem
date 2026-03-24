@@ -10,6 +10,7 @@ import { api } from "@zalem/backend/convex/_generated/api";
 import type { Id } from "@zalem/backend/convex/_generated/dataModel";
 import { Button } from "@zalem/ui/components/optics/button";
 import { Badge } from "@zalem/ui/components/optics/badge";
+import { StarRating } from "@zalem/ui/components/optics/star-rating";
 import { cn } from "@zalem/ui/lib/utils";
 
 export interface ProductData {
@@ -104,9 +105,9 @@ export function ProductCard({
         </Link>
 
         {/* rating */}
-        <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-          <span className="text-yellow-500">{"★".repeat(Math.round(product.rating))}</span>
-          <span>({product.reviewCount})</span>
+        <div className="flex items-center gap-1.5">
+          <StarRating defaultValue={Math.round(product.rating)} size="sm" disabled />
+          <span className="text-muted-foreground text-xs">({product.reviewCount})</span>
         </div>
 
         {/* price */}

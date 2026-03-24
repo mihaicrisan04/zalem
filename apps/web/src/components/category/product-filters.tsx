@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Button } from "@zalem/ui/components/optics/button";
 import { Separator } from "@zalem/ui/components/optics/separator";
+import { StarRating } from "@zalem/ui/components/optics/star-rating";
 
 const PRICE_RANGES = [
   { label: "Under 50 lei", max: 50 },
@@ -113,7 +114,7 @@ export function ProductFilters({
                 currentMinRating === rating ? "bg-accent font-medium" : ""
               }`}
             >
-              <span className="text-yellow-500">{"★".repeat(rating)}</span>
+              <StarRating defaultValue={rating} size="sm" disabled />
               <span>& up</span>
             </button>
           ))}
