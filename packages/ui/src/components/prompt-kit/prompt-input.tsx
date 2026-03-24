@@ -1,7 +1,14 @@
 "use client";
 
 import { cn } from "@zalem/ui/lib/utils";
-import React, { createContext, useContext, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 type PromptInputContextType = {
   isLoading: boolean;
@@ -102,27 +109,33 @@ function PromptInputTextarea({
 }: PromptInputTextareaProps) {
   const { value, setValue, maxHeight, onSubmit, disabled, textareaRef } = usePromptInput();
 
-  const adjustHeight = (el: HTMLTextAreaElement | null) => {
-    if (!el || disableAutosize) return;
-    el.style.overflow = "hidden";
-    el.style.height = "0px";
-    const scrollH = el.scrollHeight;
-    if (typeof maxHeight === "number") {
-      el.style.height = `${Math.min(scrollH, maxHeight)}px`;
-    } else {
-      el.style.height = `min(${scrollH}px, ${maxHeight})`;
-    }
-    el.style.overflow = "";
-  };
+  const adjustHeight = useCallback(
+    (el: HTMLTextAreaElement | null) => {
+      if (!el || disableAutosize) return;
+      // skip if element has no visible width (e.g. sidebar is animating open)
+      if (el.offsetWidth === 0) return;
+      el.style.overflow = "hidden";
+      el.style.height = "0px";
+      const scrollH = el.scrollHeight;
+      if (typeof maxHeight === "number") {
+        el.style.height = `${Math.min(scrollH, maxHeight)}px`;
+      } else {
+        el.style.height = `min(${scrollH}px, ${maxHeight})`;
+      }
+      el.style.overflow = "";
+    },
+    [disableAutosize, maxHeight],
+  );
 
   const handleRef = (el: HTMLTextAreaElement | null) => {
     (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
-    adjustHeight(el);
+    // defer initial measurement to after layout/transitions settle
+    requestAnimationFrame(() => adjustHeight(el));
   };
 
   useLayoutEffect(() => {
     adjustHeight(textareaRef.current);
-  }, [value, maxHeight, disableAutosize]);
+  }, [value, maxHeight, disableAutosize, adjustHeight]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     adjustHeight(e.target);
