@@ -343,7 +343,7 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
             }}
             data-section="reviews"
           >
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex items-center gap-4">
               <h2 className="text-lg font-bold">Reviews ({product.reviewCount})</h2>
               {readiness.activeChips.find((c) => c.type === "review_engagement") && (
                 <QuestionChip
