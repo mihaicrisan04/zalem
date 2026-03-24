@@ -150,7 +150,7 @@ export function AdvisorSidebar() {
       </Button>
 
       {/* messages */}
-      <ScrollArea className="min-h-0 flex-1" maskHeight={20}>
+      <ScrollArea className="advisor-scroll min-h-0 flex-1" maskHeight={20}>
         <div className="flex flex-col gap-4 p-4">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
@@ -255,6 +255,12 @@ export function AdvisorSidebar() {
           </div>
         </div>
       </div>
+      <style>{`
+        .advisor-scroll [data-slot="scroll-area-viewport"]::-webkit-scrollbar { width: 6px; }
+        .advisor-scroll [data-slot="scroll-area-viewport"]::-webkit-scrollbar-track { background: transparent; }
+        .advisor-scroll [data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb { background: oklch(0.708 0 0); border-radius: 3px; }
+        .dark .advisor-scroll [data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); }
+      `}</style>
     </aside>
   );
 }
