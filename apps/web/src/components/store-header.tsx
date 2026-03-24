@@ -18,12 +18,12 @@ export function StoreHeader() {
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
       <div className="container mx-auto flex h-14 items-center gap-4 px-4">
         {/* logo */}
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold">
           zalem
         </Link>
 
         {/* search bar - takes most width */}
-        <div className="flex-1 max-w-2xl mx-auto">
+        <div className="mx-auto max-w-2xl flex-1">
           <SearchBar />
         </div>
 
@@ -33,34 +33,45 @@ export function StoreHeader() {
 
           {isSignedIn ? (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/favorites">
-                  <Heart className="size-5" />
-                </Link>
+              <Button
+                render={<Link href={"/favorites" as any} />}
+                variant="ghost"
+                size="icon"
+                nativeButton={false}
+              >
+                <Heart className="size-5" />
               </Button>
 
-              <Button variant="ghost" size="icon" className="relative" asChild>
-                <Link href="/cart">
+              <div className="relative">
+                <Button
+                  render={<Link href={"/cart" as any} />}
+                  variant="ghost"
+                  size="icon"
+                  nativeButton={false}
+                >
                   <ShoppingCart className="size-5" />
-                  {cartCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-xs"
-                    >
-                      {cartCount > 99 ? "99+" : cartCount}
-                    </Badge>
-                  )}
-                </Link>
-              </Button>
+                </Button>
+                {cartCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-xs"
+                  >
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </Badge>
+                )}
+              </div>
 
               <UserButton />
             </>
           ) : (
             <>
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/cart">
-                  <ShoppingCart className="size-5" />
-                </Link>
+              <Button
+                render={<Link href={"/cart" as any} />}
+                variant="ghost"
+                size="icon"
+                nativeButton={false}
+              >
+                <ShoppingCart className="size-5" />
               </Button>
               <SignInButton mode="modal">
                 <Button variant="ghost" size="icon">
