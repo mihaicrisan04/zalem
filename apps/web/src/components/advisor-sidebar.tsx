@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GripVertical, Send, Sparkles, X } from "lucide-react";
+import { Send, Sparkles, X } from "lucide-react";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
@@ -127,10 +127,8 @@ export function AdvisorSidebar() {
       {/* resize handle */}
       <div
         onMouseDown={handleMouseDown}
-        className="absolute top-0 -left-1 z-10 flex h-full w-2 cursor-col-resize items-center justify-center opacity-0 transition-opacity hover:opacity-100"
-      >
-        <GripVertical className="text-muted-foreground size-3" />
-      </div>
+        className="absolute top-0 -left-1 z-10 h-full w-2 cursor-col-resize"
+      />
 
       {/* header */}
       <div className="flex items-center justify-between border-b px-4 py-3">

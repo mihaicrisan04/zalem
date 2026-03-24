@@ -148,7 +148,7 @@ function PromptInputTextarea({
       onChange={handleChange}
       onKeyDown={handleKeyDown}
       className={cn(
-        "text-foreground min-h-[44px] w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground",
+        "text-foreground w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground",
         className,
       )}
       rows={1}
