@@ -109,7 +109,7 @@ export function AdvisorSidebar() {
     <aside
       data-advisor-sidebar
       className={cn(
-        "bg-background flex h-full shrink-0 flex-col border-l",
+        "bg-background relative flex h-full shrink-0 flex-col border-l",
         !isResizing && "transition-[width,opacity] duration-300 ease-out",
         isOpen ? "" : "w-0 overflow-hidden opacity-0",
       )}
