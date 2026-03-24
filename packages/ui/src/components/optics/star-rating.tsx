@@ -30,7 +30,7 @@ export function StarRating({
   };
 
   return (
-    <div className={cn("flex items-center gap-2", disabled && "opacity-50", className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       {Array.from({ length: totalStars }, (_, index) => index + 1).map((star) => (
         <motion.button
           key={star}
@@ -38,14 +38,14 @@ export function StarRating({
           className={cn(
             "relative focus-visible:outline-none focus-visible:ring-2",
             "focus-visible:ring-ring focus-visible:ring-offset-2",
-            disabled && "cursor-not-allowed",
+            disabled && "pointer-events-none",
           )}
           onClick={() => handleRating(star)}
           onMouseEnter={() => !disabled && setHover(star)}
           onMouseLeave={() => !disabled && setHover(0)}
           whileHover={!disabled ? { scale: 1.3, rotate: -10 } : undefined}
           whileTap={!disabled ? { scale: 0.9, rotate: 15 } : undefined}
-          disabled={disabled}
+          tabIndex={disabled ? -1 : undefined}
         >
           <motion.div
             className={cn(

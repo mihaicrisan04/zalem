@@ -106,12 +106,7 @@ export function ProductCard({
 
         {/* rating */}
         <div className="flex items-center gap-1.5">
-          <StarRating
-            defaultValue={Math.round(product.rating)}
-            size="sm"
-            disabled
-            className="!opacity-100 [&_button]:!cursor-default"
-          />
+          <StarRating defaultValue={Math.round(product.rating)} size="sm" disabled />
           <span className="text-muted-foreground text-xs">({product.reviewCount})</span>
         </div>
 

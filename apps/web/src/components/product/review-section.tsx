@@ -94,12 +94,7 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
               {aggregate.average.toFixed(1)}
             </span>
             <div className="mt-2">
-              <StarRating
-                defaultValue={Math.round(aggregate.average)}
-                size="sm"
-                disabled
-                className="!opacity-100 [&_button]:!cursor-default"
-              />
+              <StarRating defaultValue={Math.round(aggregate.average)} size="sm" disabled />
             </div>
             <p className="text-muted-foreground mt-2 text-sm">
               {aggregate.total} {aggregate.total === 1 ? "review" : "reviews"}
@@ -114,13 +109,7 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
               return (
                 <div key={star} className="flex items-center gap-3">
                   <span className="text-muted-foreground w-4 text-right text-sm">{star}</span>
-                  <StarRating
-                    defaultValue={1}
-                    totalStars={1}
-                    size="sm"
-                    disabled
-                    className="!opacity-100 [&_button]:!cursor-default"
-                  />
+                  <StarRating defaultValue={1} totalStars={1} size="sm" disabled />
                   <div className="bg-muted h-2.5 flex-1 overflow-hidden rounded-full">
                     <div
                       className="h-full rounded-full bg-yellow-400 transition-all duration-500"
@@ -221,12 +210,7 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
                     </span>
                   </div>
                   <div className="mt-1">
-                    <StarRating
-                      defaultValue={review.rating}
-                      size="sm"
-                      disabled
-                      className="!opacity-100 [&_button]:!cursor-default"
-                    />
+                    <StarRating defaultValue={review.rating} size="sm" disabled />
                   </div>
                   <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                     {review.text}
