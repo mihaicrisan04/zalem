@@ -203,15 +203,18 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
           <h1 className="text-2xl font-bold leading-tight">{product.title}</h1>
 
           {/* rating */}
-          <button
+          <div
             onClick={() => scrollToSection("reviews")}
-            className="flex items-center gap-2 hover:opacity-80"
+            className="flex cursor-pointer items-center gap-2 hover:opacity-80"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && scrollToSection("reviews")}
           >
             <StarRating defaultValue={Math.round(product.rating)} size="sm" disabled />
             <span className="text-muted-foreground text-sm">
               {product.rating.toFixed(1)} ({product.reviewCount} reviews)
             </span>
-          </button>
+          </div>
 
           {/* price */}
           <div className="flex items-baseline gap-3">

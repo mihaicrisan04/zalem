@@ -53,10 +53,9 @@ export function useReadinessSignals(
       }
     }
 
-    // signal: review engagement (viewed reviews section)
+    // signal: review engagement — once viewedReviews is true, chip stays regardless of active section
     if (
       options?.isProductDetailPage &&
-      options?.activeTab === "reviews" &&
       currentProduct?.viewedReviews &&
       !dismissed.has("review_engagement")
     ) {
