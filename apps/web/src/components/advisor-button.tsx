@@ -6,7 +6,9 @@ import { cn } from "@zalem/ui/lib/utils";
 import { useAdvisor } from "@/hooks/use-advisor";
 
 export function AdvisorButton({ shouldPulse = false }: { shouldPulse?: boolean }) {
-  const { open } = useAdvisor();
+  const { open, isOpen } = useAdvisor();
+
+  if (isOpen) return null;
 
   return (
     <div

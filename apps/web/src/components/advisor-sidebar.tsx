@@ -1,26 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Send, Sparkles, User, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { GripVertical, Send, Sparkles, X } from "lucide-react";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
+import { ScrollArea } from "@zalem/ui/components/optics/scroll-area";
 import { cn } from "@zalem/ui/lib/utils";
 import {
-  Message,
-  MessageAvatar,
   MessageContent,
-  ChatContainerRoot,
-  ChatContainerContent,
-  ChatContainerScrollAnchor,
   PromptInput,
   PromptInputTextarea,
   PromptInputActions,
   PromptSuggestion,
   Loader,
-  ScrollButton,
 } from "@zalem/ui/components/prompt-kit";
 import { useAdvisor } from "@/hooks/use-advisor";
+
+const MIN_WIDTH = 340;
+const DEFAULT_WIDTH = 400;
+const DISMISS_THRESHOLD = 200;
 
 const SUGGESTIONS = [
   "What laptop should I get for coding?",
@@ -31,6 +30,10 @@ const SUGGESTIONS = [
 export function AdvisorSidebar() {
   const { isOpen, close, threadId, isLoading, sendMessage, pendingQuestion } = useAdvisor();
   const [input, setInput] = useState("");
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const messagesResult = useUIMessages(
     api.ai.queries.listThreadMessages,
@@ -40,12 +43,69 @@ export function AdvisorSidebar() {
 
   const messages = messagesResult?.results ?? [];
 
+  // auto-scroll on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length, isLoading]);
+
   // auto-send pending question from chip click
   useEffect(() => {
     if (pendingQuestion && isOpen && !isLoading) {
       sendMessage(pendingQuestion);
     }
   }, [pendingQuestion, isOpen]);
+
+  // max width: 1/3 of screen
+  const getMaxWidth = useCallback(() => {
+    return Math.floor(window.innerWidth / 3);
+  }, []);
+
+  // resize handle
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsResizing(true);
+
+      const startX = e.clientX;
+      const startWidth = width;
+
+      const handleMouseMove = (e: MouseEvent) => {
+        const delta = startX - e.clientX;
+        const newWidth = startWidth + delta;
+        const maxWidth = getMaxWidth();
+
+        if (newWidth < DISMISS_THRESHOLD) {
+          // will dismiss on mouse up
+          setWidth(Math.max(0, newWidth));
+        } else {
+          setWidth(Math.max(MIN_WIDTH, Math.min(maxWidth, newWidth)));
+        }
+      };
+
+      const handleMouseUp = () => {
+        setIsResizing(false);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+
+        // dismiss if dragged past threshold
+        if (sidebarRef.current) {
+          const currentWidth = sidebarRef.current.offsetWidth;
+          if (currentWidth < DISMISS_THRESHOLD) {
+            close();
+            setWidth(DEFAULT_WIDTH);
+          }
+        }
+      };
+
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    },
+    [width, getMaxWidth, close],
+  );
 
   const handleSubmit = () => {
     const trimmed = input.trim();
@@ -56,11 +116,22 @@ export function AdvisorSidebar() {
 
   return (
     <aside
+      ref={sidebarRef}
       className={cn(
-        "bg-background flex h-full shrink-0 flex-col border-l transition-[width,opacity] duration-300 ease-out",
-        isOpen ? "w-full sm:w-[400px]" : "w-0 overflow-hidden opacity-0",
+        "bg-background relative flex h-full shrink-0 flex-col border-l",
+        !isResizing && "transition-[width,opacity] duration-300 ease-out",
+        isOpen ? "" : "w-0 overflow-hidden opacity-0",
       )}
+      style={isOpen ? { width: `${width}px` } : undefined}
     >
+      {/* resize handle */}
+      <div
+        onMouseDown={handleMouseDown}
+        className="absolute top-0 -left-1 z-10 flex h-full w-2 cursor-col-resize items-center justify-center opacity-0 transition-opacity hover:opacity-100"
+      >
+        <GripVertical className="text-muted-foreground size-3" />
+      </div>
+
       {/* header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
@@ -76,8 +147,8 @@ export function AdvisorSidebar() {
       </div>
 
       {/* messages */}
-      <ChatContainerRoot className="flex-1">
-        <ChatContainerContent className="gap-4 p-4">
+      <ScrollArea className="flex-1" maskHeight={20}>
+        <div className="flex flex-col gap-4 p-4">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12">
               <div className="text-muted-foreground text-center">
@@ -113,43 +184,31 @@ export function AdvisorSidebar() {
             const isUser = msg.role === "user";
 
             return (
-              <Message key={msg.id} className={cn(isUser && "flex-row-reverse")}>
-                <MessageAvatar
-                  className={cn(isUser ? "bg-primary text-primary-foreground" : "bg-muted")}
-                >
-                  {isUser ? <User className="size-4" /> : <Sparkles className="size-4" />}
-                </MessageAvatar>
+              <div key={msg.id} className={cn("flex", isUser && "justify-end")}>
                 <MessageContent
                   markdown={!isUser}
-                  className={cn(isUser ? "bg-primary text-primary-foreground" : "bg-muted")}
+                  className={cn(
+                    "max-w-[85%]",
+                    isUser ? "bg-primary text-primary-foreground" : "bg-muted",
+                  )}
                 >
                   {text}
                 </MessageContent>
-              </Message>
+              </div>
             );
           })}
 
           {isLoading && (
-            <Message>
-              <MessageAvatar className="bg-muted">
-                <Sparkles className="size-4" />
-              </MessageAvatar>
-              <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
+            <div className="flex">
+              <div className="bg-muted flex items-center gap-2 rounded-2xl px-4 py-3">
                 <Loader variant="typing" size="sm" />
               </div>
-            </Message>
+            </div>
           )}
 
-          <ChatContainerScrollAnchor />
-        </ChatContainerContent>
-
-        {/* scroll to bottom */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center">
-          <div className="pointer-events-auto">
-            <ScrollButton />
-          </div>
+          <div ref={messagesEndRef} />
         </div>
-      </ChatContainerRoot>
+      </ScrollArea>
 
       {/* input */}
       <div className="border-t p-3">
@@ -158,7 +217,6 @@ export function AdvisorSidebar() {
           onValueChange={setInput}
           onSubmit={handleSubmit}
           isLoading={isLoading}
-          className="border-input"
         >
           <PromptInputTextarea placeholder="Ask anything..." />
           <PromptInputActions className="justify-end">
