@@ -8,12 +8,12 @@ e-commerce store with AI-powered shopping assistant
 
 | phase | what                              | depends on                  | status      |
 | ----- | --------------------------------- | --------------------------- | ----------- |
-| 1     | store UI (pages & components)     | —                           | not started |
-| 2     | data layer & seed                 | phase 1 (UI informs schema) | not started |
-| 3     | static recommendation engine      | phase 2                     | not started |
-| 4     | behavior tracking infrastructure  | phase 1                     | not started |
-| 5     | behavior-driven readiness signals | phase 3, 4                  | not started |
-| 6     | LLM integration (Gemini 3 Flash)  | phase 3, 5                  | not started |
+| 1     | store UI (pages & components)     | —                           | done        |
+| 2     | data layer & seed                 | phase 1 (UI informs schema) | done        |
+| 3     | static recommendation engine      | phase 2                     | done        |
+| 4     | behavior tracking infrastructure  | phase 1                     | done        |
+| 5     | behavior-driven readiness signals | phase 3, 4                  | done        |
+| 6     | LLM integration (Gemini 3 Flash)  | phase 3, 5                  | in progress |
 | 7     | optimization & extras             | phase 6                     | not started |
 
 UI-first approach: design the store experience first, then build the data layer to support it.
@@ -244,6 +244,17 @@ decides WHEN the AI advisor is ready to help — not when to interrupt. based on
 ## phase 6 — LLM integration (Gemini Flash)
 
 the AI layer. sits on top of everything built so far. uses `@convex-dev/agent` for conversation management, streaming, and tool calling.
+
+**sub-phase progress:**
+
+| sub-phase | what                                                                  | status      |
+| --------- | --------------------------------------------------------------------- | ----------- |
+| 6.1       | agent infrastructure (Gemini 3 Flash, system prompt, model router)    | done        |
+| 6.2       | advisor sidebar UI (push-content, resizable, prompt-kit components)   | done        |
+| 6.3       | agent tools (product details, search, recommendations, cart, reviews) | done        |
+| 6.4       | review summarization (batch, Flash-Lite, conflict surfacing)          | not started |
+| 6.5       | AI comparison mode (structured side-by-side analysis)                 | not started |
+| 6.6       | polish & safety (rate limiting, feedback, output validation)          | not started |
 
 **two-stage architecture:**
 
