@@ -10,10 +10,13 @@
 
 import type * as cart from "../cart.js";
 import type * as categories from "../categories.js";
+import type * as crons from "../crons.js";
 import type * as favorites from "../favorites.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as orders from "../orders.js";
 import type * as products from "../products.js";
+import type * as recommendationHelpers from "../recommendationHelpers.js";
+import type * as recommendations from "../recommendations.js";
 import type * as reviews from "../reviews.js";
 import type * as seed from "../seed.js";
 
@@ -22,10 +25,13 @@ import type { ApiFromModules, FilterApi, FunctionReference } from "convex/server
 declare const fullApi: ApiFromModules<{
   cart: typeof cart;
   categories: typeof categories;
+  crons: typeof crons;
   favorites: typeof favorites;
   healthCheck: typeof healthCheck;
   orders: typeof orders;
   products: typeof products;
+  recommendationHelpers: typeof recommendationHelpers;
+  recommendations: typeof recommendations;
   reviews: typeof reviews;
   seed: typeof seed;
 }>;

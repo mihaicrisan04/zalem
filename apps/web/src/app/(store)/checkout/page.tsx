@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
@@ -39,10 +39,12 @@ export default function CheckoutPage() {
     );
   }
 
-  if (cartItems.length === 0) {
-    router.push("/cart" as any);
-    return null;
-  }
+  const cartEmpty = cartItems.length === 0;
+  useEffect(() => {
+    if (cartEmpty) router.push("/cart" as any);
+  }, [cartEmpty, router]);
+
+  if (cartEmpty) return null;
 
   const subtotal = cartItems.reduce(
     (sum, item) => sum + (item?.product?.price ?? 0) * item.quantity,

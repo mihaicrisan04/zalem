@@ -11,6 +11,7 @@ implementing classical recommendation algorithms to replace placeholder data in 
 ### what was built
 
 **new files:**
+
 - `packages/backend/convex/recommendationHelpers.ts` — pure TS algorithm functions (no Convex imports, independently testable):
   - `jaccard()` — set intersection/union for tags, useCases, goodFor
   - `contentSimilarity()` — weighted 7-factor scoring (category, tags, useCases, goodFor, brand, price, rating)
@@ -62,9 +63,11 @@ implementing classical recommendation algorithms to replace placeholder data in 
 ### how to initialize recommendation data
 
 after seeding the database:
+
 ```
 cd packages/backend && bunx convex run recommendations:initialize
 ```
+
 or from the Convex dashboard → Functions → `recommendations:initialize` → Run
 
 ---
