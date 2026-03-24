@@ -122,11 +122,11 @@ export function AdvisorSidebar() {
         className="absolute top-0 -left-1 z-10 h-full w-2 cursor-col-resize"
       />
 
-      {/* close */}
+      {/* close — visible on sidebar hover */}
       <Button
         variant="raised"
         size="icon"
-        className="absolute top-2.5 right-2.5 z-20 size-7"
+        className="absolute top-2.5 right-5 z-20 size-7 opacity-0 transition-opacity group-hover/sidebar:opacity-100"
         onClick={close}
       >
         <X className="size-3.5" />
@@ -225,7 +225,7 @@ export function AdvisorSidebar() {
             </Tooltip>
             <Button
               size="icon"
-              variant="ghost"
+              variant={input.trim() ? "default" : "ghost"}
               className="size-8 shrink-0"
               disabled={isLoading || !input.trim()}
               onClick={handleSubmit}
