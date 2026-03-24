@@ -1,9 +1,5 @@
 {
   "extends": "@zalem/config/tsconfig.base.json",
-  "references": [
-    { "path": "packages/ui" },
-    { "path": "packages/env" },
-    { "path": "apps/web" }
-  ],
+  "references": [{ "path": "packages/ui" }, { "path": "packages/env" }, { "path": "apps/web" }],
   "files": []
 }

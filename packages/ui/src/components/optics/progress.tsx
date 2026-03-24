@@ -1,22 +1,18 @@
 // @ts-nocheck
-"use client"
+"use client";
 
-import { Progress as ProgressPrimitive } from "@base-ui/react/progress"
+import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 
-import { cn } from "@zalem/ui/lib/utils"
+import { cn } from "@zalem/ui/lib/utils";
 
-function Progress({
-  className = "",
-  children = null,
-  value = 0,
-  ...props
-}: any) {
+function Progress({ className = "", children = null, value = 0, ...props }: any) {
   return (
     <ProgressPrimitive.Root
       value={value}
       data-slot="progress"
       className={cn("flex flex-wrap gap-3", className)}
-      {...props}>
+      {...props}
+    >
       {children}
       <ProgressTrack>
         <ProgressIndicator />
@@ -25,57 +21,48 @@ function Progress({
   );
 }
 
-function ProgressTrack({
-  className = "",
-  ...props
-}: any) {
+function ProgressTrack({ className = "", ...props }: any) {
   return (
     <ProgressPrimitive.Track
       className={cn(
         "bg-muted h-1 rounded-md relative flex w-full items-center overflow-x-hidden",
-        className
+        className,
       )}
       data-slot="progress-track"
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ProgressIndicator({
-  className = "",
-  ...props
-}: any) {
+function ProgressIndicator({ className = "", ...props }: any) {
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
       className={cn("bg-primary h-full transition-all", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ProgressLabel({
-  className = "",
-  ...props
-}: any) {
+function ProgressLabel({ className = "", ...props }: any) {
   return (
     <ProgressPrimitive.Label
       className={cn("text-xs/relaxed font-medium", className)}
       data-slot="progress-label"
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ProgressValue({
-  className = "",
-  ...props
-}: any) {
+function ProgressValue({ className = "", ...props }: any) {
   return (
     <ProgressPrimitive.Value
       className={cn("text-muted-foreground ml-auto text-xs/relaxed tabular-nums", className)}
       data-slot="progress-value"
-      {...props} />
+      {...props}
+    />
   );
 }
-
 
 Progress.displayName = "Progress";
 ProgressTrack.displayName = "ProgressTrack";
@@ -83,11 +70,4 @@ ProgressIndicator.displayName = "ProgressIndicator";
 ProgressLabel.displayName = "ProgressLabel";
 ProgressValue.displayName = "ProgressValue";
 
-export {
-  Progress,
-  ProgressTrack,
-  ProgressIndicator,
-  ProgressLabel,
-  ProgressValue,
-}
-
+export { Progress, ProgressTrack, ProgressIndicator, ProgressLabel, ProgressValue };

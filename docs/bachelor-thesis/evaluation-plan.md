@@ -121,12 +121,12 @@ show that the design is practical, not just conceptually nice.
 
 use a simple table:
 
-| feature | p50 latency | p95 latency | avg tokens | estimated cost |
-|---------|-------------|-------------|------------|----------------|
-| recommendations | ... | ... | — | — |
-| advisor reply | ... | ... | ... | ... |
-| review summary batch | ... | ... | ... | ... |
-| comparison | ... | ... | ... | ... |
+| feature              | p50 latency | p95 latency | avg tokens | estimated cost |
+| -------------------- | ----------- | ----------- | ---------- | -------------- |
+| recommendations      | ...         | ...         | —          | —              |
+| advisor reply        | ...         | ...         | ...        | ...            |
+| review summary batch | ...         | ...         | ...        | ...            |
+| comparison           | ...         | ...         | ...        | ...            |
 
 ### thesis value
 
@@ -287,7 +287,7 @@ use a 5-point or 7-point Likert scale. keep it simple.
 
 ### intrusiveness
 
-7. "The AI assistance felt intrusive."  
+7. "The AI assistance felt intrusive."
 8. "The timing of the AI assistance felt appropriate."
 9. "I felt in control of when the AI helped me."
 
@@ -425,12 +425,12 @@ negative or mixed results are acceptable if analyzed honestly.
 
 an optional but powerful evaluation angle is comparing your system's factual accuracy against documented Rufus benchmarks:
 
-| metric | Amazon Rufus (documented) | zalem (measured) |
-|--------|--------------------------|------------------|
-| price accuracy in AI output | 72% (28% hallucination) | target: 100% (hydrated from live data, never generated) |
-| recommendation accuracy | 32% | measure via Hit Rate@5 on held-out data |
-| review summary theme accuracy | fabricates themes | measure via post-generation theme verification |
-| self-serving bias | 83% | 0% (no inventory to favor) |
+| metric                        | Amazon Rufus (documented) | zalem (measured)                                        |
+| ----------------------------- | ------------------------- | ------------------------------------------------------- |
+| price accuracy in AI output   | 72% (28% hallucination)   | target: 100% (hydrated from live data, never generated) |
+| recommendation accuracy       | 32%                       | measure via Hit Rate@5 on held-out data                 |
+| review summary theme accuracy | fabricates themes         | measure via post-generation theme verification          |
+| self-serving bias             | 83%                       | 0% (no inventory to favor)                              |
 
 this isn't a direct apples-to-apples comparison (different scale, different data), but it positions the architectural guardrails as concrete quality improvements. a supervisor will find this compelling because it shows you studied a real system, identified measurable failure modes, and designed solutions.
 

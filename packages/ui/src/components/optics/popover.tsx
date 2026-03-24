@@ -1,20 +1,16 @@
 // @ts-nocheck
-"use client"
+"use client";
 
-import * as React from "react"
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover"
+import * as React from "react";
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
-import { cn } from "@zalem/ui/lib/utils"
+import { cn } from "@zalem/ui/lib/utils";
 
-function Popover({
-  ...props
-}: any) {
+function Popover({ ...props }: any) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger({
-  ...props
-}: any) {
+function PopoverTrigger({ ...props }: any) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
@@ -34,55 +30,50 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className={cn("isolate z-50", positionerClassName)}>
+        className={cn("isolate z-50", positionerClassName)}
+      >
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
             "bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 flex flex-col gap-4 rounded-lg p-2.5 text-xs shadow-md ring-1 duration-100 z-50 w-72 origin-(--transform-origin) outline-hidden",
-            className
+            className,
           )}
-          {...props} />
+          {...props}
+        />
       </PopoverPrimitive.Positioner>
     </PopoverPrimitive.Portal>
   );
 }
 
-function PopoverHeader({
-  className = "",
-  ...props
-}: any) {
+function PopoverHeader({ className = "", ...props }: any) {
   return (
     <div
       data-slot="popover-header"
       className={cn("flex flex-col gap-1 text-xs", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function PopoverTitle({
-  className = "",
-  ...props
-}: any) {
+function PopoverTitle({ className = "", ...props }: any) {
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
       className={cn("text-sm font-medium", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function PopoverDescription({
-  className = "",
-  ...props
-}: any) {
+function PopoverDescription({ className = "", ...props }: any) {
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"
       className={cn("text-muted-foreground", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
-
 
 Popover.displayName = "Popover";
 PopoverContent.displayName = "PopoverContent";
@@ -91,12 +82,4 @@ PopoverHeader.displayName = "PopoverHeader";
 PopoverTitle.displayName = "PopoverTitle";
 PopoverTrigger.displayName = "PopoverTrigger";
 
-export {
-  Popover,
-  PopoverContent,
-  PopoverDescription,
-  PopoverHeader,
-  PopoverTitle,
-  PopoverTrigger,
-}
-
+export { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger };

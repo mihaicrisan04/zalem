@@ -9,11 +9,13 @@ a practical chapter-by-chapter structure for writing the bachelor thesis around 
 ### 1. introduction
 
 purpose:
+
 - introduce the problem
 - justify relevance
 - state research questions and contributions
 
 what to include:
+
 - e-commerce decision overload
 - limitations of generic AI shopping assistants
 - trust and intrusiveness problems
@@ -23,6 +25,7 @@ what to include:
 - thesis contributions
 
 deliverable:
+
 - a clear statement of what was built and what was evaluated
 
 ---
@@ -30,10 +33,12 @@ deliverable:
 ### 2. background and related work
 
 purpose:
+
 - show you understand the field
 - situate the project academically
 
 what to include:
+
 - classical recommender systems
   - co-occurrence
   - content-based filtering
@@ -62,9 +67,11 @@ good ending for this chapter:
 ### 3. problem definition and requirements
 
 purpose:
+
 - define what exact problem you are solving
 
 what to include:
+
 - system goals
 - non-goals
 - user-facing requirements
@@ -77,6 +84,7 @@ what to include:
   - reasonable cost
 
 also define:
+
 - evaluation criteria
 - constraints
 - assumptions
@@ -86,9 +94,11 @@ also define:
 ### 4. system design
 
 purpose:
+
 - explain the architecture and justify key decisions
 
 what to include:
+
 - overall architecture
 - frontend, backend, recommendation, AI, and evaluation components
 - reactive-first interaction model
@@ -111,9 +121,11 @@ this chapter should feel like the heart of the engineering contribution.
 ### 5. implementation
 
 purpose:
+
 - describe what was actually built
 
 what to include:
+
 - store prototype
 - backend/data layer
 - seeded data
@@ -126,6 +138,7 @@ what to include:
 - instrumentation for measurements
 
 important:
+
 - do not turn this into a file-by-file changelog
 - organize by subsystem, not by commit history
 
@@ -134,6 +147,7 @@ important:
 ### 6. evaluation methodology
 
 purpose:
+
 - define how you will test the thesis claims
 
 split this chapter into 3 parts:
@@ -178,9 +192,11 @@ split this chapter into 3 parts:
 ### 7. results
 
 purpose:
+
 - present findings clearly
 
 what to include:
+
 - recommender metric results
 - latency and cost results
 - user-study results
@@ -190,6 +206,7 @@ what to include:
 - short interpretation of each result
 
 best practice:
+
 - keep raw facts separate from discussion
 - first report, then interpret
 
@@ -198,9 +215,11 @@ best practice:
 ### 8. discussion
 
 purpose:
+
 - interpret what the results mean
 
 what to include:
+
 - did the reactive-first model help?
 - where did explanations help?
 - did review-grounded summaries improve trust?
@@ -219,9 +238,11 @@ what to include:
 ### 9. conclusion and future work
 
 purpose:
+
 - close the argument cleanly
 
 what to include:
+
 - recap the problem
 - recap the proposed system
 - recap the main findings

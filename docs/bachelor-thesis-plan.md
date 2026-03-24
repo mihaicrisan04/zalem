@@ -3,6 +3,7 @@
 how to position `zalem` as a strong computer science bachelor thesis, what to emphasize, what to avoid, and what alternative thesis directions would be stronger if you want to pivot while still in planning.
 
 > **note:** this is the original thesis-positioning memo. the maintained thesis planning set now lives in `docs/bachelor-thesis/`:
+>
 > - `docs/bachelor-thesis/README.md`
 > - `docs/bachelor-thesis/current-direction.md`
 > - `docs/bachelor-thesis/thesis-outline.md`
@@ -17,6 +18,7 @@ how to position `zalem` as a strong computer science bachelor thesis, what to em
 **short version:** yes, this can be a good bachelor thesis, but **not** if it is presented mainly as "an e-commerce app with AI".
 
 that version is too close to:
+
 - product prototyping
 - frontend/backend integration work
 - API orchestration
@@ -29,6 +31,7 @@ those things are useful, but by themselves they are usually **not enough** to fe
 > **design, implementation, and evaluation of a trustworthy, reactive-first AI shopping advisor that combines classical recommendation methods, behavior signals, and LLM-generated explanations**
 
 that framing is much better because it turns the work into a CS problem about:
+
 - system architecture
 - recommender design
 - human-AI interaction
@@ -385,6 +388,7 @@ if it were fully up to me, i would choose one of these directions:
 **trustworthy reactive-first shopping advisor**
 
 why it is strong:
+
 - modern
 - practical
 - easy to demo
@@ -392,9 +396,11 @@ why it is strong:
 - strong thesis narrative
 
 risk:
+
 - requires proper evaluation, not just implementation
 
 my recommendation:
+
 - **best overall choice**
 
 ### option 2 — most "computer science" version of your current plan
@@ -402,19 +408,23 @@ my recommendation:
 **explainable hybrid recommendation system with LLM-generated justifications**
 
 focus:
+
 - recommendation quality
 - explanation quality
 - architecture tradeoffs
 
 why it is strong:
+
 - cleaner technical scope
 - easier to evaluate objectively
 - less dependent on polished product UX
 
 risk:
+
 - less flashy demo than a full assistant
 
 my recommendation:
+
 - **best if you want more algorithm/systems credibility**
 
 ### option 3 — strongest HCI angle
@@ -422,21 +432,25 @@ my recommendation:
 **proactive vs reactive AI assistance in online shopping**
 
 focus:
+
 - trust
 - intrusiveness
 - user preference
 - intervention timing
 
 why it is strong:
+
 - very current
 - easy to explain academically
 - can produce a clean experiment
 
 risk:
+
 - more user-study heavy
 - less about backend/recommender engineering
 
 my recommendation:
+
 - **best if your department appreciates HCI / human-centered AI**
 
 ### option 4 — strongest privacy/current-society angle
@@ -444,19 +458,23 @@ my recommendation:
 **privacy-preserving behavior-aware recommendation in e-commerce**
 
 focus:
+
 - session-based signals
 - minimal data collection
 - personalization without heavy surveillance
 
 why it is strong:
+
 - socially relevant
 - intellectually serious
 - good ethics angle
 
 risk:
+
 - less flashy than an LLM assistant
 
 my recommendation:
+
 - **best if you want a more mature and defensible topic**
 
 ### option 5 — eye-catching but riskier
@@ -464,19 +482,23 @@ my recommendation:
 **agentic product comparison assistant for complex purchases**
 
 focus:
+
 - compare multiple products
 - summarize tradeoffs
 - explain reasoning
 
 why it is strong:
+
 - visually impressive
 - very easy to demo
 - clearly useful
 
 risk:
+
 - can become "just prompting" unless grounded in proper architecture and evaluation
 
 my recommendation:
+
 - **great secondary feature, weaker as the whole thesis alone**
 
 ---
@@ -502,6 +524,7 @@ in other words:
 - evaluate trust, usefulness, and latency
 
 that gives you:
+
 - a strong artifact
 - a strong demo
 - a strong thesis argument
@@ -516,6 +539,7 @@ if you continue with `zalem`, the best move is **not** to make it bigger.
 the best move is to make it **sharper**.
 
 sharper means:
+
 - fewer optional features
 - stronger research question
 - better evaluation

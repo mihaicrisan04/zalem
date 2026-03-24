@@ -9,6 +9,7 @@
     "dev:setup": "convex dev --configure --until-success"
   },
   "dependencies": {
+    "@faker-js/faker": "^10.4.0",
     "convex": "catalog:",
     "dotenv": "catalog:",
     "zod": "catalog:"

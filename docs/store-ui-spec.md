@@ -41,16 +41,19 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 ### global layout
 
 **header (sticky):**
+
 - logo (left)
 - search bar (center, takes most width) — autocomplete dropdown
 - user account icon + cart icon with badge count (right)
 - favorites icon (heart) with count
 
 **category nav bar (below header):**
+
 - horizontal row of top-level categories
 - hover/click opens mega menu with subcategories
 
 **footer:**
+
 - minimal — links, copyright
 
 ### 1. home page
@@ -78,6 +81,7 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 ```
 
 **sections:**
+
 - **hero carousel** — 3-4 promotional banners, auto-rotate
 - **deals of the day** — 4-6 products with discount badges, countdown timer
 - **trending** — horizontal scrollable row, based on recent purchase volume with time decay
@@ -107,12 +111,14 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 ```
 
 **filters (left sidebar):**
+
 - price range — predefined buckets + custom min/max slider
 - brand — checkboxes (show top 5, expand for more)
 - minimum rating — star filter (4+, 3+, etc.)
 - in stock toggle
 
 **sorting (6 options, matching emag):**
+
 1. most popular (default)
 2. newest
 3. price low → high
@@ -121,6 +127,7 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 6. discount %
 
 **product grid:**
+
 - 60 products per page with pagination (not infinite scroll, like emag)
 - URL-based filter/sort state (shareable, survives refresh)
 
@@ -154,6 +161,7 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 ```
 
 **product info panel:**
+
 - full title (brand + model + key specs)
 - star rating + review count (clickable → scrolls to reviews tab)
 - current price (large), old price (strikethrough), discount % badge
@@ -163,11 +171,13 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 - compare with similar button (opens AI-assisted comparison flow for 2-3 products)
 
 **tabs:**
+
 - **description** — product description text
 - **specifications** — key-value table (brand, model, dimensions, weight, etc.)
 - **reviews** — aggregate rating breakdown (5-star bar chart) + AI review summary + individual reviews (rating, text, date, username)
 
 **AI review summary (core):**
+
 - shown at the top of the reviews tab when enough reviews exist
 - compact structure:
   - what buyers like
@@ -177,6 +187,7 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 - should feel grounded in real feedback, not generic copy
 
 **recommendation sections:**
+
 - **frequently bought together** — 3-4 products from co-occurrence algorithm, with combined price
 - **similar products** — horizontal scroll, from content-based similarity
 - **compare mode** — user can select 2-3 similar products and ask the AI for a structured comparison
@@ -210,6 +221,7 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 ```
 
 **per item:**
+
 - product thumbnail + title (linked to product page)
 - unit price
 - quantity stepper (- / + buttons)
@@ -217,12 +229,14 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 - save to favorites button
 
 **order summary sidebar:**
+
 - subtotal
 - shipping (always "free" in our demo)
 - total
 - continue to checkout button
 
 **recommendation section:**
+
 - "you might also like" — based on cart contents (co-occurrence across all cart items)
 
 ### 6. favorites page
@@ -264,6 +278,7 @@ we're building a **demo e-commerce store** that feels like emag but is scoped to
 ```
 
 **order detail view:**
+
 - order number, date, status
 - list of items with thumbnails, titles, quantities, prices
 - order total
@@ -305,6 +320,7 @@ the core reusable component. used everywhere: home, category, search, favorites,
 ```
 
 **elements:**
+
 - product image (clickable → product detail)
 - favorite toggle (heart icon, top-right)
 - discount badge (top-left, if applicable)
@@ -319,22 +335,23 @@ the core reusable component. used everywhere: home, category, search, favorites,
 
 ## key interactions
 
-| action | behavior |
-|--------|----------|
-| add to cart | cart icon badge count updates, brief toast confirmation |
-| remove from cart | item removed, totals recalculate (optimistic) |
-| quantity change | stepper updates, totals recalculate (optimistic) |
-| favorite toggle | heart fills/unfills, toast confirmation |
-| search typing | autocomplete dropdown after 2+ chars, debounced 300ms |
-| filter change | product grid updates without full page reload, URL updates |
-| sort change | grid re-sorts, URL updates |
-| pagination | scroll to top, grid updates |
+| action           | behavior                                                   |
+| ---------------- | ---------------------------------------------------------- |
+| add to cart      | cart icon badge count updates, brief toast confirmation    |
+| remove from cart | item removed, totals recalculate (optimistic)              |
+| quantity change  | stepper updates, totals recalculate (optimistic)           |
+| favorite toggle  | heart fills/unfills, toast confirmation                    |
+| search typing    | autocomplete dropdown after 2+ chars, debounced 300ms      |
+| filter change    | product grid updates without full page reload, URL updates |
+| sort change      | grid re-sorts, URL updates                                 |
+| pagination       | scroll to top, grid updates                                |
 
 ---
 
 ## user flows summary
 
 ### browse → buy flow
+
 1. home page → click category or search
 2. category page → browse/filter/sort → click product
 3. product detail → read description/specs/reviews
@@ -344,11 +361,13 @@ the core reusable component. used everywhere: home, category, search, favorites,
 7. order confirmation
 
 ### favorites flow
+
 1. browse products → click heart on any product card
 2. go to favorites page → review saved items
 3. add to cart from favorites or remove
 
 ### order history flow
+
 1. account → my orders
 2. filter by status tab (all/delivered/cancelled)
 3. click order → view detail
@@ -357,11 +376,11 @@ the core reusable component. used everywhere: home, category, search, favorites,
 
 ## responsive breakpoints
 
-| breakpoint | grid cols | sidebar | notes |
-|------------|-----------|---------|-------|
-| desktop (1280+) | 4 | visible | full layout |
-| tablet (768-1279) | 2-3 | collapsible drawer | filters toggle |
-| mobile (< 768) | 1-2 | bottom sheet | hamburger nav, sticky cart button |
+| breakpoint        | grid cols | sidebar            | notes                             |
+| ----------------- | --------- | ------------------ | --------------------------------- |
+| desktop (1280+)   | 4         | visible            | full layout                       |
+| tablet (768-1279) | 2-3       | collapsible drawer | filters toggle                    |
+| mobile (< 768)    | 1-2       | bottom sheet       | hamburger nav, sticky cart button |
 
 ---
 

@@ -1,38 +1,34 @@
 // @ts-nocheck
-import * as React from "react"
-import { mergeProps } from "@base-ui/react/merge-props"
-import { useRender } from "@base-ui/react/use-render"
+import * as React from "react";
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
 import { cva } from "class-variance-authority";
 
-import { cn } from "@zalem/ui/lib/utils"
-import { Separator } from "@zalem/ui/components/optics/separator"
+import { cn } from "@zalem/ui/lib/utils";
+import { Separator } from "@zalem/ui/components/optics/separator";
 
-function ItemGroup({
-  className = "",
-  ...props
-}: any) {
+function ItemGroup({ className = "", ...props }: any) {
   return (
     <div
       role="list"
       data-slot="item-group"
       className={cn(
         "gap-4 has-[[data-size=sm]]:gap-2.5 has-[[data-size=xs]]:gap-2 group/item-group flex w-full flex-col",
-        className
+        className,
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemSeparator({
-  className = "",
-  ...props
-}: any) {
+function ItemSeparator({ className = "", ...props }: any) {
   return (
     <Separator
       data-slot="item-separator"
       orientation="horizontal"
       className={cn("my-2", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
@@ -55,8 +51,8 @@ const itemVariants = cva(
       variant: "default",
       size: "default",
     },
-  }
-)
+  },
+);
 
 function Item({
   className = "",
@@ -67,9 +63,12 @@ function Item({
 }: any) {
   return useRender({
     defaultTagName: "div",
-    props: mergeProps({
-      className: cn(itemVariants({ variant, size, className })),
-    }, props),
+    props: mergeProps(
+      {
+        className: cn(itemVariants({ variant, size, className })),
+      },
+      props,
+    ),
     render,
     state: {
       slot: "item",
@@ -86,110 +85,91 @@ const itemMediaVariants = cva(
       variant: {
         default: "bg-transparent",
         icon: "[&_svg:not([class*='size-'])]:size-4",
-        image: "size-8 overflow-hidden rounded-sm group-data-[size=sm]/item:size-8 group-data-[size=xs]/item:size-6 [&_img]:size-full [&_img]:object-cover",
+        image:
+          "size-8 overflow-hidden rounded-sm group-data-[size=sm]/item:size-8 group-data-[size=xs]/item:size-6 [&_img]:size-full [&_img]:object-cover",
       },
     },
     defaultVariants: {
       variant: "default",
     },
-  }
-)
+  },
+);
 
-function ItemMedia({
-  className = "",
-  variant = "default",
-  ...props
-}: any) {
+function ItemMedia({ className = "", variant = "default", ...props }: any) {
   return (
     <div
       data-slot="item-media"
       data-variant={variant}
       className={cn(itemMediaVariants({ variant, className }))}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemContent({
-  className = "",
-  ...props
-}: any) {
+function ItemContent({ className = "", ...props }: any) {
   return (
     <div
       data-slot="item-content"
       className={cn(
         "gap-1 group-data-[size=xs]/item:gap-0.5 flex flex-1 flex-col [&+[data-slot=item-content]]:flex-none",
-        className
+        className,
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemTitle({
-  className = "",
-  ...props
-}: any) {
+function ItemTitle({ className = "", ...props }: any) {
   return (
     <div
       data-slot="item-title"
       className={cn(
         "gap-2 text-xs/relaxed leading-snug font-medium underline-offset-4 line-clamp-1 flex w-fit items-center",
-        className
+        className,
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemDescription({
-  className = "",
-  ...props
-}: any) {
+function ItemDescription({ className = "", ...props }: any) {
   return (
     <p
       data-slot="item-description"
       className={cn(
         "text-muted-foreground text-left text-xs/relaxed [&>a:hover]:text-primary line-clamp-2 font-normal [&>a]:underline [&>a]:underline-offset-4",
-        className
+        className,
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemActions({
-  className = "",
-  ...props
-}: any) {
+function ItemActions({ className = "", ...props }: any) {
   return (
-    <div
-      data-slot="item-actions"
-      className={cn("gap-2 flex items-center", className)}
-      {...props} />
+    <div data-slot="item-actions" className={cn("gap-2 flex items-center", className)} {...props} />
   );
 }
 
-function ItemHeader({
-  className = "",
-  ...props
-}: any) {
+function ItemHeader({ className = "", ...props }: any) {
   return (
     <div
       data-slot="item-header"
       className={cn("gap-2 flex basis-full items-center justify-between", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function ItemFooter({
-  className = "",
-  ...props
-}: any) {
+function ItemFooter({ className = "", ...props }: any) {
   return (
     <div
       data-slot="item-footer"
       className={cn("gap-2 flex basis-full items-center justify-between", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
-
 
 Item.displayName = "Item";
 ItemMedia.displayName = "ItemMedia";
@@ -213,5 +193,4 @@ export {
   ItemDescription,
   ItemHeader,
   ItemFooter,
-}
-
+};

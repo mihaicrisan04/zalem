@@ -1,117 +1,91 @@
 // @ts-nocheck
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@zalem/ui/lib/utils"
+import { cn } from "@zalem/ui/lib/utils";
 
-function Table({
-  className = "",
-  ...props
-}: any) {
+function Table({ className = "", ...props }: any) {
   return (
     <div data-slot="table-container" className="relative w-full overflow-x-auto">
       <table
         data-slot="table"
         className={cn("w-full caption-bottom text-xs", className)}
-        {...props} />
+        {...props}
+      />
     </div>
   );
 }
 
-function TableHeader({
-  className = "",
-  ...props
-}: any) {
-  return (
-    <thead
-      data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
-      {...props} />
-  );
+function TableHeader({ className = "", ...props }: any) {
+  return <thead data-slot="table-header" className={cn("[&_tr]:border-b", className)} {...props} />;
 }
 
-function TableBody({
-  className = "",
-  ...props
-}: any) {
+function TableBody({ className = "", ...props }: any) {
   return (
     <tbody
       data-slot="table-body"
       className={cn("[&_tr:last-child]:border-0", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function TableFooter({
-  className = "",
-  ...props
-}: any) {
+function TableFooter({ className = "", ...props }: any) {
   return (
     <tfoot
       data-slot="table-footer"
       className={cn("bg-muted/50 border-t font-medium [&>tr]:last:border-b-0", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function TableRow({
-  className = "",
-  ...props
-}: any) {
+function TableRow({ className = "", ...props }: any) {
   return (
     <tr
       data-slot="table-row"
       className={cn(
         "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
-        className
+        className,
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function TableHead({
-  className = "",
-  ...props
-}: any) {
+function TableHead({ className = "", ...props }: any) {
   return (
     <th
       data-slot="table-head"
       className={cn(
         "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0",
-        className
+        className,
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function TableCell({
-  className = "",
-  ...props
-}: any) {
+function TableCell({ className = "", ...props }: any) {
   return (
     <td
       data-slot="table-cell"
-      className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
-        className
-      )}
-      {...props} />
+      className={cn("p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0", className)}
+      {...props}
+    />
   );
 }
 
-function TableCaption({
-  className = "",
-  ...props
-}: any) {
+function TableCaption({ className = "", ...props }: any) {
   return (
     <caption
       data-slot="table-caption"
       className={cn("text-muted-foreground mt-4 text-xs", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
-
 
 Table.displayName = "Table";
 TableHeader.displayName = "TableHeader";
@@ -122,14 +96,4 @@ TableRow.displayName = "TableRow";
 TableCell.displayName = "TableCell";
 TableCaption.displayName = "TableCaption";
 
-export {
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-}
-
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption };

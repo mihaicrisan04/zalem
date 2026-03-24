@@ -6,15 +6,15 @@ e-commerce store with AI-powered shopping assistant
 
 ## phases overview
 
-| phase | what | depends on | status |
-|-------|------|------------|--------|
-| 1 | store UI (pages & components) | — | not started |
-| 2 | data layer & seed | phase 1 (UI informs schema) | not started |
-| 3 | static recommendation engine | phase 2 | not started |
-| 4 | behavior tracking infrastructure | phase 1 | not started |
-| 5 | behavior-driven readiness signals | phase 3, 4 | not started |
-| 6 | LLM integration (Gemini 3 Flash) | phase 3, 5 | not started |
-| 7 | optimization & extras | phase 6 | not started |
+| phase | what                              | depends on                  | status      |
+| ----- | --------------------------------- | --------------------------- | ----------- |
+| 1     | store UI (pages & components)     | —                           | not started |
+| 2     | data layer & seed                 | phase 1 (UI informs schema) | not started |
+| 3     | static recommendation engine      | phase 2                     | not started |
+| 4     | behavior tracking infrastructure  | phase 1                     | not started |
+| 5     | behavior-driven readiness signals | phase 3, 4                  | not started |
+| 6     | LLM integration (Gemini 3 Flash)  | phase 3, 5                  | not started |
+| 7     | optimization & extras             | phase 6                     | not started |
 
 UI-first approach: design the store experience first, then build the data layer to support it.
 
@@ -23,6 +23,7 @@ UI-first approach: design the store experience first, then build the data layer 
 **AI priorities:** review summarization and AI-assisted comparison are core features, not extras. the assistant should help users validate products by summarizing what buyers actually say and by comparing similar options in a structured, grounded way.
 
 **Rufus-informed principles (from `docs/rufus-research.md`):**
+
 - **the LLM never generates factual product data** — prices, ratings, stock, specs are always hydrated from live Convex data, never from LLM output. Amazon's Rufus has a 28% price hallucination rate; we avoid this entirely
 - **output validation layer** — post-generation, verify every productId exists and claimed attributes match. Rufus has 32% accuracy; we can beat this with guardrails
 - **review summaries must surface conflicts** — don't just show majority sentiment. explicitly surface divided opinions with counts ("38 love it, 9 report issues after 6 months"). Rufus's biggest criticism is fabricating and oversimplifying review themes
@@ -32,6 +33,7 @@ UI-first approach: design the store experience first, then build the data layer 
 **auth boundary:** anonymous users can browse, search, and see readiness signals (client-side). cart, favorites, orders, reviews, and LLM advisor calls require Clerk authentication. no anonymous carts. see `docs/data-layer-plan.md` § auth & session model for the full matrix.
 
 ### detailed plans per phase
+
 - `docs/store-ui-spec.md` — emag-inspired store UI spec (phase 1)
 - `docs/data-layer-plan.md` — Convex schema, queries, mutations, indexes (phase 2)
 - `docs/recommendations-plan.md` — algorithm selection, scoring, cold-start (phase 3)
@@ -50,6 +52,7 @@ UI-first approach: design the store experience first, then build the data layer 
 build a full emag-style store that works great with zero AI. this is a product on its own.
 
 **pages:**
+
 - **home** — hero section, featured categories, deals of the day, trending products, "recommended for you" (placeholder until phase 3 wires it up)
 - **category page** — product grid with filters (price range, brand, rating, subcategory), sort (price, rating, newest, popular)
 - **product detail page** — image gallery, title/price/rating, description, specs/attributes, review section with AI summary, compare CTA for similar products, "frequently bought together" section (placeholders until phase 3)
@@ -60,6 +63,7 @@ build a full emag-style store that works great with zero AI. this is a product o
 - **checkout page** — fake checkout flow (address form, order confirmation)
 
 **components (built with @zalem/ui):**
+
 - `ProductCard` — image, title, price, rating, discount badge, add-to-cart button, favorite toggle
 - `ProductGrid` — responsive grid of ProductCards
 - `ProductFilters` — sidebar filters for category pages
@@ -70,6 +74,7 @@ build a full emag-style store that works great with zero AI. this is a product o
 - `CategoryNav` — top-level category navigation with mega menu
 
 **key details:**
+
 - responsive design (mobile-first)
 - optimistic UI for add-to-cart and favorite toggle
 - URL-based filter state (so filters survive page refresh)
@@ -82,6 +87,7 @@ build a full emag-style store that works great with zero AI. this is a product o
 the foundation. schema design + realistic seed data so everything after this has something to work with.
 
 **schema tables:**
+
 - `categories` — category tree with slug, icon, parent/child relationships, display order
 - `products` — catalog with title, description, categoryId, category (denormalized), subcategory, price, originalPrice, brand, tags, rating, reviewCount, images, specifications, stock, isDeal, purchaseCount
 - `reviews` — per-product user reviews with rating + text
@@ -94,6 +100,7 @@ the foundation. schema design + realistic seed data so everything after this has
 - `suggestions` — AI suggestions (populated in phase 6 but schema defined here)
 
 **seed script:**
+
 - pull ~200 products from DummyJSON API, map to our schema
 - supplement with faker.js if we need more products or variety
 - generate ~50 users with persona clusters (tech enthusiast, home & living, fashion, etc.)
@@ -107,6 +114,7 @@ the foundation. schema design + realistic seed data so everything after this has
 - use `faker.seed(42)` for reproducible runs
 
 **queries to implement:**
+
 - list products (paginated, by category, by search term)
 - get product by ID with reviews
 - get user's order history
@@ -146,12 +154,14 @@ classic recommendation algorithms. no AI, pure data. these serve two purposes: (
    - for anonymous users: fall back to global trending
 
 **where recommendations appear:**
+
 - home page: "trending", "recommended for you", "deals"
 - product detail: "frequently bought together", "similar products"
 - cart: "you might also like" (based on cart contents)
 - category page: sort by "recommended" option
 
 **module design:**
+
 - all recommendation logic lives in `packages/backend/convex/recommendations/`
 - clean function interface: `getFrequentlyBoughtTogether(productId)`, `getSimilarProducts(productId)`, `getTrending(category?)`, `getPersonalized(userId)`
 - the AI layer in phase 6 calls these same functions to get candidates
@@ -173,12 +183,14 @@ client-side signal collection → aggregation → storage. no AI yet, just build
 note: `useMousePosition` stays available but won't be used for tracking in the initial implementation — `useHover` + `useDwellTime` cover the same intent more efficiently. raw cursor position is useful later for heatmaps/analytics.
 
 **event buffer:**
+
 - client-side array accumulating engagement snapshots
 - flush to Convex via single mutation every 3-5 seconds
 - also flush on page navigation and via `navigator.sendBeacon` on tab close
 - the mutation upserts `behaviorSessions` — always aggregated, never raw events
 
 **`behaviorSessions` stores per product:**
+
 - productId
 - dwellTimeMs (cumulative)
 - scrollDepth (max reached)
@@ -187,6 +199,7 @@ note: `useMousePosition` stays available but won't be used for tracking in the i
 - timestamp (last interaction)
 
 **composite interest score:**
+
 ```
 interestScore =
     (dwellTimeMs / 1000) × 0.35
@@ -205,20 +218,22 @@ decides WHEN the AI advisor is ready to help — not when to interrupt. based on
 
 **readiness conditions (client-side evaluation):**
 
-| signal | condition | what happens |
-|--------|-----------|--------------|
-| product dwell | cursor on a product card >5s, or >15s on product detail | subtle pulse on advisor button |
-| deep scroll | >50% of product detail page scrolled | show contextual question chips |
-| review engagement | >5s viewing review section | show "What do buyers think?" chip |
-| comparison behavior | 3+ products viewed in same category, no add-to-cart | show "Compare these?" chip |
-| cart deliberation | items in cart, navigating away | show non-intrusive "Need help deciding?" nudge |
+| signal              | condition                                               | what happens                                   |
+| ------------------- | ------------------------------------------------------- | ---------------------------------------------- |
+| product dwell       | cursor on a product card >5s, or >15s on product detail | subtle pulse on advisor button                 |
+| deep scroll         | >50% of product detail page scrolled                    | show contextual question chips                 |
+| review engagement   | >5s viewing review section                              | show "What do buyers think?" chip              |
+| comparison behavior | 3+ products viewed in same category, no add-to-cart     | show "Compare these?" chip                     |
+| cart deliberation   | items in cart, navigating away                          | show non-intrusive "Need help deciding?" nudge |
 
 **key distinction from the old "trigger system" approach:**
+
 - these signals do NOT auto-fire LLM calls — they only change UI state (show indicator, show chips)
 - the LLM call only happens when the user clicks a chip or opens the advisor sidebar
 - this keeps LLM costs tied to user intent, not page views
 
 **readiness evaluator:**
+
 - runs client-side (no backend round-trip)
 - checks composite interest score against threshold
 - controls which question chips are shown and whether the advisor button pulses
@@ -231,6 +246,7 @@ decides WHEN the AI advisor is ready to help — not when to interrupt. based on
 the AI layer. sits on top of everything built so far. uses `@convex-dev/agent` for conversation management, streaming, and tool calling.
 
 **two-stage architecture:**
+
 ```
 stage 1: candidate generation (static, <50ms)
   co-occurrence → top 20
@@ -244,6 +260,7 @@ stage 2: LLM re-ranking + messaging (Gemini Flash, 300-500ms)
 ```
 
 **context sent to Gemini:**
+
 - current product (title, category, price, rating, key attributes)
 - user behavior (dwell time bucket, scroll depth, which products viewed)
 - user profile (favorite categories, avg spend, recent purchases)
@@ -254,6 +271,7 @@ stage 2: LLM re-ranking + messaging (Gemini Flash, 300-500ms)
 - keep total prompt under 2-4K tokens
 
 **Convex flow (via `@convex-dev/agent`):**
+
 1. user clicks a question chip or opens the advisor sidebar
 2. agent creates or continues a thread, assembles context via tools
 3. agent calls Gemini, streams response via delta chunks saved to DB
@@ -261,6 +279,7 @@ stage 2: LLM re-ranking + messaging (Gemini Flash, 300-500ms)
 5. structured product suggestions extracted from the agent's response
 
 **Gemini config:**
+
 - model: Gemini 3 Flash (`@ai-sdk/google`) for conversational advice
 - model: Gemini 3.1 Flash-Lite for simple re-ranking slots (homepage hero)
 - model: Gemini 3.1 Flash-Lite or `gemini-embedding-001`-adjacent batch flow for review summarization and other offline enrichment tasks
@@ -270,11 +289,13 @@ stage 2: LLM re-ranking + messaging (Gemini Flash, 300-500ms)
 - context caching for system prompt + few-shot examples (90% cost reduction on cached tokens)
 
 **core AI surfaces in phase 6:**
+
 - advisor sidebar for user-initiated product guidance
 - review summarization at the top of the reviews tab
 - AI-assisted comparison for 2-3 similar products in the same category
 
 **output format:**
+
 ```json
 {
   "suggestions": [

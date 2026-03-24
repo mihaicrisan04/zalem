@@ -89,17 +89,17 @@ import Link from "next/link";
 
 <Button asChild variant="ghost">
   <Link href="/dashboard">Dashboard</Link>
-</Button>
+</Button>;
 
 // ✅ CORRECT - Base UI pattern
 import Link from "next/link";
 
 <Button render={<Link href="/dashboard" />} variant="ghost" nativeButton={false}>
   Dashboard
-</Button>
+</Button>;
 ```
 
-### Select 
+### Select
 
 The `position` prop is replaced with a boolean prop `alignItemWithTrigger` which defaults to true.
 

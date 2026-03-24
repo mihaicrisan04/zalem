@@ -3,6 +3,7 @@
 research compiled 2026-03-14
 
 > **note:** this is the initial research compilation. the phase numbering, schema draft, and trigger system described here have been superseded by later planning documents. for the canonical versions, see:
+>
 > - `docs/PLAN.md` — authoritative phase ordering (7 phases, UI-first)
 > - `docs/data-layer-plan.md` — authoritative schema
 > - `docs/ai-integration-plan.md` — authoritative AI architecture (reactive-first model, `@convex-dev/agent`)
@@ -32,6 +33,7 @@ research compiled 2026-03-14
 ## project overview
 
 build a context-aware AI shopping assistant that:
+
 - tracks user behavior (cursor, dwell time, scroll, viewport focus)
 - combines behavior signals with user purchase history and preferences
 - uses a fast multimodal LLM (Gemini Flash) to generate contextual suggestions
@@ -46,22 +48,22 @@ core principle: **it's all about the context.** the AI should know what's on the
 
 ### essential (start here)
 
-| paper | why it matters |
-|---|---|
-| **"No Clicks, No Problem: Using Cursor Movements to Understand and Improve Search"** — Huang et al., CHI 2011 ([pdf](https://jeffhuang.com/papers/CursorBehavior_CHI11.pdf)) | foundational paper proving cursor hover features correlate better with relevance than click-through rates. directly relevant to our tracking approach |
-| **"Learning Efficient Representations of Mouse Movements to Predict User Attention"** — Arapakis & Leiva, SIGIR 2020 ([arxiv](https://arxiv.org/abs/2006.01644)) | neural networks trained on cursor movement representations predict user attention effectively — validates our approach of using cursor data as an attention proxy |
-| **"Actions Speak Louder than Words: Trillion-Parameter Sequential Transducers for Generative Recommendations"** — Meta, 2024 ([arxiv](https://arxiv.org/pdf/2402.17152)) | Meta's HSTU architecture that Shopify adopted. state of the art in generative recommendation. good to understand the direction the field is heading |
+| paper                                                                                                                                                                                              | why it matters                                                                                                                                                                   |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **"No Clicks, No Problem: Using Cursor Movements to Understand and Improve Search"** — Huang et al., CHI 2011 ([pdf](https://jeffhuang.com/papers/CursorBehavior_CHI11.pdf))                       | foundational paper proving cursor hover features correlate better with relevance than click-through rates. directly relevant to our tracking approach                            |
+| **"Learning Efficient Representations of Mouse Movements to Predict User Attention"** — Arapakis & Leiva, SIGIR 2020 ([arxiv](https://arxiv.org/abs/2006.01644))                                   | neural networks trained on cursor movement representations predict user attention effectively — validates our approach of using cursor data as an attention proxy                |
+| **"Actions Speak Louder than Words: Trillion-Parameter Sequential Transducers for Generative Recommendations"** — Meta, 2024 ([arxiv](https://arxiv.org/pdf/2402.17152))                           | Meta's HSTU architecture that Shopify adopted. state of the art in generative recommendation. good to understand the direction the field is heading                              |
 | **"Enhancing UX Evaluation Through Collaboration with Conversational AI Assistants: Effects of Proactive Dialogue and Timing"** — CHI 2024 ([acm](https://dl.acm.org/doi/10.1145/3613904.3642168)) | tested when to show proactive AI suggestions. finding: suggestions **after** a user pause are preferred over synchronous or preemptive ones. directly informs our trigger system |
 
 ### surveys (for deeper understanding)
 
-| paper | topic |
-|---|---|
-| **"A Survey on User Behavior Modeling in Recommender Systems"** — IJCAI 2023 ([pdf](https://www.ijcai.org/proceedings/2023/0746.pdf)) | comprehensive analysis of how behavior signals feed into recommendations |
-| **"Large Language Model Enhanced Recommender Systems: A Survey"** — arXiv 2412.13432, Dec 2024 | categorizes LLM+RecSys approaches: knowledge enhancement, interaction enhancement, model enhancement |
-| **"A Survey on Session-based Recommender Systems"** — Wang et al., ACM Computing Surveys 2021 | foundational survey on session-based recommendations (what we're doing) |
-| **"A Comprehensive Review of Recommender Systems"** — arXiv 2407.13699, 2024 | covers context-aware, review-based, and fairness-aware systems |
-| **"LLM4Rec: A Comprehensive Survey"** — Future Internet journal, 2025 | reviews 150+ papers on LLMs for recommendations (2018-2024) |
+| paper                                                                                                                                 | topic                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **"A Survey on User Behavior Modeling in Recommender Systems"** — IJCAI 2023 ([pdf](https://www.ijcai.org/proceedings/2023/0746.pdf)) | comprehensive analysis of how behavior signals feed into recommendations                             |
+| **"Large Language Model Enhanced Recommender Systems: A Survey"** — arXiv 2412.13432, Dec 2024                                        | categorizes LLM+RecSys approaches: knowledge enhancement, interaction enhancement, model enhancement |
+| **"A Survey on Session-based Recommender Systems"** — Wang et al., ACM Computing Surveys 2021                                         | foundational survey on session-based recommendations (what we're doing)                              |
+| **"A Comprehensive Review of Recommender Systems"** — arXiv 2407.13699, 2024                                                          | covers context-aware, review-based, and fairness-aware systems                                       |
+| **"LLM4Rec: A Comprehensive Survey"** — Future Internet journal, 2025                                                                 | reviews 150+ papers on LLMs for recommendations (2018-2024)                                          |
 
 ### practical reads
 
@@ -75,6 +77,7 @@ core principle: **it's all about the context.** the AI should know what's on the
 ## implementation phases
 
 ### phase 1 — fake store foundation
+
 - seed a product catalog (~200 products across 6-8 categories) using faker.js or DummyJSON data
 - build product listing page, product detail page, category browsing
 - implement cart, basic checkout flow (no real payments)
@@ -82,6 +85,7 @@ core principle: **it's all about the context.** the AI should know what's on the
 - use existing `@zalem/ui` components for the store UI
 
 ### phase 2 — static recommendation engine
+
 - implement co-occurrence algorithm: "customers who bought X also bought Y"
 - implement content-based similarity: same category, overlapping tags, similar price range
 - implement trending/popular items with time decay
@@ -90,6 +94,7 @@ core principle: **it's all about the context.** the AI should know what's on the
 - this is the baseline — no AI yet, just classic algorithms
 
 ### phase 3 — behavior tracking system
+
 - add viewport tracking with `react-intersection-observer` (which products are visible)
 - add dwell time tracking (how long each product stays in view)
 - add scroll depth tracking on product detail pages
@@ -99,6 +104,7 @@ core principle: **it's all about the context.** the AI should know what's on the
 - implement composite "interest score" from combined signals
 
 ### phase 4 — intelligent trigger system
+
 - define trigger conditions:
   - user dwells on a product card for >3 seconds
   - user scrolls past 50% of a product description
@@ -109,6 +115,7 @@ core principle: **it's all about the context.** the AI should know what's on the
 - build non-intrusive suggestion UI (slide-in panel, not a modal)
 
 ### phase 5 — LLM integration (Gemini Flash)
+
 - set up Gemini API access via Convex actions
 - build context assembly pipeline:
   1. current product details
@@ -121,6 +128,7 @@ core principle: **it's all about the context.** the AI should know what's on the
 - stream AI responses back to client via Convex reactive queries
 
 ### phase 6 — polish & optimization
+
 - tune trigger thresholds based on testing
 - add context caching for repeated product contexts (Gemini supports this, up to 75% cost reduction)
 - add rate limiting per user session
@@ -183,6 +191,7 @@ core principle: **it's all about the context.** the AI should know what's on the
 ```
 
 **data flow:**
+
 1. user browses the store → behavior tracker collects signals (viewport, dwell, cursor, scroll)
 2. events buffer client-side, flushed every 3-5s via Convex mutation
 3. trigger evaluator checks composite interest score — if threshold met, fires a trigger
@@ -212,8 +221,9 @@ export default defineSchema({
     tags: v.array(v.string()),
     rating: v.number(),
     reviewCount: v.number(),
-    images: v.array(v.string()),       // convex storage IDs or URLs
-    attributes: v.object({             // flexible product attributes
+    images: v.array(v.string()), // convex storage IDs or URLs
+    attributes: v.object({
+      // flexible product attributes
       color: v.optional(v.string()),
       size: v.optional(v.string()),
       material: v.optional(v.string()),
@@ -227,7 +237,7 @@ export default defineSchema({
   // ── product reviews (for AI context) ──
   reviews: defineTable({
     productId: v.id("products"),
-    userId: v.string(),                // Clerk user ID
+    userId: v.string(), // Clerk user ID
     rating: v.number(),
     text: v.string(),
     createdAt: v.number(),
@@ -238,11 +248,13 @@ export default defineSchema({
   // ── orders & purchase history ──
   orders: defineTable({
     userId: v.string(),
-    items: v.array(v.object({
-      productId: v.id("products"),
-      quantity: v.number(),
-      priceAtPurchase: v.number(),
-    })),
+    items: v.array(
+      v.object({
+        productId: v.id("products"),
+        quantity: v.number(),
+        priceAtPurchase: v.number(),
+      }),
+    ),
     total: v.number(),
     createdAt: v.number(),
   })
@@ -258,33 +270,34 @@ export default defineSchema({
       max: v.number(),
     }),
     favoriteBrands: v.array(v.string()),
-    tags: v.array(v.string()),         // accumulated interest tags
+    tags: v.array(v.string()), // accumulated interest tags
     updatedAt: v.number(),
-  })
-    .index("by_user", ["userId"]),
+  }).index("by_user", ["userId"]),
 
   // ── co-occurrence matrix (precomputed, phase 2) ──
   productCoOccurrences: defineTable({
     productId: v.id("products"),
     relatedProductId: v.id("products"),
-    score: v.number(),                 // co-purchase frequency / confidence
+    score: v.number(), // co-purchase frequency / confidence
   })
     .index("by_product", ["productId"])
     .index("by_product_score", ["productId", "score"]),
 
   // ── behavior tracking (aggregated, not raw events) ──
   behaviorSessions: defineTable({
-    userId: v.optional(v.string()),    // optional for anonymous users
+    userId: v.optional(v.string()), // optional for anonymous users
     sessionId: v.string(),
-    productsViewed: v.array(v.object({
-      productId: v.id("products"),
-      dwellTimeMs: v.number(),
-      scrollDepth: v.number(),         // 0-1
-      cursorHoverMs: v.number(),
-      viewedReviews: v.boolean(),
-      timestamp: v.number(),
-    })),
-    currentPage: v.string(),           // URL or route
+    productsViewed: v.array(
+      v.object({
+        productId: v.id("products"),
+        dwellTimeMs: v.number(),
+        scrollDepth: v.number(), // 0-1
+        cursorHoverMs: v.number(),
+        viewedReviews: v.boolean(),
+        timestamp: v.number(),
+      }),
+    ),
+    currentPage: v.string(), // URL or route
     cartProductIds: v.array(v.id("products")),
     updatedAt: v.number(),
   })
@@ -295,14 +308,16 @@ export default defineSchema({
   suggestions: defineTable({
     userId: v.optional(v.string()),
     sessionId: v.string(),
-    triggerType: v.string(),           // "dwell", "scroll", "idle", "review_view", etc.
+    triggerType: v.string(), // "dwell", "scroll", "idle", "review_view", etc.
     triggerProductId: v.id("products"),
-    suggestedProducts: v.array(v.object({
-      productId: v.id("products"),
-      reason: v.string(),
-    })),
-    message: v.string(),               // natural language from LLM
-    status: v.string(),                // "pending", "shown", "dismissed", "clicked"
+    suggestedProducts: v.array(
+      v.object({
+        productId: v.id("products"),
+        reason: v.string(),
+      }),
+    ),
+    message: v.string(), // natural language from LLM
+    status: v.string(), // "pending", "shown", "dismissed", "clicked"
     createdAt: v.number(),
   })
     .index("by_session", ["sessionId"])
@@ -312,10 +327,12 @@ export default defineSchema({
   carts: defineTable({
     userId: v.optional(v.string()),
     sessionId: v.string(),
-    items: v.array(v.object({
-      productId: v.id("products"),
-      quantity: v.number(),
-    })),
+    items: v.array(
+      v.object({
+        productId: v.id("products"),
+        quantity: v.number(),
+      }),
+    ),
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
@@ -329,14 +346,14 @@ export default defineSchema({
 
 ### libraries to use
 
-| signal | tool | notes |
-|---|---|---|
-| viewport / in-view | `react-intersection-observer` | `useInView` hook, gold standard for detecting visible products |
-| dwell time | custom hook + IntersectionObserver | start timer on enter viewport, stop on exit |
-| scroll depth | `react-scroll-percentage` or custom | percentage of product page scrolled |
-| cursor proximity | custom `mousemove` hook, throttled 150ms | which product card is nearest to cursor |
-| idle detection | `react-idle-timer` | detect when user stops interacting |
-| eye tracking | WebGazer.js (optional, phase 6) | requires webcam consent, supplementary signal only |
+| signal             | tool                                     | notes                                                          |
+| ------------------ | ---------------------------------------- | -------------------------------------------------------------- |
+| viewport / in-view | `react-intersection-observer`            | `useInView` hook, gold standard for detecting visible products |
+| dwell time         | custom hook + IntersectionObserver       | start timer on enter viewport, stop on exit                    |
+| scroll depth       | `react-scroll-percentage` or custom      | percentage of product page scrolled                            |
+| cursor proximity   | custom `mousemove` hook, throttled 150ms | which product card is nearest to cursor                        |
+| idle detection     | `react-idle-timer`                       | detect when user stops interacting                             |
+| eye tracking       | WebGazer.js (optional, phase 6)          | requires webcam consent, supplementary signal only             |
 
 ### event batching strategy
 
@@ -373,13 +390,13 @@ when `interestScore > threshold` (tunable, start with 2.0) → fire trigger
 
 based on CHI 2024 research: suggestions shown **after** a natural pause are preferred. never interrupt mid-action.
 
-| trigger | condition | cooldown |
-|---|---|---|
-| product dwell | >3s on a single product card in list view | 30s per product |
-| deep scroll | >50% scroll on product detail page | once per page view |
-| review engagement | >5s viewing review section | once per page view |
-| idle on product | >8s idle on product detail page | once per page view |
-| comparison behavior | 3+ products viewed in same category, no add-to-cart | 60s |
+| trigger             | condition                                           | cooldown           |
+| ------------------- | --------------------------------------------------- | ------------------ |
+| product dwell       | >3s on a single product card in list view           | 30s per product    |
+| deep scroll         | >50% scroll on product detail page                  | once per page view |
+| review engagement   | >5s viewing review section                          | once per page view |
+| idle on product     | >8s idle on product detail page                     | once per page view |
+| comparison behavior | 3+ products viewed in same category, no add-to-cart | 60s                |
 
 ### global rules
 
@@ -540,15 +557,15 @@ images             → images
 
 ## key libraries & tools
 
-| library | purpose | phase |
-|---|---|---|
-| `@faker-js/faker` | seed data generation | 1 |
-| `react-intersection-observer` | viewport/in-view tracking | 3 |
-| `react-scroll-percentage` | scroll depth tracking | 3 |
-| `react-idle-timer` | idle detection | 3 |
-| `@google/generative-ai` | Gemini API client | 5 |
-| `@convex-dev/ratelimiter` | rate limiting per user | 5 |
-| `webgazer` | browser eye tracking (optional) | 6 |
+| library                       | purpose                         | phase |
+| ----------------------------- | ------------------------------- | ----- |
+| `@faker-js/faker`             | seed data generation            | 1     |
+| `react-intersection-observer` | viewport/in-view tracking       | 3     |
+| `react-scroll-percentage`     | scroll depth tracking           | 3     |
+| `react-idle-timer`            | idle detection                  | 3     |
+| `@google/generative-ai`       | Gemini API client               | 5     |
+| `@convex-dev/ratelimiter`     | rate limiting per user          | 5     |
+| `webgazer`                    | browser eye tracking (optional) | 6     |
 
 ---
 

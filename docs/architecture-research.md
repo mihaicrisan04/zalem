@@ -17,6 +17,7 @@ Convex components, monorepo strategy, and whether to split services.
 the most important component. full framework for building AI agents with persistent chat history, thread management, tool calling, and streaming. wraps Vercel AI SDK — use `@ai-sdk/google` for Gemini Flash.
 
 **why it matters for us:**
+
 - persistent conversation threads per user/session — exactly what the sidebar needs
 - **streaming via database deltas** (not HTTP) — pass `{ saveStreamDeltas: true }` and all connected clients get real-time updates via Convex subscriptions. no HTTP streaming endpoint needed
 - built-in tool calling — the assistant can call `searchProducts`, `addToCart`, `getRecommendations` as Convex functions
@@ -35,6 +36,7 @@ the most important component. full framework for building AI agents with persist
 database-backed rate limiting with token bucket and fixed window algorithms. stores only 2 numbers per limit. supports sharding for high throughput.
 
 **why it matters for us:**
+
 - rate limit AI calls per user (10 requests/minute token bucket with burst allowance)
 - rate limit against Gemini API quotas (fixed window matching their limits)
 - reserved capacity — if a user exceeds the limit, schedule the call for when tokens are available with jitter
@@ -47,6 +49,7 @@ database-backed rate limiting with token bucket and fixed window algorithms. sto
 maintains denormalized counts, sums, min/max in O(log n) time. acts as both an aggregate engine and a sharded counter.
 
 **what it would give us:**
+
 - **purchase counts per product** — no more manual `patch(productId, { purchaseCount: count + 1 })` with OCC conflicts
 - **review counts + average ratings** — sum values with namespacing by product, compute avg automatically
 - **trending scores** — aggregate purchase/view counts over time windows
@@ -61,6 +64,7 @@ maintains denormalized counts, sums, min/max in O(log n) time. acts as both an a
 managed job queue with parallel execution limits, retries with exponential backoff, completion callbacks, batch enqueuing.
 
 **why it matters for us:**
+
 - **batch embedding generation** — enqueue embedding jobs for product descriptions with `maxParallelism: 10` to avoid overwhelming the Gemini API
 - **batch co-occurrence computation** — enqueue matrix updates with controlled parallelism
 - **separate pools for different workloads** — AI pool, embedding pool, each with independent limits
@@ -75,6 +79,7 @@ managed job queue with parallel execution limits, retries with exponential backo
 orchestrates long-running workflows that survive server restarts. each step can be a query, mutation, action, or nested workflow with independent retry config. supports parallel steps.
 
 **why it matters for us:**
+
 - **order processing workflow**: validate cart → snapshot products → create order → update purchase counts → clear cart → schedule confirmation. with per-step retries, if Gemini is down for the post-purchase recommendation, the order still completes
 - **batch recommendation recomputation**: fetch purchases (paginated) → compute co-occurrence → update trending → generate embeddings for new products. durable across restarts
 - **embedding recomputation**: fan out in batches of 50 products per step, each calling Gemini. 200 steps for 10K products, each independent, with retry
@@ -88,6 +93,7 @@ orchestrates long-running workflows that survive server restarts. each step can 
 fires when documents are created, updated, or deleted. you register trigger functions on specific tables.
 
 **why it matters for us:**
+
 - **aggregate sync** — trigger on `orders` to automatically call `aggregate.insert()` for purchase counts
 - **review denormalization** — trigger on `reviews` to update product's average rating via aggregate component
 - **recommendation invalidation** — trigger on `orders` to flag stale co-occurrences
@@ -99,26 +105,26 @@ fires when documents are created, updated, or deleted. you register trigger func
 
 ## components to skip
 
-| component | why skip |
-|---|---|
+| component                               | why skip                                                                           |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
 | `@convex-dev/persistent-text-streaming` | `@convex-dev/agent` already has built-in delta streaming — using both is redundant |
-| `@convex-dev/action-retrier` | `@convex-dev/workpool` is a superset (has retries + parallelism + batching) |
-| custom sharded counters | `@convex-dev/aggregate` covers this if we need it later (deferred for now) |
+| `@convex-dev/action-retrier`            | `@convex-dev/workpool` is a superset (has retries + parallelism + batching)        |
+| custom sharded counters                 | `@convex-dev/aggregate` covers this if we need it later (deferred for now)         |
 
 ---
 
 ## component summary
 
-| need | component | phase |
-|---|---|---|
-| AI shopping assistant | `@convex-dev/agent` + `@ai-sdk/google` | 6 |
-| streaming AI responses | agent's built-in delta streaming | 6 |
-| rate limiting AI calls | `@convex-dev/rate-limiter` | 6 |
-| batch embedding / co-occurrence | `@convex-dev/workpool` | 3 |
-| order + recommendation pipelines | `@convex-dev/workflow` | 2, 3 |
-| table write side-effects | `convex-helpers` triggers | all |
-| scheduled recomputation | built-in cron jobs (no component) | 3 |
-| client query caching | `convex-helpers` `ConvexQueryCacheProvider` | 2 |
+| need                             | component                                   | phase |
+| -------------------------------- | ------------------------------------------- | ----- |
+| AI shopping assistant            | `@convex-dev/agent` + `@ai-sdk/google`      | 6     |
+| streaming AI responses           | agent's built-in delta streaming            | 6     |
+| rate limiting AI calls           | `@convex-dev/rate-limiter`                  | 6     |
+| batch embedding / co-occurrence  | `@convex-dev/workpool`                      | 3     |
+| order + recommendation pipelines | `@convex-dev/workflow`                      | 2, 3  |
+| table write side-effects         | `convex-helpers` triggers                   | all   |
+| scheduled recomputation          | built-in cron jobs (no component)           | 3     |
+| client query caching             | `convex-helpers` `ConvexQueryCacheProvider` | 2     |
 
 note: `@convex-dev/aggregate` is covered in section 3 above — evaluated and deferred for now.
 

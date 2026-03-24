@@ -1,4 +1,5 @@
 i want the build the following project in this monorepo:
+
 ## Create an AI Assistant for an E-commerce Store
 
 Using a very fast multimodal LLM (e.g., Google Gemini 3.0 Flash), build context based on user behavior from tracked parameters and suggest items or recommendations efficiently and intelligently based on user actions on the website.

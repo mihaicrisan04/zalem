@@ -45,6 +45,7 @@ current AI shopping assistants often have one or more of these issues:
 - they increase complexity and cost without clear measurable benefit
 
 these are not hypothetical concerns. Amazon's Rufus — the largest production AI shopping assistant (300M+ users, ~$12B incremental sales) — demonstrates them concretely:
+
 - **32% recommendation accuracy** (matching actual "best products")
 - **28% price hallucination rate** when prices appear in generated text
 - **83% self-serving recommendations** (favoring Amazon-owned products)

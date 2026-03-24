@@ -27,6 +27,7 @@ user query
 ### multi-model routing
 
 Rufus doesn't use one model. a real-time router selects among:
+
 - Anthropic Claude Sonnet (complex reasoning)
 - Amazon Nova (general queries)
 - custom shopping-specialized LLM (trained on Amazon's catalog + reviews)
@@ -38,6 +39,7 @@ the router optimizes across **answer quality, latency, cost, and engagement metr
 ### streaming + hydration (two-channel output)
 
 Rufus streams two things simultaneously:
+
 1. **text tokens** — progressive streaming, word by word
 2. **markup directives** — specify UI layout (product cards, comparison tables, etc.)
 
@@ -54,6 +56,7 @@ live store data (prices, availability) **hydrates** these directives during stre
 - prompt caching, parallel tool calling
 
 we won't need this scale, but the optimizations are relevant:
+
 - **prompt caching** — we already planned this with Gemini context caching
 - **parallel tool calling** — our agent should call `getRecommendations`, `getProductDetails`, `getCartContents` in parallel, not sequentially
 
@@ -63,20 +66,21 @@ we won't need this scale, but the optimizations are relevant:
 
 this is valuable — shows what Amazon prioritized and what came later.
 
-| when | feature | notes |
-|------|---------|-------|
-| Feb 2024 | basic Q&A, product research, broad recommendations | launch MVP |
-| Jul 2024 | expanded to all US users | 274M daily queries by Oct |
-| late 2024 | order history awareness, review summarization | personalization layer |
-| mid 2025 | "Compare with Similar" button, "Why you might like this" | core decision-support features |
-| mid 2025 | account memory (family, pets, dietary preferences) | cross-session personalization |
-| mid 2025 | price history (30-day, 90-day), deal finder | utility features |
-| mid 2025 | photo uploads, handwritten grocery list scanning | multimodal input |
-| Oct 2025 | "Help Me Decide" — proactive, appears when browsing shows indecision | **this is our readiness signals concept** |
-| Nov 2025 | agentic: auto-buy, conversational reordering, cart management | beyond our scope |
-| Q4 2025 | "Buy for Me" on third-party sites, cross-platform memory | beyond our scope |
+| when      | feature                                                              | notes                                     |
+| --------- | -------------------------------------------------------------------- | ----------------------------------------- |
+| Feb 2024  | basic Q&A, product research, broad recommendations                   | launch MVP                                |
+| Jul 2024  | expanded to all US users                                             | 274M daily queries by Oct                 |
+| late 2024 | order history awareness, review summarization                        | personalization layer                     |
+| mid 2025  | "Compare with Similar" button, "Why you might like this"             | core decision-support features            |
+| mid 2025  | account memory (family, pets, dietary preferences)                   | cross-session personalization             |
+| mid 2025  | price history (30-day, 90-day), deal finder                          | utility features                          |
+| mid 2025  | photo uploads, handwritten grocery list scanning                     | multimodal input                          |
+| Oct 2025  | "Help Me Decide" — proactive, appears when browsing shows indecision | **this is our readiness signals concept** |
+| Nov 2025  | agentic: auto-buy, conversational reordering, cart management        | beyond our scope                          |
+| Q4 2025   | "Buy for Me" on third-party sites, cross-platform memory             | beyond our scope                          |
 
 **zalem implication:** Amazon's priority order validates our plan:
+
 1. basic Q&A and recommendations (our phase 6 MVP)
 2. review summarization (our phase 6 core feature)
 3. comparison (our phase 6 core feature)
@@ -99,6 +103,7 @@ the fact that "Help Me Decide" came **10 months after launch** confirms our reac
 - fabricates product specifications
 
 **zalem implication:** this is our biggest competitive edge opportunity:
+
 1. **never let the LLM generate prices** — always hydrate from live data
 2. **never let the LLM invent specs** — only reference data from the product document
 3. **ground everything in real review text** — cite specific reviews, not summaries of summaries
@@ -114,6 +119,7 @@ the fact that "Help Me Decide" came **10 months after launch** confirms our reac
 - when reviews conflict, Rufus presents majority-sentiment summary without surfacing the conflict
 
 **zalem implication:** our review summarization should:
+
 1. **always cite review count** — "based on 47 reviews" grounds the summary
 2. **surface conflicting opinions explicitly** — "most buyers love the keyboard feel (38 reviews), but 9 reviewers report key wobble after 6 months"
 3. **link to actual review text** — let users verify claims
@@ -150,12 +156,14 @@ the fact that "Help Me Decide" came **10 months after launch** confirms our reac
 ### 2. COSMO knowledge graph (we can partially replicate this)
 
 Amazon's commonsense knowledge graph captures implicit relationships:
+
 - "slip-resistant shoes" -> relevant for "pregnant women"
 - "wireless mouse" -> relevant for "laptop setup"
 
 uses LLMs to build the knowledge graph: recursive generate -> filter -> annotate -> refine pipeline. achieved **60% improvement in macro F1 score** for product relevance.
 
 **zalem implication:** we can't build a full knowledge graph, but we can:
+
 - enrich product tags with implicit use cases during seed generation
 - add a "good for" field on products (e.g., "gaming", "office", "travel")
 - use the LLM during seed to generate these enrichments (batch, offline)
@@ -167,13 +175,13 @@ different query types need different models. Amazon uses a router that considers
 
 **zalem implication:** formalize our model routing:
 
-| query type | model | rationale |
-|-----------|-------|-----------|
-| review summarization (batch) | Flash-Lite | offline, high volume, simple task |
-| quick product Q&A ("is this waterproof?") | Flash-Lite | fast, cheap, factual lookup |
-| comparison | Flash | needs reasoning about tradeoffs |
-| personalized advice | Flash | needs context integration |
-| complex multi-turn conversation | Flash | needs conversation coherence |
+| query type                                | model      | rationale                         |
+| ----------------------------------------- | ---------- | --------------------------------- |
+| review summarization (batch)              | Flash-Lite | offline, high volume, simple task |
+| quick product Q&A ("is this waterproof?") | Flash-Lite | fast, cheap, factual lookup       |
+| comparison                                | Flash      | needs reasoning about tradeoffs   |
+| personalized advice                       | Flash      | needs context integration         |
+| complex multi-turn conversation           | Flash      | needs conversation coherence      |
 
 ### 4. advertising integration (not relevant for us, but worth noting)
 
@@ -192,6 +200,7 @@ Rufus surfaces sponsored products within AI responses. this is a $68.6B business
 the comparison is **conversational and text-driven with inline product cards**, not a structured comparison matrix. this is simpler than what we planned (structured table comparison) but may be more natural.
 
 **zalem implication:** offer both:
+
 1. structured comparison table (specs side by side) — generated from product data, no LLM needed
 2. AI comparison narrative — the LLM explains tradeoffs in natural language
 3. the structured table is always available; the AI narrative is the value-add
@@ -200,14 +209,14 @@ the comparison is **conversational and text-driven with inline product cards**, 
 
 ## competitive landscape
 
-| | Amazon Rufus | Walmart | Shopify | our approach |
-|---|---|---|---|---|
-| strategy | walled garden | open (OpenAI partnership) | ChatGPT integration | standalone demo store |
-| moat | proprietary data | open ecosystem | merchant tooling | architecture + evaluation |
-| accuracy | 32% reported | untested | N/A | **opportunity to beat** |
-| review handling | summarizes but fabricates | N/A | N/A | **cite and verify** |
-| proactive vs reactive | started reactive, added proactive after 10 months | N/A | N/A | reactive-first from day 1 |
-| comparison | conversational | N/A | N/A | structured + conversational |
+|                       | Amazon Rufus                                      | Walmart                   | Shopify             | our approach                |
+| --------------------- | ------------------------------------------------- | ------------------------- | ------------------- | --------------------------- |
+| strategy              | walled garden                                     | open (OpenAI partnership) | ChatGPT integration | standalone demo store       |
+| moat                  | proprietary data                                  | open ecosystem            | merchant tooling    | architecture + evaluation   |
+| accuracy              | 32% reported                                      | untested                  | N/A                 | **opportunity to beat**     |
+| review handling       | summarizes but fabricates                         | N/A                       | N/A                 | **cite and verify**         |
+| proactive vs reactive | started reactive, added proactive after 10 months | N/A                       | N/A                 | reactive-first from day 1   |
+| comparison            | conversational                                    | N/A                       | N/A                 | structured + conversational |
 
 ---
 
@@ -216,6 +225,7 @@ the comparison is **conversational and text-driven with inline product cards**, 
 ### Amazon Rufus patent
 
 three core technologies:
+
 1. **Semantic Similarity Model** — maps queries to product understanding beyond keyword matching
 2. **ClickTraining Data** — uses actual click/purchase behavior to train relevance models
 3. **Visual Label Tagging (VLT)** — automated visual feature extraction from product images
@@ -249,6 +259,7 @@ framework using LLMs to build commonsense knowledge graphs from customer interac
 #### 1. output validation layer (new)
 
 Rufus's 32% accuracy and 28% price hallucination rate are embarrassing. we can beat this:
+
 - post-generation validation: check every `productId` in the response exists and matches the claimed attributes
 - never let the LLM output prices, ratings, or stock — hydrate from live data
 - for review summaries: verify that claimed themes appear in actual reviews (string matching against review corpus)
@@ -256,6 +267,7 @@ Rufus's 32% accuracy and 28% price hallucination rate are embarrassing. we can b
 #### 2. conflicting review handling (enhancement to review summarization)
 
 Rufus presents majority sentiment and hides conflicts. our review summary should explicitly surface divided opinions:
+
 ```
 "buyers love the keyboard feel (38 of 47 reviews), but 9 reviewers report key wobble after 6+ months of use"
 ```
@@ -263,6 +275,7 @@ Rufus presents majority sentiment and hides conflicts. our review summary should
 #### 3. product enrichment during seed (new, batch)
 
 inspired by COSMO knowledge graph. during seed generation:
+
 - add `useCases` field: ["gaming", "office", "travel", "students"]
 - add `goodFor` field: ["typing comfort", "quiet environments", "multiple devices"]
 - generate these via LLM batch processing of product descriptions
@@ -275,11 +288,16 @@ instead of ad-hoc "use Flash-Lite for simple stuff", define a routing function:
 ```typescript
 function selectModel(queryType: string): ModelConfig {
   switch (queryType) {
-    case "review_summary":     return { model: "flash-lite", thinkingLevel: "none" };
-    case "product_qa":         return { model: "flash-lite", thinkingLevel: "minimal" };
-    case "comparison":         return { model: "flash", thinkingLevel: "medium" };
-    case "personalized_advice": return { model: "flash", thinkingLevel: "medium" };
-    case "conversation":       return { model: "flash", thinkingLevel: "medium" };
+    case "review_summary":
+      return { model: "flash-lite", thinkingLevel: "none" };
+    case "product_qa":
+      return { model: "flash-lite", thinkingLevel: "minimal" };
+    case "comparison":
+      return { model: "flash", thinkingLevel: "medium" };
+    case "personalized_advice":
+      return { model: "flash", thinkingLevel: "medium" };
+    case "conversation":
+      return { model: "flash", thinkingLevel: "medium" };
   }
 }
 ```
@@ -287,14 +305,14 @@ function selectModel(queryType: string): ModelConfig {
 #### 5. hydration pattern for product data (architecture change)
 
 the LLM should output product references, not product details:
+
 ```json
 {
-  "suggestions": [
-    { "productId": "abc123", "reason": "pairs well with the keyboard in your cart" }
-  ],
+  "suggestions": [{ "productId": "abc123", "reason": "pairs well with the keyboard in your cart" }],
   "message": "here's a wrist rest that pairs perfectly with your keyboard"
 }
 ```
+
 the client then hydrates each `productId` with live Convex data (price, stock, rating). this eliminates price/stock hallucination entirely.
 
 we already planned this (output format in ai-integration-plan.md has `productId` references), but we should make it an explicit architectural principle: **the LLM never generates factual product data**.
@@ -302,6 +320,7 @@ we already planned this (output format in ai-integration-plan.md has `productId`
 #### 6. parallel tool calling in agent (optimization)
 
 ensure the `@convex-dev/agent` tools are called in parallel where possible:
+
 - `getProductDetails` + `getCartContents` + `getRecommendations` can all run simultaneously
 - `getReviewSummary` can run in parallel with candidate generation
 - this mirrors Rufus's parallel tool calling optimization
@@ -311,6 +330,7 @@ ensure the `@convex-dev/agent` tools are called in parallel where possible:
 ## sources
 
 ### Amazon engineering blogs
+
 - [Amazon Science — Technology behind Rufus](https://www.amazon.science/blog/the-technology-behind-amazons-genai-powered-shopping-assistant-rufus)
 - [AWS — Scaling Rufus with 80K chips for Prime Day](https://aws.amazon.com/blogs/machine-learning/scaling-rufus-the-amazon-generative-ai-powered-conversational-shopping-assistant-with-over-80000-aws-inferentia-and-aws-trainium-chips-for-prime-day/)
 - [AWS — Rufus on Bedrock](https://aws.amazon.com/blogs/machine-learning/how-rufus-scales-conversational-shopping-experiences-to-millions-of-amazon-customers-with-amazon-bedrock/)
@@ -320,12 +340,14 @@ ensure the `@convex-dev/agent` tools are called in parallel where possible:
 - [Amazon Science — COSMO Knowledge Graphs](https://www.amazon.science/blog/building-commonsense-knowledge-graphs-to-aid-product-recommendation)
 
 ### feature announcements
+
 - [About Amazon — Rufus launch](https://www.aboutamazon.com/news/retail/amazon-rufus)
 - [About Amazon — Personalized features](https://www.aboutamazon.com/news/retail/amazon-rufus-ai-assistant-personalized-shopping-features)
 - [About Amazon — Agentic AI shopping](https://www.aboutamazon.com/news/retail/amazon-agentic-ai-gen-ai-shopping)
 - [About Amazon — Lens Live](https://www.aboutamazon.com/news/retail/search-image-amazon-lens-live-shopping-rufus)
 
 ### analysis and criticism
+
 - [ConsumerAffairs — Rufus is often wrong](https://www.consumeraffairs.com/news/amazons-ai-shopping-assistant-rufus-is-often-wrong-110724.html)
 - [Marketplace Pulse — Amazon's Shopping AI Is Confidently Wrong](https://www.marketplacepulse.com/articles/amazons-shopping-ai-is-confidently-wrong)
 - [Lasso Security — Bad Rufus: Amazon Chatbot Gone Wrong](https://www.lasso.security/blog/amazon-chatbot-gone-wrong)
@@ -333,11 +355,13 @@ ensure the `@convex-dev/agent` tools are called in parallel where possible:
 - [ZenML — Scaling Rufus to 250M Users](https://www.zenml.io/llmops-database/scaling-an-ai-powered-conversational-shopping-assistant-to-250-million-users)
 
 ### market data
+
 - [PPC Land — Rufus drove $12B in sales](https://ppc.land/amazons-ai-shopping-assistant-drove-12-billion-in-sales-for-2025/)
 - [Fortune — Rufus on pace for $10B](https://fortune.com/2025/11/02/amazon-rufus-ai-shopping-assistant-chatbot-10-billion-sales-monetization/)
 - [CNBC — OpenAI agentic shopping](https://www.cnbc.com/2026/03/20/open-ai-agentic-shopping-etsy-shopify-walmart-amazon.html)
 
 ### patents and papers
+
 - [Seller Sessions — Rufus Patent Blueprint](https://sellersessions.com/rufus-the-blueprint/)
 - [arXiv:2008.09237 — COOKIE Dataset](https://arxiv.org/abs/2008.09237)
 - [arXiv:2508.14059 — GNN for Amazon Co-purchase](https://arxiv.org/abs/2508.14059)

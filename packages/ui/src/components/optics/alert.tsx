@@ -1,8 +1,8 @@
 // @ts-nocheck
-import * as React from "react"
+import * as React from "react";
 import { cva } from "class-variance-authority";
 
-import { cn } from "@zalem/ui/lib/utils"
+import { cn } from "@zalem/ui/lib/utils";
 
 const alertVariants = cva(
   "grid gap-0.5 rounded-lg border px-2 py-1.5 text-left text-xs/relaxed has-data-[slot=alert-action]:relative has-data-[slot=alert-action]:pr-18 has-[>svg]:grid-cols-[auto_1fr] has-[>svg]:gap-x-1.5 *:[svg]:row-span-2 *:[svg]:translate-y-0.5 *:[svg]:text-current *:[svg:not([class*='size-'])]:size-3.5 w-full relative group/alert",
@@ -10,76 +10,66 @@ const alertVariants = cva(
     variants: {
       variant: {
         default: "bg-card text-card-foreground",
-        destructive: "text-destructive bg-card *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current",
+        destructive:
+          "text-destructive bg-card *:data-[slot=alert-description]:text-destructive/90 *:[svg]:text-current",
       },
     },
     defaultVariants: {
       variant: "default",
     },
-  }
-)
+  },
+);
 
-function Alert({
-  className = "",
-  variant = "default",
-  ...props
-}: any) {
+function Alert({ className = "", variant = "default", ...props }: any) {
   return (
     <div
       data-slot="alert"
       role="alert"
       className={cn(alertVariants({ variant }), className)}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function AlertTitle({
-  className = "",
-  ...props
-}: any) {
+function AlertTitle({ className = "", ...props }: any) {
   return (
     <div
       data-slot="alert-title"
       className={cn(
         "font-medium group-has-[>svg]/alert:col-start-2 [&_a]:hover:text-foreground [&_a]:underline [&_a]:underline-offset-3",
-        className
+        className,
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function AlertDescription({
-  className = "",
-  ...props
-}: any) {
+function AlertDescription({ className = "", ...props }: any) {
   return (
     <div
       data-slot="alert-description"
       className={cn(
         "text-muted-foreground text-xs/relaxed text-balance md:text-pretty [&_p:not(:last-child)]:mb-4 [&_a]:hover:text-foreground [&_a]:underline [&_a]:underline-offset-3",
-        className
+        className,
       )}
-      {...props} />
+      {...props}
+    />
   );
 }
 
-function AlertAction({
-  className = "",
-  ...props
-}: any) {
+function AlertAction({ className = "", ...props }: any) {
   return (
     <div
       data-slot="alert-action"
       className={cn("absolute top-1.5 right-2", className)}
-      {...props} />
+      {...props}
+    />
   );
 }
-
 
 Alert.displayName = "Alert";
 AlertTitle.displayName = "AlertTitle";
 AlertDescription.displayName = "AlertDescription";
 AlertAction.displayName = "AlertAction";
 
-export { Alert, AlertTitle, AlertDescription, AlertAction }
-
+export { Alert, AlertTitle, AlertDescription, AlertAction };

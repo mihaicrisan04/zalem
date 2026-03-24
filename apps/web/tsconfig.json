@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "baseUrl": ".",
     "skipLibCheck": true,
@@ -28,12 +24,8 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@zalem/ui/*": [
-        "../../packages/ui/src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@zalem/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": [
@@ -44,11 +36,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "./node_modules"
-  ],
-  "references": [
-    { "path": "../../packages/ui" },
-    { "path": "../../packages/env" }
-  ]
+  "exclude": ["./node_modules"],
+  "references": [{ "path": "../../packages/ui" }, { "path": "../../packages/env" }]
 }

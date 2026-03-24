@@ -8,15 +8,15 @@ this document captures what breaks from the original small-scale plan and what t
 
 ## what broke in the original plan
 
-| original assumption | breaks at scale because | fix |
-|---|---|---|
-| content-based similarity on-the-fly (1 vs 199 products) | 1 vs 9,999 products per request is too slow for real-time queries | **precompute top-N similar** via batch action using `vectorSearch()` (action-only, cannot be used in queries) |
-| co-occurrence precomputed in a single Convex action | millions of orders = millions of pair operations, exceeds action timeout/memory | **batched precomputation** via multiple scheduled actions |
-| "similar products" scans all products in category | 5,000+ products per category can't be `.collect()`ed in a query | **precomputed similarity table** + index lookup |
-| "for you" scores all products against user profile | can't score 50K products per request | **two-stage: index-driven candidate retrieval → score subset** |
-| co-occurrence storage ~3,000 pairs | 10K products = 100K-500K meaningful pairs | still fits in Convex, but precomputation needs batching |
-| discount % sort "in memory, only 200 products" | 5,000 per category can't sort in memory | **precompute discountPercent field** + index on it |
-| `products.by_category_and_purchaseCount` single index per sort | works fine but complex multi-filter queries (price range + brand + rating + in stock) need thought | **filter after index narrowing** — Convex handles this, but query planning matters |
+| original assumption                                            | breaks at scale because                                                                            | fix                                                                                                           |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| content-based similarity on-the-fly (1 vs 199 products)        | 1 vs 9,999 products per request is too slow for real-time queries                                  | **precompute top-N similar** via batch action using `vectorSearch()` (action-only, cannot be used in queries) |
+| co-occurrence precomputed in a single Convex action            | millions of orders = millions of pair operations, exceeds action timeout/memory                    | **batched precomputation** via multiple scheduled actions                                                     |
+| "similar products" scans all products in category              | 5,000+ products per category can't be `.collect()`ed in a query                                    | **precomputed similarity table** + index lookup                                                               |
+| "for you" scores all products against user profile             | can't score 50K products per request                                                               | **two-stage: index-driven candidate retrieval → score subset**                                                |
+| co-occurrence storage ~3,000 pairs                             | 10K products = 100K-500K meaningful pairs                                                          | still fits in Convex, but precomputation needs batching                                                       |
+| discount % sort "in memory, only 200 products"                 | 5,000 per category can't sort in memory                                                            | **precompute discountPercent field** + index on it                                                            |
+| `products.by_category_and_purchaseCount` single index per sort | works fine but complex multi-filter queries (price range + brand + rating + in stock) need thought | **filter after index narrowing** — Convex handles this, but query planning matters                            |
 
 ---
 
@@ -30,12 +30,14 @@ this document captures what breaks from the original small-scale plan and what t
 **critical constraint:** Convex `vectorSearch()` is only available in actions, not in queries. this means you cannot use it to build a reactive `similarProducts` query that auto-updates when data changes. two approaches:
 
 **approach A — precomputed similarity table (recommended for product detail page):**
+
 - a batch action runs `vectorSearch()` for each product to find its top-N neighbors
 - stores results in a `productSimilarity` table (same pattern as `productCoOccurrences`)
 - the `similarProducts` query reads from this table — fast, reactive, O(1) per product
 - recompute via cron (daily) or on product insert/update
 
 **approach B — action-based retrieval (for AI candidate generation):**
+
 - the AI context assembler runs as an action and can call `vectorSearch()` directly
 - useful when reactivity isn't needed (assembling candidates for the LLM)
 - loses reactivity but gains real-time similarity without precomputation
@@ -45,23 +47,22 @@ this document captures what breaks from the original small-scale plan and what t
 products: defineTable({
   // ... existing fields ...
   embedding: v.optional(v.array(v.float64())),
-})
-  .vectorIndex("by_embedding", {
-    vectorField: "embedding",
-    dimensions: 128, // or 256, tune for quality vs storage
-    filterFields: ["category"],
-  })
+}).vectorIndex("by_embedding", {
+  vectorField: "embedding",
+  dimensions: 128, // or 256, tune for quality vs storage
+  filterFields: ["category"],
+});
 
 // precomputed results table (approach A)
 productSimilarity: defineTable({
   productId: v.id("products"),
   similarProductId: v.id("products"),
   score: v.number(),
-})
-  .index("by_product_and_score", ["productId", "score"])
+}).index("by_product_and_score", ["productId", "score"]);
 ```
 
 **when to generate embeddings:**
+
 - on product insert/update via an internal action
 - batch recompute when embedding model changes
 - use Google's `gemini-embedding-001` model (not Gemini Flash — use the dedicated embedding model). cost: ~$0.006 per 10K products at ~50 tokens per product
@@ -116,14 +117,14 @@ this is the same two-stage pattern from the AI integration plan, but applied to 
 
 the existing index strategy actually works well for most sorts:
 
-| sort | index | scales? |
-|------|-------|---------|
-| popular | `by_category_and_purchaseCount` | yes — index scan |
-| newest | `by_category` (by _creationTime) | yes — index scan |
-| price asc/desc | `by_category_and_price` | yes — index scan |
-| rating | `by_category_and_rating` | yes — index scan |
-| review count | `by_category_and_reviewCount` | yes — index scan |
-| discount % | was "in-memory sort" | **no** — fix below |
+| sort           | index                             | scales?            |
+| -------------- | --------------------------------- | ------------------ |
+| popular        | `by_category_and_purchaseCount`   | yes — index scan   |
+| newest         | `by_category` (by \_creationTime) | yes — index scan   |
+| price asc/desc | `by_category_and_price`           | yes — index scan   |
+| rating         | `by_category_and_rating`          | yes — index scan   |
+| review count   | `by_category_and_reviewCount`     | yes — index scan   |
+| discount %     | was "in-memory sort"              | **no** — fix below |
 
 **fix for discount sort:** precompute a `discountPercent` field on the product document. update it when price or originalPrice changes. add index:
 
@@ -132,6 +133,7 @@ the existing index strategy actually works well for most sorts:
 ```
 
 **multi-filter queries:** Convex doesn't support multiple inequality filters in a single index. for complex filter combos (price range + min rating + brand), the strategy is:
+
 1. use the most selective index (usually category + sort field)
 2. apply remaining filters via `.filter()` on the narrowed result set
 3. for paginated queries, this means the server may need to scan past some non-matching documents to fill a page — acceptable as long as the index narrows sufficiently
@@ -144,6 +146,7 @@ at extreme scale (100K+ products in a single category with tight filters), this 
 **at scale target:** 5,000-10,000 products across 15-20 categories
 
 sources for realistic product data:
+
 - **DummyJSON** — 194 products (use as a base, multiply with variations)
 - **Faker.js** — generate product variations (different colors, sizes, models)
 - **Open product datasets:**
@@ -160,14 +163,14 @@ for reviews: 3-10 reviews per product = 15K-100K reviews.
 
 ## revised precomputation vs on-the-fly
 
-| data | small scale (<500 products) | large scale (5K-50K products) |
-|------|---------------------------|-------------------------------|
-| co-occurrence | single action, all pairs | batched pipeline, top-N per product |
-| content similarity | on-the-fly (score all) | **precomputed `productSimilarity` table** (batch action uses `vectorSearch()`, stores top-N per product) |
-| trending | field on product doc | field on product doc (same) |
-| discount % | computed in memory | **precomputed field + index** |
-| "for you" | score all candidates | **two-stage: candidate generation → scoring** |
-| "similar products" | score all in category | **read from `productSimilarity` table** (reactive query) or action-based `vectorSearch()` for AI context |
+| data               | small scale (<500 products) | large scale (5K-50K products)                                                                            |
+| ------------------ | --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| co-occurrence      | single action, all pairs    | batched pipeline, top-N per product                                                                      |
+| content similarity | on-the-fly (score all)      | **precomputed `productSimilarity` table** (batch action uses `vectorSearch()`, stores top-N per product) |
+| trending           | field on product doc        | field on product doc (same)                                                                              |
+| discount %         | computed in memory          | **precomputed field + index**                                                                            |
+| "for you"          | score all candidates        | **two-stage: candidate generation → scoring**                                                            |
+| "similar products" | score all in category       | **read from `productSimilarity` table** (reactive query) or action-based `vectorSearch()` for AI context |
 
 note: Convex `vectorSearch()` is action-only. all query-time similarity lookups at scale must read from precomputed tables, not call `vectorSearch()` directly.
 
@@ -213,7 +216,7 @@ coOccurrenceAggregation: defineTable({
   batchId: v.string(),
 })
   .index("by_batch", ["batchId"])
-  .index("by_product_pair", ["productIdA", "productIdB"])
+  .index("by_product_pair", ["productIdA", "productIdB"]);
 ```
 
 ```typescript
@@ -223,23 +226,22 @@ productSimilarity: defineTable({
   productId: v.id("products"),
   similarProductId: v.id("products"),
   score: v.number(),
-})
-  .index("by_product_and_score", ["productId", "score"])
+}).index("by_product_and_score", ["productId", "score"]);
 ```
 
 ---
 
 ## revised data volume estimates
 
-| table | small (200 products) | large (10K products) | notes |
-|-------|---------------------|---------------------|-------|
-| products | 200 | 10,000 | +embedding field (~1KB each) |
-| reviews | 600 | 50,000-100,000 | |
-| orders | 500 | 100,000-500,000 | |
-| productCoOccurrences | 3,000 | 200,000 (top-20 per product) | |
-| cartItems | ~100 | ~50,000 concurrent | |
-| favorites | ~200 | ~200,000 | |
-| userPreferences | 50 | 10,000-100,000 | |
+| table                | small (200 products) | large (10K products)         | notes                        |
+| -------------------- | -------------------- | ---------------------------- | ---------------------------- |
+| products             | 200                  | 10,000                       | +embedding field (~1KB each) |
+| reviews              | 600                  | 50,000-100,000               |                              |
+| orders               | 500                  | 100,000-500,000              |                              |
+| productCoOccurrences | 3,000                | 200,000 (top-20 per product) |                              |
+| cartItems            | ~100                 | ~50,000 concurrent           |                              |
+| favorites            | ~200                 | ~200,000                     |                              |
+| userPreferences      | 50                   | 10,000-100,000               |                              |
 
 all well within Convex's capacity. the main concern isn't storage — it's **query scan width** (how many documents a single query needs to read). the index + precomputed table strategy keeps scans narrow at any scale.
 
@@ -250,12 +252,14 @@ all well within Convex's capacity. the main concern isn't storage — it's **que
 what changes in the implementation phases:
 
 ### phase 2 (data layer)
+
 - add `discountPercent` field to products schema
 - add `embedding` field to products schema (optional initially)
 - add vector search index definition
 - expand seed script to generate 5K-10K products
 
 ### phase 3 (recommendations)
+
 - co-occurrence: implement batched pipeline instead of single action
 - similar products: implement precomputed `productSimilarity` table populated by batch action using `vectorSearch()` (Convex vector search is action-only, cannot be used in reactive queries)
 - "for you": implement two-stage candidate generation
@@ -263,6 +267,7 @@ what changes in the implementation phases:
 - add `productSimilarity` table to schema
 
 ### phases 4-7 (unchanged)
+
 - behavior tracking, triggers, AI integration — all operate on the pre-filtered candidate set, so they're scale-independent
 
 ---
@@ -271,11 +276,11 @@ what changes in the implementation phases:
 
 the algorithms don't change. the math is the same. what changes is **how we retrieve candidates**:
 
-| approach | small scale | large scale |
-|----------|-----------|------------|
-| find similar products | scan all, score, sort | precomputed `productSimilarity` table (batch action uses `vectorSearch()`) |
-| find co-occurring products | precomputed table (all pairs) | precomputed table (top-N per product) |
-| personalized recommendations | score all candidates | two-stage: index retrieval → score subset |
-| category page sorts | index works | index works + precompute discount field |
+| approach                     | small scale                   | large scale                                                                |
+| ---------------------------- | ----------------------------- | -------------------------------------------------------------------------- |
+| find similar products        | scan all, score, sort         | precomputed `productSimilarity` table (batch action uses `vectorSearch()`) |
+| find co-occurring products   | precomputed table (all pairs) | precomputed table (top-N per product)                                      |
+| personalized recommendations | score all candidates          | two-stage: index retrieval → score subset                                  |
+| category page sorts          | index works                   | index works + precompute discount field                                    |
 
 the key principle: **indexes and precomputation replace in-memory scanning.** Convex `vectorSearch()` is action-only, so query-time similarity requires reading from a precomputed table. the action-based path is available for non-reactive use cases (AI context assembly).

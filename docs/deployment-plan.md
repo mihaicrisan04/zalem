@@ -21,20 +21,22 @@ two separate deployments: Next.js frontend on Vercel, Convex backend on Convex c
 
 ## 3. Vercel project config
 
-| setting | value |
-|---|---|
-| root directory | `apps/web` |
-| framework | Next.js (auto-detected) |
-| build command | codified in `apps/web/vercel.json` |
-| output directory | default (`.next`) |
-| install command | auto-detected (bun) |
+| setting          | value                              |
+| ---------------- | ---------------------------------- |
+| root directory   | `apps/web`                         |
+| framework        | Next.js (auto-detected)            |
+| build command    | codified in `apps/web/vercel.json` |
+| output directory | default (`.next`)                  |
+| install command  | auto-detected (bun)                |
 
 **build command** (in `vercel.json`):
+
 ```
 cd ../.. && npx convex deploy --cmd 'cd apps/web && npx next build' --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL
 ```
 
 this does:
+
 1. goes to repo root (Vercel scopes to `apps/web`)
 2. deploys Convex functions to production
 3. injects `NEXT_PUBLIC_CONVEX_URL` automatically
@@ -42,11 +44,11 @@ this does:
 
 ## 4. Vercel environment variables
 
-| variable | value | env |
-|---|---|---|
-| `CONVEX_DEPLOY_KEY` | from Convex dashboard | production |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...` | production |
-| `CLERK_SECRET_KEY` | `sk_live_...` | production |
+| variable                            | value                 | env        |
+| ----------------------------------- | --------------------- | ---------- |
+| `CONVEX_DEPLOY_KEY`                 | from Convex dashboard | production |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...`         | production |
+| `CLERK_SECRET_KEY`                  | `sk_live_...`         | production |
 
 `NEXT_PUBLIC_CONVEX_URL` is **not** set manually — `convex deploy` injects it.
 

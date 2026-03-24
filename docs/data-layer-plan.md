@@ -161,25 +161,25 @@ export default defineSchema({
     title: v.string(),
     description: v.string(),
     categoryId: v.id("categories"),
-    category: v.string(),            // denormalized category name for display + filtering
+    category: v.string(), // denormalized category name for display + filtering
     subcategory: v.optional(v.string()),
     price: v.number(),
     originalPrice: v.optional(v.number()), // if set, product is discounted
     brand: v.string(),
     tags: v.array(v.string()),
-    rating: v.number(),              // denormalized average, updated on review add/remove
-    reviewCount: v.number(),         // denormalized count
-    images: v.array(v.string()),     // URLs
+    rating: v.number(), // denormalized average, updated on review add/remove
+    reviewCount: v.number(), // denormalized count
+    images: v.array(v.string()), // URLs
     specifications: v.optional(
-      v.record(v.string(), v.string()) // flexible key-value specs
+      v.record(v.string(), v.string()), // flexible key-value specs
     ),
     stock: v.number(),
     isDeal: v.boolean(),
     dealExpiresAt: v.optional(v.number()),
-    purchaseCount: v.number(),       // denormalized, for trending/popular sort
+    purchaseCount: v.number(), // denormalized, for trending/popular sort
     // ── enrichment fields (inspired by Amazon COSMO knowledge graph, see docs/rufus-research.md) ──
-    useCases: v.optional(v.array(v.string())),  // e.g., ["gaming", "office", "travel"] — generated via batch LLM during seed
-    goodFor: v.optional(v.array(v.string())),   // e.g., ["typing comfort", "quiet environments"] — generated via batch LLM during seed
+    useCases: v.optional(v.array(v.string())), // e.g., ["gaming", "office", "travel"] — generated via batch LLM during seed
+    goodFor: v.optional(v.array(v.string())), // e.g., ["typing comfort", "quiet environments"] — generated via batch LLM during seed
     // ── scale fields (see docs/scale-considerations.md) ──
     discountPercent: v.optional(v.number()), // precomputed: (originalPrice - price) / originalPrice * 100
     embedding: v.optional(v.array(v.float64())), // product embedding for vector similarity search
@@ -221,8 +221,8 @@ export default defineSchema({
   reviews: defineTable({
     productId: v.id("products"),
     clerkUserId: v.string(),
-    userName: v.string(),            // denormalized for display without user lookup
-    rating: v.number(),              // 1-5
+    userName: v.string(), // denormalized for display without user lookup
+    rating: v.number(), // 1-5
     text: v.string(),
     createdAt: v.number(),
   })
@@ -261,19 +261,18 @@ export default defineSchema({
   // no foreign key dependency — if a product is deleted, order history is intact.
   orders: defineTable({
     clerkUserId: v.string(),
-    orderNumber: v.number(),         // sequential, human-readable
-    items: v.array(v.object({
-      productId: v.id("products"),
-      title: v.string(),             // snapshot at purchase time
-      image: v.string(),             // snapshot
-      price: v.number(),             // price at purchase time
-      quantity: v.number(),
-    })),
-    total: v.number(),
-    status: v.union(
-      v.literal("delivered"),
-      v.literal("cancelled"),
+    orderNumber: v.number(), // sequential, human-readable
+    items: v.array(
+      v.object({
+        productId: v.id("products"),
+        title: v.string(), // snapshot at purchase time
+        image: v.string(), // snapshot
+        price: v.number(), // price at purchase time
+        quantity: v.number(),
+      }),
     ),
+    total: v.number(),
+    status: v.union(v.literal("delivered"), v.literal("cancelled")),
     shippingAddress: v.object({
       name: v.string(),
       address: v.string(),
@@ -298,16 +297,14 @@ export default defineSchema({
     favoriteBrands: v.array(v.string()),
     interestTags: v.array(v.string()),
     updatedAt: v.number(),
-  })
-    .index("by_user", ["clerkUserId"]),
+  }).index("by_user", ["clerkUserId"]),
 
   // ── co-occurrences ── (phase 3, precomputed recommendations)
   productCoOccurrences: defineTable({
     productId: v.id("products"),
     relatedProductId: v.id("products"),
     score: v.number(),
-  })
-    .index("by_product_and_score", ["productId", "score"]),
+  }).index("by_product_and_score", ["productId", "score"]),
 
   // ── co-occurrence aggregation ── (phase 3, temporary during batch recomputation at scale)
   // used by the batched co-occurrence pipeline when processing 100K+ orders
@@ -325,14 +322,16 @@ export default defineSchema({
   behaviorSessions: defineTable({
     clerkUserId: v.optional(v.string()),
     sessionId: v.string(),
-    productsViewed: v.array(v.object({
-      productId: v.id("products"),
-      dwellTimeMs: v.number(),
-      scrollDepth: v.number(),
-      cursorHoverMs: v.number(),
-      viewedReviews: v.boolean(),
-      timestamp: v.number(),
-    })),
+    productsViewed: v.array(
+      v.object({
+        productId: v.id("products"),
+        dwellTimeMs: v.number(),
+        scrollDepth: v.number(),
+        cursorHoverMs: v.number(),
+        viewedReviews: v.boolean(),
+        timestamp: v.number(),
+      }),
+    ),
     currentPage: v.string(),
     cartProductIds: v.array(v.id("products")),
     updatedAt: v.number(),
@@ -346,10 +345,12 @@ export default defineSchema({
     sessionId: v.string(),
     triggerType: v.string(),
     triggerProductId: v.id("products"),
-    suggestedProducts: v.array(v.object({
-      productId: v.id("products"),
-      reason: v.string(),
-    })),
+    suggestedProducts: v.array(
+      v.object({
+        productId: v.id("products"),
+        reason: v.string(),
+      }),
+    ),
     message: v.string(),
     status: v.union(
       v.literal("pending"),
@@ -359,8 +360,7 @@ export default defineSchema({
       v.literal("clicked"),
     ),
     createdAt: v.number(),
-  })
-    .index("by_session_and_status", ["sessionId", "status"]),
+  }).index("by_session_and_status", ["sessionId", "status"]),
 });
 ```
 
@@ -437,22 +437,22 @@ graph LR
 
 ### categories.ts
 
-| function | type | args | used by | notes |
-|----------|------|------|---------|-------|
-| `list` | query | — | category nav bar, mega menu | returns all categories ordered, with parent/child structure. cache-friendly (rarely changes) |
-| `getBySlug` | query | `slug` | category page breadcrumb, routing | single category by URL slug |
-| `getChildren` | query | `parentId` | mega menu subcategories | children of a category, ordered |
+| function      | type  | args       | used by                           | notes                                                                                        |
+| ------------- | ----- | ---------- | --------------------------------- | -------------------------------------------------------------------------------------------- |
+| `list`        | query | —          | category nav bar, mega menu       | returns all categories ordered, with parent/child structure. cache-friendly (rarely changes) |
+| `getBySlug`   | query | `slug`     | category page breadcrumb, routing | single category by URL slug                                                                  |
+| `getChildren` | query | `parentId` | mega menu subcategories           | children of a category, ordered                                                              |
 
 ### products.ts
 
-| function | type | args | used by | notes |
-|----------|------|------|---------|-------|
-| `get` | query | `productId` | product detail page | single product by ID, `ctx.db.get()` |
-| `listByCategory` | query | `category, sort, filters, paginationOpts` | category page | paginated, uses appropriate index per sort option. filters (price min/max, brands, minRating, inStock) applied via `.filter()` after index narrowing by category |
-| `listDeals` | query | — | homepage deals section | `isDeal === true`, sorted by expiry, `.take(6)` |
-| `listTrending` | query | `category?` | homepage trending, category "popular" sort | by `purchaseCount` desc, `.take(10)` |
-| `search` | query | `query, category?, paginationOpts` | search results page | uses `searchIndex("search_title")`, paginated |
-| `autocomplete` | query | `query` | search bar dropdown | uses search index, `.take(8)`, returns minimal fields (id, title, image, price) |
+| function         | type  | args                                      | used by                                    | notes                                                                                                                                                            |
+| ---------------- | ----- | ----------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get`            | query | `productId`                               | product detail page                        | single product by ID, `ctx.db.get()`                                                                                                                             |
+| `listByCategory` | query | `category, sort, filters, paginationOpts` | category page                              | paginated, uses appropriate index per sort option. filters (price min/max, brands, minRating, inStock) applied via `.filter()` after index narrowing by category |
+| `listDeals`      | query | —                                         | homepage deals section                     | `isDeal === true`, sorted by expiry, `.take(6)`                                                                                                                  |
+| `listTrending`   | query | `category?`                               | homepage trending, category "popular" sort | by `purchaseCount` desc, `.take(10)`                                                                                                                             |
+| `search`         | query | `query, category?, paginationOpts`        | search results page                        | uses `searchIndex("search_title")`, paginated                                                                                                                    |
+| `autocomplete`   | query | `query`                                   | search bar dropdown                        | uses search index, `.take(8)`, returns minimal fields (id, title, image, price)                                                                                  |
 
 **sort strategy for `listByCategory`:**
 
@@ -469,51 +469,51 @@ discount % sort uses a precomputed `discountPercent` field on the product docume
 
 ### reviews.ts
 
-| function | type | args | used by | notes |
-|----------|------|------|---------|-------|
-| `listByProduct` | query | `productId, paginationOpts` | product detail reviews tab | paginated, newest first via `by_product` index |
-| `getAggregateByProduct` | query | `productId` | product detail rating breakdown | computes 5-star distribution. could be denormalized if perf matters |
-| `create` | mutation | `productId, rating, text` | product detail page | gets clerkUserId from auth, inserts review, calls `_updateProductRating` |
-| `_updateProductRating` | internal mutation | `productId` | called by `create` | recalculates avg rating + count, patches product |
+| function                | type              | args                        | used by                         | notes                                                                    |
+| ----------------------- | ----------------- | --------------------------- | ------------------------------- | ------------------------------------------------------------------------ |
+| `listByProduct`         | query             | `productId, paginationOpts` | product detail reviews tab      | paginated, newest first via `by_product` index                           |
+| `getAggregateByProduct` | query             | `productId`                 | product detail rating breakdown | computes 5-star distribution. could be denormalized if perf matters      |
+| `create`                | mutation          | `productId, rating, text`   | product detail page             | gets clerkUserId from auth, inserts review, calls `_updateProductRating` |
+| `_updateProductRating`  | internal mutation | `productId`                 | called by `create`              | recalculates avg rating + count, patches product                         |
 
 ### cart.ts
 
-| function | type | args | used by | notes |
-|----------|------|------|---------|-------|
-| `list` | query | — | cart page, cart recommendations | gets clerkUserId from auth, joins with product data for display |
-| `add` | mutation | `productId, quantity?` | product card, product detail | upserts: if product already in cart, increments quantity. uses `by_user_and_product` index |
-| `remove` | mutation | `productId` | cart page | deletes cartItem row |
-| `updateQuantity` | mutation | `productId, quantity` | cart page quantity stepper | patches quantity. if quantity <= 0, removes item |
-| `count` | query | — | header cart badge | returns total item count for user. lightweight query |
-| `_clear` | internal mutation | `clerkUserId` | called by checkout | removes all cart items for user |
+| function         | type              | args                   | used by                         | notes                                                                                      |
+| ---------------- | ----------------- | ---------------------- | ------------------------------- | ------------------------------------------------------------------------------------------ |
+| `list`           | query             | —                      | cart page, cart recommendations | gets clerkUserId from auth, joins with product data for display                            |
+| `add`            | mutation          | `productId, quantity?` | product card, product detail    | upserts: if product already in cart, increments quantity. uses `by_user_and_product` index |
+| `remove`         | mutation          | `productId`            | cart page                       | deletes cartItem row                                                                       |
+| `updateQuantity` | mutation          | `productId, quantity`  | cart page quantity stepper      | patches quantity. if quantity <= 0, removes item                                           |
+| `count`          | query             | —                      | header cart badge               | returns total item count for user. lightweight query                                       |
+| `_clear`         | internal mutation | `clerkUserId`          | called by checkout              | removes all cart items for user                                                            |
 
 ### favorites.ts
 
-| function | type | args | used by | notes |
-|----------|------|------|---------|-------|
-| `list` | query | — | favorites page | gets clerkUserId from auth, returns favorites with joined product data, newest first |
-| `toggle` | mutation | `productId` | product card heart icon | if exists → delete, if not → insert. idempotent toggle pattern |
-| `isProductFavorited` | query | `productId` | single product card | boolean check via `by_user_and_product` index |
-| `batchCheck` | query | `productIds` | product grid (check multiple) | returns `Set<productId>` of favorited products. avoids N+1 queries for product grids |
+| function             | type     | args         | used by                       | notes                                                                                |
+| -------------------- | -------- | ------------ | ----------------------------- | ------------------------------------------------------------------------------------ |
+| `list`               | query    | —            | favorites page                | gets clerkUserId from auth, returns favorites with joined product data, newest first |
+| `toggle`             | mutation | `productId`  | product card heart icon       | if exists → delete, if not → insert. idempotent toggle pattern                       |
+| `isProductFavorited` | query    | `productId`  | single product card           | boolean check via `by_user_and_product` index                                        |
+| `batchCheck`         | query    | `productIds` | product grid (check multiple) | returns `Set<productId>` of favorited products. avoids N+1 queries for product grids |
 
 ### orders.ts
 
-| function | type | args | used by | notes |
-|----------|------|------|---------|-------|
-| `listByUser` | query | `status?, paginationOpts` | order history page | paginated, filtered by optional status tab. uses `by_user_and_status` or `by_user` index |
-| `get` | query | `orderId` | order detail view | single order by ID, validates it belongs to the requesting user |
-| `checkout` | mutation | `shippingAddress` | checkout page | reads cart items, snapshots product data (title, image, price), creates order, increments `purchaseCount` on products, clears cart |
-| `_create` | internal mutation | `orderData` | called by checkout | inserts order document |
-| `_nextOrderNumber` | internal mutation | — | called by checkout | generates sequential order number |
+| function           | type              | args                      | used by            | notes                                                                                                                              |
+| ------------------ | ----------------- | ------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `listByUser`       | query             | `status?, paginationOpts` | order history page | paginated, filtered by optional status tab. uses `by_user_and_status` or `by_user` index                                           |
+| `get`              | query             | `orderId`                 | order detail view  | single order by ID, validates it belongs to the requesting user                                                                    |
+| `checkout`         | mutation          | `shippingAddress`         | checkout page      | reads cart items, snapshots product data (title, image, price), creates order, increments `purchaseCount` on products, clears cart |
+| `_create`          | internal mutation | `orderData`               | called by checkout | inserts order document                                                                                                             |
+| `_nextOrderNumber` | internal mutation | —                         | called by checkout | generates sequential order number                                                                                                  |
 
 ### recommendations.ts (phase 3)
 
-| function | type | args | used by | notes |
-|----------|------|------|---------|-------|
-| `frequentlyBoughtTogether` | query | `productId` | product detail page | reads `productCoOccurrences` by_product_and_score desc, `.take(4)`, joins product data |
-| `similarProducts` | query | `productId` | product detail page | reads product, finds others in same category with overlapping tags/brand, scores + sorts in memory, `.take(10)`. at scale (~1K+ products per category), switch to reading from a precomputed `productSimilarity` table instead (Convex `vectorSearch()` is action-only, so it cannot back a reactive query directly) |
-| `forYou` | query | — | homepage "recommended for you" | reads `userPreferences`, queries products matching favorite categories/brands/price range, `.take(10)`. falls back to trending for anonymous users |
-| `forCart` | query | — | cart page "you might also like" | reads cart items, aggregates co-occurrences across all cart products, deduplicates (exclude cart items), top 10 |
+| function                   | type  | args        | used by                         | notes                                                                                                                                                                                                                                                                                                                |
+| -------------------------- | ----- | ----------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `frequentlyBoughtTogether` | query | `productId` | product detail page             | reads `productCoOccurrences` by_product_and_score desc, `.take(4)`, joins product data                                                                                                                                                                                                                               |
+| `similarProducts`          | query | `productId` | product detail page             | reads product, finds others in same category with overlapping tags/brand, scores + sorts in memory, `.take(10)`. at scale (~1K+ products per category), switch to reading from a precomputed `productSimilarity` table instead (Convex `vectorSearch()` is action-only, so it cannot back a reactive query directly) |
+| `forYou`                   | query | —           | homepage "recommended for you"  | reads `userPreferences`, queries products matching favorite categories/brands/price range, `.take(10)`. falls back to trending for anonymous users                                                                                                                                                                   |
+| `forCart`                  | query | —           | cart page "you might also like" | reads cart items, aggregates co-occurrences across all cart products, deduplicates (exclude cart items), top 10                                                                                                                                                                                                      |
 
 ---
 
@@ -581,33 +581,33 @@ sequenceDiagram
 
 every index exists for a specific UI query. no speculative indexes.
 
-| index | serves | query pattern |
-|-------|--------|---------------|
-| `categories.by_slug` | URL routing → category page | `eq("slug", slug)` |
-| `categories.by_parent` | mega menu subcategories | `eq("parentId", id)`, ordered |
-| `products.by_category` | category page (newest sort) | `eq("category", cat)`, order desc |
-| `products.by_category_and_price` | category page (price sort) | `eq("category", cat)`, order asc/desc |
-| `products.by_category_and_rating` | category page (rating sort) | `eq("category", cat)`, order desc |
-| `products.by_category_and_reviewCount` | category page (review count sort) | `eq("category", cat)`, order desc |
-| `products.by_category_and_purchaseCount` | category page (popular sort) | `eq("category", cat)`, order desc |
-| `products.by_isDeal` | homepage deals | `eq("isDeal", true)` |
-| `products.by_purchaseCount` | homepage trending | global, order desc |
-| `products.by_category_and_brand` | category filter by brand | `eq("category", cat).eq("brand", brand)` |
-| `products.search_title` | search bar + search results | full-text search |
-| `reviews.by_product` | product detail reviews | `eq("productId", id)`, newest first |
-| `reviews.by_user` | "my reviews" | `eq("clerkUserId", uid)` |
-| `cartItems.by_user` | cart page listing | `eq("clerkUserId", uid)` |
-| `cartItems.by_user_and_product` | add-to-cart upsert check | `eq("clerkUserId", uid).eq("productId", pid)` |
-| `favorites.by_user` | favorites page | `eq("clerkUserId", uid)`, newest first |
-| `favorites.by_user_and_product` | favorite toggle + check | `eq("clerkUserId", uid).eq("productId", pid)` |
-| `orders.by_user` | order history (all) | `eq("clerkUserId", uid)`, newest first |
-| `orders.by_user_and_status` | order history (by tab) | `eq("clerkUserId", uid).eq("status", s)` |
-| `userPreferences.by_user` | personalized recommendations | `eq("clerkUserId", uid)` |
-| `products.by_category_and_discountPercent` | category page (discount sort) | `eq("category", cat)`, order desc |
-| `products.by_embedding` (vector) | similar products at scale (action-only — used by batch precomputation action and AI context assembly action, not by reactive queries) | `ctx.vectorSearch("products", "by_embedding", { vector, filter: category })` |
-| `productCoOccurrences.by_product_and_score` | frequently bought together | `eq("productId", pid)`, score desc |
-| `coOccurrenceAggregation.by_batch` | batch cleanup during recomputation | `eq("batchId", id)` |
-| `coOccurrenceAggregation.by_product_pair` | accumulate pair counts | `eq("productIdA", a).eq("productIdB", b)` |
+| index                                       | serves                                                                                                                                | query pattern                                                                |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `categories.by_slug`                        | URL routing → category page                                                                                                           | `eq("slug", slug)`                                                           |
+| `categories.by_parent`                      | mega menu subcategories                                                                                                               | `eq("parentId", id)`, ordered                                                |
+| `products.by_category`                      | category page (newest sort)                                                                                                           | `eq("category", cat)`, order desc                                            |
+| `products.by_category_and_price`            | category page (price sort)                                                                                                            | `eq("category", cat)`, order asc/desc                                        |
+| `products.by_category_and_rating`           | category page (rating sort)                                                                                                           | `eq("category", cat)`, order desc                                            |
+| `products.by_category_and_reviewCount`      | category page (review count sort)                                                                                                     | `eq("category", cat)`, order desc                                            |
+| `products.by_category_and_purchaseCount`    | category page (popular sort)                                                                                                          | `eq("category", cat)`, order desc                                            |
+| `products.by_isDeal`                        | homepage deals                                                                                                                        | `eq("isDeal", true)`                                                         |
+| `products.by_purchaseCount`                 | homepage trending                                                                                                                     | global, order desc                                                           |
+| `products.by_category_and_brand`            | category filter by brand                                                                                                              | `eq("category", cat).eq("brand", brand)`                                     |
+| `products.search_title`                     | search bar + search results                                                                                                           | full-text search                                                             |
+| `reviews.by_product`                        | product detail reviews                                                                                                                | `eq("productId", id)`, newest first                                          |
+| `reviews.by_user`                           | "my reviews"                                                                                                                          | `eq("clerkUserId", uid)`                                                     |
+| `cartItems.by_user`                         | cart page listing                                                                                                                     | `eq("clerkUserId", uid)`                                                     |
+| `cartItems.by_user_and_product`             | add-to-cart upsert check                                                                                                              | `eq("clerkUserId", uid).eq("productId", pid)`                                |
+| `favorites.by_user`                         | favorites page                                                                                                                        | `eq("clerkUserId", uid)`, newest first                                       |
+| `favorites.by_user_and_product`             | favorite toggle + check                                                                                                               | `eq("clerkUserId", uid).eq("productId", pid)`                                |
+| `orders.by_user`                            | order history (all)                                                                                                                   | `eq("clerkUserId", uid)`, newest first                                       |
+| `orders.by_user_and_status`                 | order history (by tab)                                                                                                                | `eq("clerkUserId", uid).eq("status", s)`                                     |
+| `userPreferences.by_user`                   | personalized recommendations                                                                                                          | `eq("clerkUserId", uid)`                                                     |
+| `products.by_category_and_discountPercent`  | category page (discount sort)                                                                                                         | `eq("category", cat)`, order desc                                            |
+| `products.by_embedding` (vector)            | similar products at scale (action-only — used by batch precomputation action and AI context assembly action, not by reactive queries) | `ctx.vectorSearch("products", "by_embedding", { vector, filter: category })` |
+| `productCoOccurrences.by_product_and_score` | frequently bought together                                                                                                            | `eq("productId", pid)`, score desc                                           |
+| `coOccurrenceAggregation.by_batch`          | batch cleanup during recomputation                                                                                                    | `eq("batchId", id)`                                                          |
+| `coOccurrenceAggregation.by_product_pair`   | accumulate pair counts                                                                                                                | `eq("productIdA", a).eq("productIdB", b)`                                    |
 
 ---
 
@@ -663,24 +663,24 @@ packages/backend/convex/
 
 pages that need pagination use Convex's cursor-based pagination with `usePaginatedQuery`:
 
-| page | page size | pattern |
-|------|-----------|---------|
-| category listing | 60 | `usePaginatedQuery` with "load more" or page buttons |
-| search results | 60 | same as category |
-| order history | 20 | `usePaginatedQuery` |
-| product reviews | 10 | `usePaginatedQuery` with "load more" |
+| page             | page size | pattern                                              |
+| ---------------- | --------- | ---------------------------------------------------- |
+| category listing | 60        | `usePaginatedQuery` with "load more" or page buttons |
+| search results   | 60        | same as category                                     |
+| order history    | 20        | `usePaginatedQuery`                                  |
+| product reviews  | 10        | `usePaginatedQuery` with "load more"                 |
 
 pages that don't need pagination use `.take(N)`:
 
-| page | limit | function |
-|------|-------|----------|
-| homepage deals | 6 | `.take(6)` |
-| homepage trending | 10 | `.take(10)` |
-| recommended for you | 10 | `.take(10)` |
-| frequently bought together | 4 | `.take(4)` |
-| similar products | 10 | `.take(10)` |
-| cart recommendations | 10 | `.take(10)` |
-| autocomplete | 8 | `.take(8)` |
+| page                       | limit | function    |
+| -------------------------- | ----- | ----------- |
+| homepage deals             | 6     | `.take(6)`  |
+| homepage trending          | 10    | `.take(10)` |
+| recommended for you        | 10    | `.take(10)` |
+| frequently bought together | 4     | `.take(4)`  |
+| similar products           | 10    | `.take(10)` |
+| cart recommendations       | 10    | `.take(10)` |
+| autocomplete               | 8     | `.take(8)`  |
 
 ---
 
@@ -696,17 +696,17 @@ if (!identity) throw new ConvexError("not authenticated");
 const clerkUserId = identity.subject; // Clerk user ID
 ```
 
-| feature | anonymous | authenticated |
-|---------|-----------|---------------|
-| browse products, categories, search | yes | yes |
-| product detail + reviews | yes (read) | yes (read + write) |
-| cart (add, remove, quantity) | **no** — prompt to sign in | yes |
-| favorites | **no** — prompt to sign in | yes |
-| checkout + orders | **no** | yes |
-| behavior tracking | yes (session-scoped) | yes (user-scoped) |
-| AI advisor (readiness signals) | yes (client-side only) | yes |
-| AI advisor (LLM calls) | **no** — prompt to sign in | yes |
-| personalized recommendations | no (falls back to trending) | yes |
+| feature                             | anonymous                   | authenticated      |
+| ----------------------------------- | --------------------------- | ------------------ |
+| browse products, categories, search | yes                         | yes                |
+| product detail + reviews            | yes (read)                  | yes (read + write) |
+| cart (add, remove, quantity)        | **no** — prompt to sign in  | yes                |
+| favorites                           | **no** — prompt to sign in  | yes                |
+| checkout + orders                   | **no**                      | yes                |
+| behavior tracking                   | yes (session-scoped)        | yes (user-scoped)  |
+| AI advisor (readiness signals)      | yes (client-side only)      | yes                |
+| AI advisor (LLM calls)              | **no** — prompt to sign in  | yes                |
+| personalized recommendations        | no (falls back to trending) | yes                |
 
 ### why cart requires auth
 
@@ -715,6 +715,7 @@ the simplest correct approach for this project. anonymous carts add complexity (
 ### behavior tracking for anonymous users
 
 `behaviorSessions` supports anonymous users via the `sessionId` field (a client-generated UUID stored in localStorage). anonymous behavior data is:
+
 - used client-side for readiness signals (question chips, advisor button pulse)
 - flushed to the backend with `clerkUserId: undefined`
 - **not** merged with an authenticated profile if the user later signs in (intentional privacy-by-design)

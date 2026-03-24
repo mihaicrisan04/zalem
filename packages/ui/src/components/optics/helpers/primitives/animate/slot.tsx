@@ -1,17 +1,17 @@
 // @ts-nocheck
-'use client';;
-import * as React from 'react';
-import { motion, isMotionComponent } from 'motion/react';
-import { cn } from '@zalem/ui/lib/utils';
+"use client";
+import * as React from "react";
+import { motion, isMotionComponent } from "motion/react";
+import { cn } from "@zalem/ui/lib/utils";
 
 function mergeRefs(...refs) {
   return (node) => {
     refs.forEach((ref) => {
       if (!ref) return;
-      if (typeof ref === 'function') {
+      if (typeof ref === "function") {
         ref(node);
       } else {
-        (ref).current = node;
+        ref.current = node;
       }
     });
   };
@@ -26,30 +26,22 @@ function mergeProps(childProps, slotProps) {
 
   if (childProps.style || slotProps.style) {
     merged.style = {
-      ...(childProps.style),
-      ...(slotProps.style),
+      ...childProps.style,
+      ...slotProps.style,
     };
   }
 
   return merged;
 }
 
-function Slot(
-  {
-    children,
-    ref,
-    ...props
-  }
-) {
+function Slot({ children, ref, ...props }) {
   const isAlreadyMotion =
-    typeof children.type === 'object' &&
-    children.type !== null &&
-    isMotionComponent(children.type);
+    typeof children.type === "object" && children.type !== null && isMotionComponent(children.type);
 
-  const Base = React.useMemo(() =>
-    isAlreadyMotion
-      ? (children.type)
-      : motion.create(children.type), [isAlreadyMotion, children.type]);
+  const Base = React.useMemo(
+    () => (isAlreadyMotion ? children.type : motion.create(children.type)),
+    [isAlreadyMotion, children.type],
+  );
 
   if (!React.isValidElement(children)) return null;
 
@@ -57,7 +49,7 @@ function Slot(
 
   const mergedProps = mergeProps(childProps, props);
 
-  return (<Base {...mergedProps} ref={mergeRefs(childRef, ref)} />);
+  return <Base {...mergedProps} ref={mergeRefs(childRef, ref)} />;
 }
 
 export { Slot };

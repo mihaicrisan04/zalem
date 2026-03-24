@@ -1,27 +1,22 @@
 // @ts-nocheck
-"use client"
+"use client";
 
-import * as React from "react"
-import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card"
+import * as React from "react";
+import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card";
 
-import { cn } from "@zalem/ui/lib/utils"
+import { cn } from "@zalem/ui/lib/utils";
 
 // Context local para cada instancia de HoverCard para manejar estados de interacción
 const HoverCardInstanceContext = React.createContext({
   shouldKeepOpenRef: { current: false },
-  setShouldKeepOpen: () => { },
+  setShouldKeepOpen: () => {},
   isPointerOverTriggerRef: { current: false },
   isPointerOverContentRef: { current: false },
-  openHoverCard: () => { },
+  openHoverCard: () => {},
   delay: 600,
 });
 
-function HoverCard({
-  open: controlledOpen,
-  onOpenChange,
-  delay = 600,
-  ...props
-}: any) {
+function HoverCard({ open: controlledOpen, onOpenChange, delay = 600, ...props }: any) {
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false);
 
   const isControlled = controlledOpen !== undefined;
@@ -234,11 +229,8 @@ function HoverCardContent({
   onPointerLeave,
   ...props
 }: any) {
-  const {
-    setShouldKeepOpen,
-    isPointerOverTriggerRef,
-    isPointerOverContentRef,
-  } = React.useContext(HoverCardInstanceContext);
+  const { setShouldKeepOpen, isPointerOverTriggerRef, isPointerOverContentRef } =
+    React.useContext(HoverCardInstanceContext);
 
   const handlePointerEnter = React.useCallback(
     (event) => {
@@ -267,25 +259,25 @@ function HoverCardContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        className="isolate z-50">
+        className="isolate z-50"
+      >
         <PreviewCardPrimitive.Popup
           data-slot="hover-card-content"
           className={cn(
             "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 bg-popover text-popover-foreground w-72 rounded-lg p-2.5 text-xs/relaxed shadow-md ring-1 duration-100 z-50 origin-(--transform-origin) outline-hidden",
-            className
+            className,
           )}
           onPointerEnter={handlePointerEnter}
           onPointerLeave={handlePointerLeave}
-          {...props} />
+          {...props}
+        />
       </PreviewCardPrimitive.Positioner>
     </PreviewCardPrimitive.Portal>
   );
 }
 
-
 HoverCard.displayName = "HoverCard";
 HoverCardTrigger.displayName = "HoverCardTrigger";
 HoverCardContent.displayName = "HoverCardContent";
 
-export { HoverCard, HoverCardTrigger, HoverCardContent }
-
+export { HoverCard, HoverCardTrigger, HoverCardContent };
