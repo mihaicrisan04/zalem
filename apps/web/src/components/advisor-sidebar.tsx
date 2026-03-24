@@ -18,6 +18,7 @@ import {
 import { useAdvisor } from "@/hooks/use-advisor";
 
 const MIN_WIDTH = 340;
+const DEFAULT_WIDTH = 400;
 const DISMISS_THRESHOLD = 200;
 
 const SUGGESTIONS = [
@@ -27,17 +28,9 @@ const SUGGESTIONS = [
 ];
 
 export function AdvisorSidebar() {
-  const {
-    isOpen,
-    close,
-    threadId,
-    isLoading,
-    sendMessage,
-    pendingQuestion,
-    sidebarWidth,
-    setSidebarWidth,
-  } = useAdvisor();
+  const { isOpen, close, threadId, isLoading, sendMessage, pendingQuestion } = useAdvisor();
   const [input, setInput] = useState("");
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -49,12 +42,10 @@ export function AdvisorSidebar() {
 
   const messages = messagesResult?.results ?? [];
 
-  // auto-scroll on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length, isLoading]);
 
-  // auto-send pending question from chip click
   useEffect(() => {
     if (pendingQuestion && isOpen && !isLoading) {
       sendMessage(pendingQuestion);
@@ -71,7 +62,7 @@ export function AdvisorSidebar() {
       setIsResizing(true);
 
       const startX = e.clientX;
-      const startWidth = sidebarWidth;
+      const startWidth = width;
 
       const handleMouseMove = (e: MouseEvent) => {
         const delta = startX - e.clientX;
@@ -79,9 +70,9 @@ export function AdvisorSidebar() {
         const maxWidth = getMaxWidth();
 
         if (newWidth < DISMISS_THRESHOLD) {
-          setSidebarWidth(Math.max(0, newWidth));
+          setWidth(Math.max(0, newWidth));
         } else {
-          setSidebarWidth(Math.max(MIN_WIDTH, Math.min(maxWidth, newWidth)));
+          setWidth(Math.max(MIN_WIDTH, Math.min(maxWidth, newWidth)));
         }
       };
 
@@ -92,10 +83,10 @@ export function AdvisorSidebar() {
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
 
-        // check current width from state via closure won't work, read from DOM
         const sidebar = document.querySelector("[data-advisor-sidebar]");
         if (sidebar && sidebar.clientWidth < DISMISS_THRESHOLD) {
           close();
+          setWidth(DEFAULT_WIDTH);
         }
       };
 
@@ -104,7 +95,7 @@ export function AdvisorSidebar() {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [sidebarWidth, getMaxWidth, close, setSidebarWidth],
+    [width, getMaxWidth, close],
   );
 
   const handleSubmit = () => {
@@ -118,11 +109,11 @@ export function AdvisorSidebar() {
     <aside
       data-advisor-sidebar
       className={cn(
-        "bg-background fixed top-0 right-0 z-40 flex h-svh flex-col border-l",
+        "bg-background flex shrink-0 flex-col border-l",
         !isResizing && "transition-[width,opacity] duration-300 ease-out",
         isOpen ? "" : "w-0 overflow-hidden opacity-0",
       )}
-      style={isOpen ? { width: `${sidebarWidth}px` } : undefined}
+      style={isOpen ? { width: `${width}px` } : undefined}
     >
       {/* resize handle */}
       <div
