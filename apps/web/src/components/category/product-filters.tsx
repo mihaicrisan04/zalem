@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useMounted } from "@/hooks/use-mounted";
 import { useRouter } from "next/navigation";
 import { Button } from "@zalem/ui/components/optics/button";
 import { Separator } from "@zalem/ui/components/optics/separator";
@@ -26,6 +27,7 @@ export function ProductFilters({
   searchParams: Record<string, string | string[] | undefined>;
 }) {
   const router = useRouter();
+  const mounted = useMounted();
 
   const currentMinPrice = searchParams.minPrice ? Number(searchParams.minPrice) : undefined;
   const currentMaxPrice = searchParams.maxPrice ? Number(searchParams.maxPrice) : undefined;
@@ -123,15 +125,17 @@ export function ProductFilters({
 
         {/* range slider */}
         <div className="space-y-3 px-1">
-          <Slider
-            value={sliderValue}
-            min={0}
-            max={MAX_PRICE}
-            step={10}
-            minStepsBetweenValues={1}
-            onValueChange={(values: number[]) => setSliderValue(values as [number, number])}
-            onValueCommitted={handleSliderCommit}
-          />
+          {mounted && (
+            <Slider
+              value={sliderValue}
+              min={0}
+              max={MAX_PRICE}
+              step={10}
+              minStepsBetweenValues={1}
+              onValueChange={(values: number[]) => setSliderValue(values as [number, number])}
+              onValueCommitted={handleSliderCommit}
+            />
+          )}
           <div className="text-muted-foreground flex items-center justify-between text-xs">
             <span className="tabular-nums">{sliderValue[0]} lei</span>
             <span className="tabular-nums">

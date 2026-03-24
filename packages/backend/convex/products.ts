@@ -22,6 +22,7 @@ export const listByCategory = query({
         v.literal("discount"),
       ),
     ),
+    subcategory: v.optional(v.string()),
     minPrice: v.optional(v.number()),
     maxPrice: v.optional(v.number()),
     brands: v.optional(v.array(v.string())),
@@ -72,13 +73,18 @@ export const listByCategory = query({
         break;
     }
 
-    const { minPrice, maxPrice, minRating, inStock } = args;
+    const { subcategory, minPrice, maxPrice, minRating, inStock } = args;
     const hasFilters =
-      minPrice !== undefined || maxPrice !== undefined || minRating !== undefined || inStock;
+      subcategory !== undefined ||
+      minPrice !== undefined ||
+      maxPrice !== undefined ||
+      minRating !== undefined ||
+      inStock;
 
     const filtered = hasFilters
       ? q.filter((p) => {
           const conditions = [];
+          if (subcategory !== undefined) conditions.push(p.eq(p.field("subcategory"), subcategory));
           if (minPrice !== undefined) conditions.push(p.gte(p.field("price"), minPrice));
           if (maxPrice !== undefined) conditions.push(p.lte(p.field("price"), maxPrice));
           if (minRating !== undefined) conditions.push(p.gte(p.field("rating"), minRating));

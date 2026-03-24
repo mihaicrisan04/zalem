@@ -35,10 +35,21 @@ export function CategoryPageClient({
 
   const categoryName = category?.name ?? slug;
 
+  // resolve parent category for subcategory filtering
+  const parentCategory =
+    category?.parentId && categories
+      ? categories.find((c: (typeof categories)[number]) => c._id === category.parentId)
+      : null;
+
+  const isSubcategory = !!parentCategory;
+  const queryCategoryName = isSubcategory ? parentCategory.name : categoryName;
+  const querySubcategory = isSubcategory ? categoryName : undefined;
+
   const { results, status, loadMore } = usePaginatedQuery(
     api.products.listByCategory,
     {
-      category: categoryName,
+      category: queryCategoryName,
+      subcategory: querySubcategory,
       sort,
       minPrice,
       maxPrice,
@@ -53,12 +64,6 @@ export function CategoryPageClient({
     api.favorites.batchCheck,
     results.length > 0 ? { productIds: results.map((p) => p._id) } : "skip",
   );
-
-  // get parent category for breadcrumb
-  const parentCategory =
-    category?.parentId && categories
-      ? categories.find((c: (typeof categories)[number]) => c._id === category.parentId)
-      : null;
 
   return (
     <div className="container mx-auto px-4 py-6">

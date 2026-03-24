@@ -5,7 +5,11 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   reactCompiler: true,
   images: {
-    remotePatterns: [{ hostname: "cdn.dummyjson.com" }, { hostname: "dummyjson.com" }],
+    remotePatterns: [
+      { hostname: "cdn.dummyjson.com" },
+      { hostname: "dummyjson.com" },
+      { hostname: "images.unsplash.com" },
+    ],
   },
 };
 
