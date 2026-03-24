@@ -18,6 +18,7 @@ import { cn } from "@zalem/ui/lib/utils";
 import { ProductRow } from "@/components/product-row";
 import { ReviewSection } from "./review-section";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
+import { useFavoritedIds } from "@/hooks/use-favorited-ids";
 
 export function ProductDetailClient({ productId }: { productId: Id<"products"> }) {
   const product = useQuery(api.products.get, { id: productId });
@@ -26,6 +27,8 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
     category: product?.category,
     limit: 10,
   });
+  const similarFiltered = similarProducts?.filter((p) => p._id !== productId);
+  const similarFavIds = useFavoritedIds(similarFiltered?.map((p) => p._id) ?? []);
   const { isSignedIn } = useAuth();
   const addToCart = useMutation(api.cart.add);
   const toggleFavorite = useMutation(api.favorites.toggle);
@@ -223,8 +226,9 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
       <Separator className="my-8" />
       <ProductRow
         title="Similar products"
-        products={similarProducts?.filter((p) => p._id !== product._id)}
+        products={similarFiltered}
         isLoading={similarProducts === undefined}
+        favoritedIds={similarFavIds}
       />
     </div>
   );

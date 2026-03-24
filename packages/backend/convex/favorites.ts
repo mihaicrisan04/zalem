@@ -68,6 +68,21 @@ export const isProductFavorited = query({
   },
 });
 
+export const count = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return 0;
+
+    const favs = await ctx.db
+      .query("favorites")
+      .withIndex("by_user", (q) => q.eq("clerkUserId", identity.subject))
+      .collect();
+
+    return favs.length;
+  },
+});
+
 export const batchCheck = query({
   args: { productIds: v.array(v.id("products")) },
   handler: async (ctx, args) => {

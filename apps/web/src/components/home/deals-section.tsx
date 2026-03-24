@@ -4,9 +4,11 @@ import { useQuery } from "convex/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { ProductGrid } from "@/components/product-grid";
 import { ProductGridSkeleton } from "@/components/product-card-skeleton";
+import { useFavoritedIds } from "@/hooks/use-favorited-ids";
 
 export function DealsSection() {
   const deals = useQuery(api.products.listDeals);
+  const favoritedIds = useFavoritedIds(deals?.map((d) => d._id) ?? []);
 
   return (
     <section>
@@ -16,7 +18,11 @@ export function DealsSection() {
           Limited time
         </span>
       </div>
-      {deals === undefined ? <ProductGridSkeleton count={6} /> : <ProductGrid products={deals} />}
+      {deals === undefined ? (
+        <ProductGridSkeleton count={6} />
+      ) : (
+        <ProductGrid products={deals} favoritedIds={favoritedIds} />
+      )}
     </section>
   );
 }

@@ -13,6 +13,7 @@ import { SearchBar } from "./search-bar";
 export function StoreHeader() {
   const { isSignedIn } = useAuth();
   const cartCount = useQuery(api.cart.count) ?? 0;
+  const favCount = useQuery(api.favorites.count) ?? 0;
 
   return (
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
@@ -33,14 +34,24 @@ export function StoreHeader() {
 
           {isSignedIn ? (
             <>
-              <Button
-                render={<Link href={"/favorites" as any} />}
-                variant="ghost"
-                size="icon"
-                nativeButton={false}
-              >
-                <Heart className="size-5" />
-              </Button>
+              <div className="relative">
+                <Button
+                  render={<Link href={"/favorites" as any} />}
+                  variant="ghost"
+                  size="icon"
+                  nativeButton={false}
+                >
+                  <Heart className="size-5" />
+                </Button>
+                {favCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-xs"
+                  >
+                    {favCount > 99 ? "99+" : favCount}
+                  </Badge>
+                )}
+              </div>
 
               <div className="relative">
                 <Button

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { ScrollArea } from "@zalem/ui/components/optics/scroll-area";
 import { ProductCard, type ProductData } from "./product-card";
 import { ProductCardSkeleton } from "./product-card-skeleton";
 
@@ -35,19 +36,21 @@ export function ProductRow({
         )}
       </div>
 
-      <div className="scrollbar-none -mx-4 flex gap-4 overflow-x-auto px-4 pb-2">
-        {isLoading
-          ? Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-56 shrink-0">
-                <ProductCardSkeleton />
-              </div>
-            ))
-          : products?.map((product) => (
-              <div key={product._id} className="w-56 shrink-0">
-                <ProductCard product={product} isFavorited={favSet.has(product._id)} />
-              </div>
-            ))}
-      </div>
+      <ScrollArea className="-mx-4" viewportClassName="px-4" maskHeight={40}>
+        <div className="flex gap-4 pb-2">
+          {isLoading
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <div key={`skeleton-${i}`} className="w-56 shrink-0">
+                  <ProductCardSkeleton />
+                </div>
+              ))
+            : products?.map((product) => (
+                <div key={product._id} className="w-56 shrink-0">
+                  <ProductCard product={product} isFavorited={favSet.has(product._id)} />
+                </div>
+              ))}
+        </div>
+      </ScrollArea>
     </section>
   );
 }
