@@ -15,25 +15,7 @@ import {
 } from "@zalem/ui/components/optics/hover-card";
 import { SearchBar } from "./search-bar";
 
-function PreviewSkeleton() {
-  return (
-    <div className="space-y-2.5">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="flex items-center gap-2.5 p-1.5">
-          <div className="bg-muted size-9 shrink-0 animate-pulse rounded" />
-          <div className="flex-1 space-y-1.5">
-            <div className="bg-muted h-3 w-3/4 animate-pulse rounded" />
-            <div className="bg-muted h-2.5 w-1/2 animate-pulse rounded" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FavoritesPreview() {
-  const favorites = useQuery(api.favorites.list);
-  if (favorites === undefined) return <PreviewSkeleton />;
+function FavoritesPreview({ favorites }: { favorites: any[] }) {
   if (favorites.length === 0) {
     return <p className="text-muted-foreground py-2 text-center">No favorites yet</p>;
   }
@@ -83,9 +65,7 @@ function FavoritesPreview() {
   );
 }
 
-function CartPreview() {
-  const cartItems = useQuery(api.cart.list);
-  if (cartItems === undefined) return <PreviewSkeleton />;
+function CartPreview({ cartItems }: { cartItems: any[] }) {
   if (cartItems.length === 0) {
     return <p className="text-muted-foreground py-2 text-center">Your cart is empty</p>;
   }
@@ -145,10 +125,63 @@ function CartPreview() {
   );
 }
 
+function HeaderButtonWithPreview({
+  href,
+  icon,
+  label,
+  count,
+  preview,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  count: number;
+  preview: React.ReactNode | null;
+}) {
+  const button = (
+    <div className="relative">
+      <Button
+        render={<Link href={href as any} />}
+        variant="ghost"
+        size="lg"
+        nativeButton={false}
+        className="gap-2 text-sm"
+      >
+        {icon}
+        <span className="hidden sm:inline">{label}</span>
+      </Button>
+      {count > 0 && (
+        <Badge
+          variant="destructive"
+          className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-[10px]"
+        >
+          {count > 99 ? "99+" : count}
+        </Badge>
+      )}
+    </div>
+  );
+
+  if (!preview) return button;
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger render={<div />}>{button}</HoverCardTrigger>
+      <HoverCardContent side="bottom" align="end" className="w-72">
+        {preview}
+      </HoverCardContent>
+    </HoverCard>
+  );
+}
+
 export function StoreHeader() {
   const { isSignedIn } = useAuth();
   const cartCount = useQuery(api.cart.count) ?? 0;
   const favCount = useQuery(api.favorites.count) ?? 0;
+  // prefetch for hover cards — only show hover card when data is loaded
+  const favoritesData = useQuery(api.favorites.list);
+  const cartData = useQuery(api.cart.list);
+  const favReady = favoritesData !== undefined;
+  const cartReady = cartData !== undefined;
 
   return (
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
@@ -169,62 +202,22 @@ export function StoreHeader() {
           {isSignedIn ? (
             <>
               {/* favorites */}
-              <HoverCard>
-                <HoverCardTrigger render={<div />}>
-                  <div className="relative">
-                    <Button
-                      render={<Link href={"/favorites" as any} />}
-                      variant="ghost"
-                      size="lg"
-                      nativeButton={false}
-                      className="gap-2 text-sm"
-                    >
-                      <Heart className="size-[18px]" />
-                      <span className="hidden sm:inline">Favorites</span>
-                    </Button>
-                    {favCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-[10px]"
-                      >
-                        {favCount > 99 ? "99+" : favCount}
-                      </Badge>
-                    )}
-                  </div>
-                </HoverCardTrigger>
-                <HoverCardContent side="bottom" align="end" className="w-72">
-                  <FavoritesPreview />
-                </HoverCardContent>
-              </HoverCard>
+              <HeaderButtonWithPreview
+                href="/favorites"
+                icon={<Heart className="size-[18px]" />}
+                label="Favorites"
+                count={favCount}
+                preview={favReady ? <FavoritesPreview favorites={favoritesData!} /> : null}
+              />
 
               {/* cart */}
-              <HoverCard>
-                <HoverCardTrigger render={<div />}>
-                  <div className="relative">
-                    <Button
-                      render={<Link href={"/cart" as any} />}
-                      variant="ghost"
-                      size="lg"
-                      nativeButton={false}
-                      className="gap-2 text-sm"
-                    >
-                      <ShoppingCart className="size-[18px]" />
-                      <span className="hidden sm:inline">Cart</span>
-                    </Button>
-                    {cartCount > 0 && (
-                      <Badge
-                        variant="destructive"
-                        className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-[10px]"
-                      >
-                        {cartCount > 99 ? "99+" : cartCount}
-                      </Badge>
-                    )}
-                  </div>
-                </HoverCardTrigger>
-                <HoverCardContent side="bottom" align="end" className="w-72">
-                  <CartPreview />
-                </HoverCardContent>
-              </HoverCard>
+              <HeaderButtonWithPreview
+                href="/cart"
+                icon={<ShoppingCart className="size-[18px]" />}
+                label="Cart"
+                count={cartCount}
+                preview={cartReady ? <CartPreview cartItems={cartData!} /> : null}
+              />
 
               <div className="ml-2">
                 <UserButton />
