@@ -161,7 +161,7 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
           {/* actions */}
           <div className="flex gap-3">
             <Button
-              className="flex-1"
+              className="h-11 flex-1 text-sm"
               size="lg"
               onClick={handleAddToCart}
               disabled={product.stock === 0}
@@ -169,7 +169,7 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
               <ShoppingCart className="mr-2 size-5" />
               Add to cart
             </Button>
-            <Button variant="outline" size="lg" onClick={handleToggleFavorite}>
+            <Button variant="outline" size="lg" className="h-11" onClick={handleToggleFavorite}>
               <Heart className="size-5" fill={isFavorited ? "currentColor" : "none"} />
             </Button>
           </div>

@@ -29,24 +29,24 @@ export function StoreHeader() {
         </div>
 
         {/* right section */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           {isSignedIn ? (
             <>
               <div className="relative">
                 <Button
                   render={<Link href={"/favorites" as any} />}
                   variant="ghost"
-                  size="sm"
+                  size="lg"
                   nativeButton={false}
-                  className="gap-1.5"
+                  className="gap-2 text-sm"
                 >
-                  <Heart className="size-4" />
+                  <Heart className="size-[18px]" />
                   <span className="hidden sm:inline">Favorites</span>
                 </Button>
                 {favCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1.5 -right-1.5 size-5 justify-center rounded-full p-0 text-[10px]"
+                    className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-[10px]"
                   >
                     {favCount > 99 ? "99+" : favCount}
                   </Badge>
@@ -57,17 +57,17 @@ export function StoreHeader() {
                 <Button
                   render={<Link href={"/cart" as any} />}
                   variant="ghost"
-                  size="sm"
+                  size="lg"
                   nativeButton={false}
-                  className="gap-1.5"
+                  className="gap-2 text-sm"
                 >
-                  <ShoppingCart className="size-4" />
+                  <ShoppingCart className="size-[18px]" />
                   <span className="hidden sm:inline">Cart</span>
                 </Button>
                 {cartCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1.5 -right-1.5 size-5 justify-center rounded-full p-0 text-[10px]"
+                    className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-[10px]"
                   >
                     {cartCount > 99 ? "99+" : cartCount}
                   </Badge>
@@ -81,16 +81,16 @@ export function StoreHeader() {
               <Button
                 render={<Link href={"/cart" as any} />}
                 variant="ghost"
-                size="sm"
+                size="lg"
                 nativeButton={false}
-                className="gap-1.5"
+                className="gap-2 text-sm"
               >
-                <ShoppingCart className="size-4" />
+                <ShoppingCart className="size-[18px]" />
                 <span className="hidden sm:inline">Cart</span>
               </Button>
               <SignInButton mode="modal">
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <User className="size-4" />
+                <Button variant="outline" size="lg" className="gap-2 text-sm">
+                  <User className="size-[18px]" />
                   <span className="hidden sm:inline">Sign in</span>
                 </Button>
               </SignInButton>

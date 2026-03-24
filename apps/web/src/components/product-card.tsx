@@ -73,43 +73,43 @@ export function ProductCard({
 
       {/* discount badge */}
       {product.discountPercent && product.discountPercent > 0 && (
-        <Badge variant="destructive" className="absolute top-2 left-2 text-xs">
+        <Badge variant="destructive" className="absolute top-2.5 left-2.5">
           -{product.discountPercent}%
         </Badge>
       )}
 
       {/* deal badge */}
-      {product.isDeal && <Badge className="absolute top-2 left-2 mt-6 text-xs">Deal</Badge>}
+      {product.isDeal && <Badge className="absolute top-2.5 left-2.5 mt-7">Deal</Badge>}
 
       {/* favorite toggle */}
       <button
         onClick={handleToggleFavorite}
         className={cn(
-          "absolute top-2 right-2 rounded-full bg-white/80 p-1.5 shadow-sm transition-colors hover:bg-white",
+          "absolute top-2.5 right-2.5 rounded-full bg-white/80 p-2 shadow-sm transition-colors hover:bg-white dark:bg-black/50 dark:hover:bg-black/70",
           isFavorited && "text-red-500",
         )}
       >
-        <Heart className="size-4" fill={isFavorited ? "currentColor" : "none"} />
+        <Heart className="size-[18px]" fill={isFavorited ? "currentColor" : "none"} />
       </button>
 
       {/* info */}
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
+      <div className="flex flex-1 flex-col gap-2 p-3.5">
         <Link
           href={`/products/${product._id}` as any}
-          className="line-clamp-2 text-sm font-medium leading-tight hover:underline"
+          className="line-clamp-2 text-[13px] font-medium leading-snug hover:underline"
         >
           {product.title}
         </Link>
 
         {/* rating */}
-        <div className="text-muted-foreground flex items-center gap-1 text-xs">
+        <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
           <span className="text-yellow-500">{"★".repeat(Math.round(product.rating))}</span>
           <span>({product.reviewCount})</span>
         </div>
 
         {/* price */}
         <div className="mt-auto flex items-baseline gap-2">
-          <span className="text-lg font-bold">{product.price.toFixed(2)} lei</span>
+          <span className="text-xl font-bold tracking-tight">{product.price.toFixed(2)} lei</span>
           {product.originalPrice && (
             <span className="text-muted-foreground text-sm line-through">
               {product.originalPrice.toFixed(2)}
@@ -119,8 +119,8 @@ export function ProductCard({
 
         {/* add to cart */}
         <Button
-          size="sm"
-          className="mt-1 w-full"
+          size="lg"
+          className="mt-1 w-full text-sm"
           onClick={handleAddToCart}
           disabled={product.stock === 0}
         >

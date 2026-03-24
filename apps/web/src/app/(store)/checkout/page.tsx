@@ -117,7 +117,7 @@ export default function CheckoutPage() {
           </div>
         ))}
 
-        <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+        <Button type="submit" className="h-11 w-full text-sm" size="lg" disabled={isSubmitting}>
           {isSubmitting ? "Placing order..." : "Place order"}
         </Button>
       </form>

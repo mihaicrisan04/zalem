@@ -112,7 +112,12 @@ export function CategoryPageClient({
                 <ProductGrid products={results} favoritedIds={(favoritedIds as string[]) ?? []} />
                 {status === "CanLoadMore" && (
                   <div className="mt-8 flex justify-center">
-                    <Button variant="outline" onClick={() => loadMore(24)}>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="text-sm"
+                      onClick={() => loadMore(24)}
+                    >
                       Load more products
                     </Button>
                   </div>

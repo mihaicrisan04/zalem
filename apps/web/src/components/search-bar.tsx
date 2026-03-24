@@ -77,7 +77,7 @@ export function SearchBar() {
               setIsOpen(true);
             }}
             onFocus={() => setIsOpen(true)}
-            className="pl-9 pr-9"
+            className="h-9 pl-9 pr-9 text-sm"
           />
           {query && (
             <button
