@@ -74,7 +74,9 @@ export function StoreHeader() {
                 )}
               </div>
 
-              <UserButton />
+              <div className="ml-2">
+                <UserButton />
+              </div>
             </>
           ) : (
             <>
