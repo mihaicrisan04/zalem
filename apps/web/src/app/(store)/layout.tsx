@@ -24,25 +24,28 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
   return (
     <BehaviorTrackerContext value={tracker}>
       <AdvisorProvider>
-        <div className="flex min-h-svh">
-          {/* main content — natural scroll via browser */}
-          <div className="flex min-w-0 flex-1 flex-col">
-            {mounted ? (
-              <>
-                <StoreHeader />
-                <CategoryNav />
-              </>
-            ) : (
-              <>
-                <div className="h-16 border-b" />
-                <div className="border-b py-3" />
-              </>
-            )}
-            <main className="flex-1">{children}</main>
-            {mounted && <StoreFooter />}
+        <div className="flex h-svh">
+          {/* scroll container — just scrolls, not a flex-col */}
+          <div className="min-w-0 flex-1 overflow-y-auto">
+            {/* inner wrapper — flex-col with min-h-full pushes footer down */}
+            <div className="flex min-h-full flex-col">
+              {mounted ? (
+                <>
+                  <StoreHeader />
+                  <CategoryNav />
+                </>
+              ) : (
+                <>
+                  <div className="h-16 border-b" />
+                  <div className="border-b py-3" />
+                </>
+              )}
+              <main className="flex-1">{children}</main>
+              {mounted && <StoreFooter />}
+            </div>
           </div>
 
-          {/* advisor sidebar — sticky so it stays visible while page scrolls */}
+          {/* advisor sidebar — flex sibling, pushes content */}
           {mounted && <AdvisorSidebar />}
         </div>
 
