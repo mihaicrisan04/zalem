@@ -78,11 +78,10 @@ const ScrollArea = React.forwardRef(
         <div
           ref={viewportRef}
           data-slot="scroll-area-viewport"
+          data-hide-scrollbar={hideScrollbar || undefined}
           className={cn(
             "size-full overflow-auto rounded-[inherit]",
-            hideScrollbar
-              ? "scrollbar-none"
-              : "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent",
+            !hideScrollbar && "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent",
             viewportClassName,
           )}
           tabIndex={0}
