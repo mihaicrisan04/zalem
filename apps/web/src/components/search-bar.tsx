@@ -109,7 +109,11 @@ export function SearchBar() {
               No products found for &ldquo;{debouncedQuery}&rdquo;
             </div>
           ) : (
-            <ScrollArea className="h-auto max-h-80" viewportClassName="max-h-80" maskHeight={24}>
+            <ScrollArea
+              className="h-auto max-h-80"
+              viewportClassName="max-h-80 scrollbar-none"
+              maskHeight={24}
+            >
               <div>
                 {results.map((product: (typeof results)[number]) => (
                   <Link

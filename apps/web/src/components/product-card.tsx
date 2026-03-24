@@ -99,7 +99,7 @@ export function ProductCard({
       <div className="flex flex-1 flex-col gap-2 p-3.5">
         <Link
           href={`/products/${product._id}` as any}
-          className="line-clamp-2 text-[13px] font-medium leading-snug hover:underline"
+          className="line-clamp-2 min-h-[2.5rem] text-[13px] font-medium leading-snug hover:underline"
         >
           {product.title}
         </Link>
