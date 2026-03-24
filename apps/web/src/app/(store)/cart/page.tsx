@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useQuery, useMutation } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { Minus, Plus, Trash2, Heart } from "lucide-react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
@@ -125,13 +126,21 @@ export default function CartPage() {
                         toast.success(added ? "Saved to favorites" : "Removed from favorites");
                       }}
                       className={cn(
-                        "cursor-pointer transition-all hover:scale-110 active:scale-95",
+                        "cursor-pointer transition-colors",
                         isFav
                           ? "text-red-500 hover:text-red-600"
                           : "text-muted-foreground hover:text-red-500",
                       )}
                     >
-                      <Heart className="size-4" fill={isFav ? "currentColor" : "none"} />
+                      <motion.div
+                        animate={{
+                          scale: isFav ? [1, 1.3, 1] : 1,
+                          rotate: isFav ? [0, -10, 10, 0] : 0,
+                        }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Heart className="size-4" fill={isFav ? "currentColor" : "none"} />
+                      </motion.div>
                     </button>
 
                     <button

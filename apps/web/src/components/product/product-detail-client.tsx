@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useQuery, useMutation } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { Heart, ShoppingCart } from "lucide-react";
+import { motion } from "motion/react";
 import { toast } from "sonner";
 import { api } from "@zalem/backend/convex/_generated/api";
 import type { Id } from "@zalem/backend/convex/_generated/dataModel";
@@ -267,7 +268,15 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
               )}
               onClick={handleToggleFavorite}
             >
-              <Heart className="size-5" fill={isFavorited ? "currentColor" : "none"} />
+              <motion.div
+                animate={{
+                  scale: isFavorited ? [1, 1.3, 1] : 1,
+                  rotate: isFavorited ? [0, -10, 10, 0] : 0,
+                }}
+                transition={{ duration: 0.3 }}
+              >
+                <Heart className="size-5" fill={isFavorited ? "currentColor" : "none"} />
+              </motion.div>
             </Button>
           </div>
 
