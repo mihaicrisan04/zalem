@@ -55,10 +55,10 @@ export function useReadinessSignals(
       }
     }
 
-    // signal: deep scroll (>50% on product detail page)
+    // signal: deep scroll (>50% on product detail page) → pulse advisor only, no chip
     if (options?.isProductDetailPage && currentProduct) {
-      if (currentProduct.scrollDepth > 0.5 && !isDismissed("deep_scroll")) {
-        chips.push({ text: "Is this the right choice for you?", type: "deep_scroll" });
+      if (currentProduct.scrollDepth > 0.5) {
+        shouldPulse = true;
       }
     }
 

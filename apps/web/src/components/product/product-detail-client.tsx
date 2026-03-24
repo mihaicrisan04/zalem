@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { Heart, ShoppingCart } from "lucide-react";
@@ -22,7 +21,10 @@ import { useFavoritedIds } from "@/hooks/use-favorited-ids";
 import { useProductEngagement } from "@/hooks/use-product-engagement";
 import { useBehaviorTrackerContext } from "@/hooks/use-behavior-tracker";
 import { useReadinessSignals } from "@/hooks/use-readiness-signals";
-import { QuestionChip, StickyBottomChip } from "@/components/question-chips";
+import { QuestionChip } from "@/components/question-chips";
+
+const SECTION_IDS = ["description", "specifications", "reviews"] as const;
+type SectionId = (typeof SECTION_IDS)[number];
 
 export function ProductDetailClient({ productId }: { productId: Id<"products"> }) {
   const product = useQuery(api.products.get, { id: productId });
@@ -44,32 +46,66 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
   const addToCart = useMutation(api.cart.add);
   const toggleFavorite = useMutation(api.favorites.toggle);
   const { addToRecentlyViewed } = useRecentlyViewed();
+
+  // image gallery state
   const [selectedImage, setSelectedImage] = useState(0);
-  const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
+  const [hoveredImage, setHoveredImage] = useState<number | null>(null);
+  const displayedImage = hoveredImage ?? selectedImage;
+
+  // sticky tab nav — tracks which section is in view
+  const [activeSection, setActiveSection] = useState<SectionId>("description");
+  const sectionRefs = useRef<Record<SectionId, HTMLElement | null>>({
+    description: null,
+    specifications: null,
+    reviews: null,
+  });
+
+  // observe which section is in viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute("data-section") as SectionId;
+            if (id) setActiveSection(id);
+          }
+        }
+      },
+      { rootMargin: "-40% 0px -50% 0px" },
+    );
+
+    for (const section of SECTION_IDS) {
+      const el = sectionRefs.current[section];
+      if (el) observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  }, [product]);
+
+  const scrollToSection = useCallback((section: SectionId) => {
+    const el = sectionRefs.current[section];
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+  }, []);
 
   // behavior tracking
   const { ref: engagementRef, engagement } = useProductEngagement(productId);
   const tracker = useBehaviorTrackerContext();
 
-  // track engagement updates
   useEffect(() => {
-    if (product) {
-      tracker.trackProduct(engagement, product.category);
-    }
+    if (product) tracker.trackProduct(engagement, product.category);
   }, [engagement.dwellTimeMs, engagement.scrollDepth, product?.category]);
 
-  // track review tab views
   useEffect(() => {
-    if (activeTab === "reviews") {
-      tracker.setViewedReviews(productId);
-    }
-  }, [activeTab, productId]);
+    if (activeSection === "reviews") tracker.setViewedReviews(productId);
+  }, [activeSection, productId]);
 
-  // readiness signals for this product
   const readiness = useReadinessSignals(tracker.state, {
     isProductDetailPage: true,
     currentProductId: productId,
-    activeTab,
+    activeTab: activeSection,
   });
 
   useEffect(() => {
@@ -124,15 +160,15 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
 
       {/* main content: gallery + info */}
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* image gallery */}
+        {/* image gallery — carousel with hover preview */}
         <div>
-          <div className="bg-muted relative aspect-square overflow-hidden rounded-lg">
+          <div className="bg-muted relative aspect-square overflow-hidden rounded-xl">
             <Image
-              src={product.images[selectedImage] ?? product.images[0]}
+              src={product.images[displayedImage] ?? product.images[0]}
               alt={product.title}
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
+              className="object-cover transition-all duration-300"
               priority
             />
           </div>
@@ -141,10 +177,16 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
               {product.images.map((img, i) => (
                 <button
                   key={i}
+                  onMouseEnter={() => setHoveredImage(i)}
+                  onMouseLeave={() => setHoveredImage(null)}
                   onClick={() => setSelectedImage(i)}
                   className={cn(
-                    "relative size-16 shrink-0 overflow-hidden rounded-md border-2",
-                    selectedImage === i ? "border-primary" : "border-transparent",
+                    "relative size-16 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
+                    selectedImage === i
+                      ? "border-primary ring-primary/20 ring-2"
+                      : hoveredImage === i
+                        ? "border-primary/50"
+                        : "border-transparent hover:border-muted-foreground/30",
                   )}
                 >
                   <Image src={img} alt="" fill sizes="64px" className="object-cover" />
@@ -156,11 +198,11 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
 
         {/* product info */}
         <div className="space-y-4">
-          <h1 className="text-2xl font-bold">{product.title}</h1>
+          <h1 className="text-2xl font-bold leading-tight">{product.title}</h1>
 
           {/* rating */}
           <button
-            onClick={() => setActiveTab("reviews")}
+            onClick={() => scrollToSection("reviews")}
             className="text-muted-foreground flex items-center gap-2 text-sm hover:underline"
           >
             <span className="text-yellow-500">{"★".repeat(Math.round(product.rating))}</span>
@@ -171,7 +213,9 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
 
           {/* price */}
           <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-bold">{product.price.toFixed(2)} lei</span>
+            <span className="text-3xl font-bold tracking-tight">
+              {product.price.toFixed(2)} lei
+            </span>
             {product.originalPrice && (
               <>
                 <span className="text-muted-foreground text-xl line-through">
@@ -225,63 +269,88 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
         </div>
       </div>
 
-      {/* tabs */}
-      <div className="mt-10">
-        <div className="flex border-b">
-          {(["description", "specs", "reviews"] as const).map((tab) => (
+      {/* sticky section nav */}
+      <div className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-16 z-20 -mx-4 mt-12 border-b backdrop-blur">
+        <div className="container mx-auto flex px-4">
+          {SECTION_IDS.map((section) => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={section}
+              onClick={() => scrollToSection(section)}
               className={cn(
-                "px-4 py-2 text-sm font-medium capitalize transition-colors",
-                activeTab === tab
-                  ? "text-primary border-primary border-b-2"
-                  : "text-muted-foreground hover:text-foreground",
+                "border-b-2 px-5 py-3 text-sm font-medium capitalize transition-colors",
+                activeSection === section
+                  ? "text-primary border-primary"
+                  : "text-muted-foreground hover:text-foreground border-transparent",
               )}
             >
-              {tab === "specs" ? "Specifications" : tab}
+              {section}
             </button>
           ))}
         </div>
+      </div>
 
-        <div className="py-6">
-          {activeTab === "description" && (
-            <p className="text-muted-foreground max-w-prose leading-relaxed">
-              {product.description}
-            </p>
-          )}
+      {/* all sections rendered — scroll through them */}
+      <div className="mt-8 space-y-16">
+        {/* description */}
+        <section
+          ref={(el) => {
+            sectionRefs.current.description = el;
+          }}
+          data-section="description"
+        >
+          <h2 className="mb-4 text-lg font-bold">Description</h2>
+          <p className="text-muted-foreground max-w-prose leading-relaxed">{product.description}</p>
+        </section>
 
-          {activeTab === "specs" && product.specifications && (
-            <div className="max-w-lg">
-              {Object.entries(product.specifications).map(([key, value]) => (
-                <div key={key} className="flex border-b py-2.5">
-                  <span className="text-muted-foreground w-40 shrink-0 text-sm">{key}</span>
-                  <span className="text-sm font-medium">{value}</span>
+        {/* specifications */}
+        <section
+          ref={(el) => {
+            sectionRefs.current.specifications = el;
+          }}
+          data-section="specifications"
+        >
+          <h2 className="mb-4 text-lg font-bold">Specifications</h2>
+          {product.specifications ? (
+            <div className="bg-muted/30 max-w-xl overflow-hidden rounded-lg border">
+              {Object.entries(product.specifications).map(([key, value], i) => (
+                <div
+                  key={key}
+                  className={cn("flex px-4 py-3 text-sm", i % 2 === 0 ? "bg-muted/20" : "")}
+                >
+                  <span className="text-muted-foreground w-44 shrink-0 font-medium">{key}</span>
+                  <span>{value}</span>
                 </div>
               ))}
             </div>
+          ) : (
+            <p className="text-muted-foreground text-sm">No specifications available.</p>
           )}
+        </section>
 
-          {activeTab === "reviews" && (
-            <>
-              {readiness.activeChips.find((c) => c.type === "review_engagement") && (
-                <div className="mb-4">
-                  <QuestionChip
-                    chip={readiness.activeChips.find((c) => c.type === "review_engagement")!}
-                    onDismiss={readiness.dismissChip}
-                  />
-                </div>
-              )}
-              <ReviewSection productId={product._id} />
-            </>
-          )}
-        </div>
+        {/* reviews */}
+        <section
+          ref={(el) => {
+            sectionRefs.current.reviews = el;
+          }}
+          data-section="reviews"
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-bold">Reviews ({product.reviewCount})</h2>
+            {readiness.activeChips.find((c) => c.type === "review_engagement") && (
+              <QuestionChip
+                chip={readiness.activeChips.find((c) => c.type === "review_engagement")!}
+                onDismiss={readiness.dismissChip}
+              />
+            )}
+          </div>
+          <ReviewSection productId={product._id} />
+        </section>
       </div>
 
       {/* frequently bought together */}
       {fbtProducts && fbtProducts.length > 0 && (
         <>
-          <Separator className="my-8" />
+          <Separator className="my-10" />
           <ProductRow
             title="Frequently bought together"
             products={fbtProducts as any}
@@ -292,7 +361,7 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
       )}
 
       {/* similar products */}
-      <Separator className="my-8" />
+      <Separator className="my-10" />
       {readiness.activeChips.find((c) => c.type === "comparison_behavior") && (
         <div className="mb-4">
           <QuestionChip
@@ -307,14 +376,6 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
         isLoading={similarProducts === undefined}
         favoritedIds={relatedFavIds}
       />
-
-      {/* deep scroll chip — sticky bottom bar */}
-      {readiness.activeChips.find((c) => c.type === "deep_scroll") && (
-        <StickyBottomChip
-          chip={readiness.activeChips.find((c) => c.type === "deep_scroll")!}
-          onDismiss={readiness.dismissChip}
-        />
-      )}
     </div>
   );
 }
