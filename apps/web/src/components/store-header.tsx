@@ -15,9 +15,26 @@ import {
 } from "@zalem/ui/components/optics/hover-card";
 import { SearchBar } from "./search-bar";
 
+function PreviewSkeleton() {
+  return (
+    <div className="space-y-2.5">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="flex items-center gap-2.5 p-1.5">
+          <div className="bg-muted size-9 shrink-0 animate-pulse rounded" />
+          <div className="flex-1 space-y-1.5">
+            <div className="bg-muted h-3 w-3/4 animate-pulse rounded" />
+            <div className="bg-muted h-2.5 w-1/2 animate-pulse rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FavoritesPreview() {
   const favorites = useQuery(api.favorites.list);
-  if (!favorites || favorites.length === 0) {
+  if (favorites === undefined) return <PreviewSkeleton />;
+  if (favorites.length === 0) {
     return <p className="text-muted-foreground py-2 text-center">No favorites yet</p>;
   }
   const items = favorites.slice(0, 4);
@@ -68,7 +85,8 @@ function FavoritesPreview() {
 
 function CartPreview() {
   const cartItems = useQuery(api.cart.list);
-  if (!cartItems || cartItems.length === 0) {
+  if (cartItems === undefined) return <PreviewSkeleton />;
+  if (cartItems.length === 0) {
     return <p className="text-muted-foreground py-2 text-center">Your cart is empty</p>;
   }
   const items = cartItems.slice(0, 3);
