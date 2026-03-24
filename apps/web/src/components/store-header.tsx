@@ -170,7 +170,7 @@ export function StoreHeader() {
             <>
               {/* favorites */}
               <HoverCard>
-                <HoverCardTrigger>
+                <HoverCardTrigger render={<div />}>
                   <div className="relative">
                     <Button
                       render={<Link href={"/favorites" as any} />}
@@ -199,7 +199,7 @@ export function StoreHeader() {
 
               {/* cart */}
               <HoverCard>
-                <HoverCardTrigger>
+                <HoverCardTrigger render={<div />}>
                   <div className="relative">
                     <Button
                       render={<Link href={"/cart" as any} />}
