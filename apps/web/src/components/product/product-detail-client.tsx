@@ -19,6 +19,10 @@ import { ProductRow } from "@/components/product-row";
 import { ReviewSection } from "./review-section";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { useFavoritedIds } from "@/hooks/use-favorited-ids";
+import { useProductEngagement } from "@/hooks/use-product-engagement";
+import { useBehaviorTrackerContext } from "@/hooks/use-behavior-tracker";
+import { useReadinessSignals } from "@/hooks/use-readiness-signals";
+import { QuestionChips } from "@/components/question-chips";
 
 export function ProductDetailClient({ productId }: { productId: Id<"products"> }) {
   const product = useQuery(api.products.get, { id: productId });
@@ -42,6 +46,31 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
   const { addToRecentlyViewed } = useRecentlyViewed();
   const [selectedImage, setSelectedImage] = useState(0);
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
+
+  // behavior tracking
+  const { ref: engagementRef, engagement } = useProductEngagement(productId);
+  const tracker = useBehaviorTrackerContext();
+
+  // track engagement updates
+  useEffect(() => {
+    if (product) {
+      tracker.trackProduct(engagement, product.category);
+    }
+  }, [engagement.dwellTimeMs, engagement.scrollDepth, product?.category]);
+
+  // track review tab views
+  useEffect(() => {
+    if (activeTab === "reviews") {
+      tracker.setViewedReviews(productId);
+    }
+  }, [activeTab, productId]);
+
+  // readiness signals for this product
+  const readiness = useReadinessSignals(tracker.state, {
+    isProductDetailPage: true,
+    currentProductId: productId,
+    activeTab,
+  });
 
   useEffect(() => {
     if (product) addToRecentlyViewed(product._id);
@@ -74,7 +103,7 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div ref={engagementRef} className="container mx-auto px-4 py-6">
       {/* breadcrumb */}
       <nav className="text-muted-foreground mb-6 flex items-center gap-1 text-sm">
         <Link href="/" className="hover:text-foreground">
@@ -193,6 +222,11 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
           <p className="text-muted-foreground text-sm">
             Brand: <span className="text-foreground font-medium">{product.brand}</span>
           </p>
+
+          {/* question chips */}
+          {readiness.activeChips.length > 0 && (
+            <QuestionChips chips={readiness.activeChips} onDismiss={readiness.dismissChip} />
+          )}
         </div>
       </div>
 

@@ -20,6 +20,7 @@
     "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-intersection-observer": "^10.0.3",
     "sonner": "catalog:",
     "zod": "catalog:"
   },
