@@ -24,6 +24,7 @@ import { useProductEngagement } from "@/hooks/use-product-engagement";
 import { useBehaviorTrackerContext } from "@/hooks/use-behavior-tracker";
 import { useReadinessSignals } from "@/hooks/use-readiness-signals";
 import { QuestionChip } from "@/components/question-chips";
+import { useAdvisor } from "@/hooks/use-advisor";
 
 const SECTION_IDS = ["description", "specifications", "reviews"] as const;
 type SectionId = (typeof SECTION_IDS)[number];
@@ -96,6 +97,13 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
       window.scrollTo({ top, behavior: "smooth" });
     }
   }, []);
+
+  // set product context for advisor
+  const { setProductId } = useAdvisor();
+  useEffect(() => {
+    setProductId(productId);
+    return () => setProductId(null);
+  }, [productId, setProductId]);
 
   // behavior tracking
   const { ref: engagementRef, engagement } = useProductEngagement(productId);

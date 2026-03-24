@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { useAction } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ type AdvisorState = {
   open: (question?: string) => void;
   close: () => void;
   sendMessage: (question: string) => void;
+  setProductId: (id: string | null) => void;
   pendingQuestion: string | null;
 };
 
@@ -33,8 +34,13 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const productIdRef = useRef<string | null>(null);
 
   const requestAdvice = useAction(api.ai.advisor.requestAdvice);
+
+  const setProductId = useCallback((id: string | null) => {
+    productIdRef.current = id;
+  }, []);
 
   const sendMessage = useCallback(
     async (question: string) => {
@@ -50,6 +56,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
         const result = await requestAdvice({
           threadId: threadId ?? undefined,
           question,
+          productId: productIdRef.current ?? undefined,
         });
 
         if (result.threadId && result.threadId !== threadId) {
@@ -93,6 +100,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
         open,
         close,
         sendMessage,
+        setProductId,
         pendingQuestion,
       }}
     >

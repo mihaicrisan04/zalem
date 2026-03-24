@@ -9,6 +9,7 @@ export const requestAdvice = action({
   args: {
     threadId: v.optional(v.string()),
     question: v.string(),
+    productId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -18,13 +19,16 @@ export const requestAdvice = action({
 
     const userId = identity.subject;
 
+    // prepend product context if available
+    const prompt = args.productId
+      ? `[Context: viewing product ${args.productId}]\n${args.question}`
+      : args.question;
+
     if (args.threadId) {
       const { thread } = await shoppingAdvisor.continueThread(ctx, {
         threadId: args.threadId,
       });
-      const result = await thread.generateText({
-        prompt: args.question,
-      });
+      const result = await thread.generateText({ prompt });
       return { threadId: args.threadId, text: result.text };
     }
 
@@ -33,7 +37,7 @@ export const requestAdvice = action({
     });
 
     const result = await thread.generateText({
-      prompt: args.question,
+      prompt,
       messages: FEW_SHOT_EXAMPLES,
     });
 
