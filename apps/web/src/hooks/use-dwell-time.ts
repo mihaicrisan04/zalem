@@ -1,43 +1,47 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
-export function useDwellTime<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
+export function useDwellTime() {
+  const [element, setElement] = useState<HTMLElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const [dwellTimeMs, setDwellTimeMs] = useState(0);
+  const [currentMs, setCurrentMs] = useState(0);
   const [cumulativeMs, setCumulativeMs] = useState(0);
 
+  // callback ref — works with combined refs in useProductEngagement
+  const ref = useCallback((el: HTMLElement | null) => {
+    setElement(el);
+  }, []);
+
+  // attach mouse listeners when element changes
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    if (!element) return;
 
     const enter = () => setIsHovered(true);
     const leave = () => {
       setIsHovered(false);
-      setDwellTimeMs((prev) => {
+      setCurrentMs((prev) => {
         setCumulativeMs((cum) => cum + prev);
         return 0;
       });
     };
 
-    el.addEventListener("mouseenter", enter);
-    el.addEventListener("mouseleave", leave);
+    element.addEventListener("mouseenter", enter);
+    element.addEventListener("mouseleave", leave);
     return () => {
-      el.removeEventListener("mouseenter", enter);
-      el.removeEventListener("mouseleave", leave);
+      element.removeEventListener("mouseenter", enter);
+      element.removeEventListener("mouseleave", leave);
     };
-  }, []);
+  }, [element]);
 
+  // tick while hovered
   useEffect(() => {
     if (!isHovered) return;
     const interval = setInterval(() => {
-      setDwellTimeMs((prev) => prev + 100);
+      setCurrentMs((prev) => prev + 100);
     }, 100);
     return () => clearInterval(interval);
   }, [isHovered]);
 
-  const totalDwellMs = cumulativeMs + dwellTimeMs;
-
-  return { ref, isHovered, dwellTimeMs: totalDwellMs };
+  return { ref, isHovered, dwellTimeMs: cumulativeMs + currentMs };
 }

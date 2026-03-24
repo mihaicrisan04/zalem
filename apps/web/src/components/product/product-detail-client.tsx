@@ -22,7 +22,7 @@ import { useFavoritedIds } from "@/hooks/use-favorited-ids";
 import { useProductEngagement } from "@/hooks/use-product-engagement";
 import { useBehaviorTrackerContext } from "@/hooks/use-behavior-tracker";
 import { useReadinessSignals } from "@/hooks/use-readiness-signals";
-import { QuestionChips } from "@/components/question-chips";
+import { QuestionChip, StickyBottomChip } from "@/components/question-chips";
 
 export function ProductDetailClient({ productId }: { productId: Id<"products"> }) {
   const product = useQuery(api.products.get, { id: productId });
@@ -222,11 +222,6 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
           <p className="text-muted-foreground text-sm">
             Brand: <span className="text-foreground font-medium">{product.brand}</span>
           </p>
-
-          {/* question chips */}
-          {readiness.activeChips.length > 0 && (
-            <QuestionChips chips={readiness.activeChips} onDismiss={readiness.dismissChip} />
-          )}
         </div>
       </div>
 
@@ -267,7 +262,19 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
             </div>
           )}
 
-          {activeTab === "reviews" && <ReviewSection productId={product._id} />}
+          {activeTab === "reviews" && (
+            <>
+              {readiness.activeChips.find((c) => c.type === "review_engagement") && (
+                <div className="mb-4">
+                  <QuestionChip
+                    chip={readiness.activeChips.find((c) => c.type === "review_engagement")!}
+                    onDismiss={readiness.dismissChip}
+                  />
+                </div>
+              )}
+              <ReviewSection productId={product._id} />
+            </>
+          )}
         </div>
       </div>
 
@@ -286,12 +293,28 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
 
       {/* similar products */}
       <Separator className="my-8" />
+      {readiness.activeChips.find((c) => c.type === "comparison_behavior") && (
+        <div className="mb-4">
+          <QuestionChip
+            chip={readiness.activeChips.find((c) => c.type === "comparison_behavior")!}
+            onDismiss={readiness.dismissChip}
+          />
+        </div>
+      )}
       <ProductRow
         title="Similar products"
         products={similarProducts}
         isLoading={similarProducts === undefined}
         favoritedIds={relatedFavIds}
       />
+
+      {/* deep scroll chip — sticky bottom bar */}
+      {readiness.activeChips.find((c) => c.type === "deep_scroll") && (
+        <StickyBottomChip
+          chip={readiness.activeChips.find((c) => c.type === "deep_scroll")!}
+          onDismiss={readiness.dismissChip}
+        />
+      )}
     </div>
   );
 }

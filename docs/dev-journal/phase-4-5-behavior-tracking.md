@@ -13,18 +13,22 @@ these phases are combined because phase 5 (readiness signals) is purely client-s
 ### what was built
 
 **backend:**
+
 - `packages/backend/convex/behavior.ts` — single `upsertSession` mutation that merges incoming behavior data with existing session records. uses max-value merging for dwell time, scroll depth, hover time. upserts by sessionId.
 
 **tracking hooks:**
+
 - `use-dwell-time` — ref-based hover duration tracking with cumulative time across multiple hover events
 - `use-viewport-tracking` — IntersectionObserver via react-intersection-observer, tracks time element is visible in viewport
 - `use-scroll-depth` — max scroll position on page (0-1), resets on pathname change, uses requestAnimationFrame for throttling
 - `use-product-engagement` — composite hook combining dwell + viewport + scroll into a single engagement object. merges refs from dwell (useRef) and viewport (callback ref)
 
 **event buffer:**
+
 - `use-behavior-tracker` — central event buffer with React context. maintains a Map<productId, engagement> buffer. flushes to backend every 5 seconds, on page navigation, and on tab hide/close via visibilitychange event. generates session ID via sessionStorage (unique per browser tab session). supports both anonymous and authenticated users.
 
 **readiness signals:**
+
 - `use-readiness-signals` — client-side evaluator with 5 signal types:
   1. product dwell (>5s on card, >15s on detail page) → pulse advisor button
   2. deep scroll (>50% on product detail) → "Is this the right choice for you?" chip
@@ -34,6 +38,7 @@ these phases are combined because phase 5 (readiness signals) is purely client-s
 - cooldown system: dismissed chips don't reappear for 60 seconds
 
 **UI components:**
+
 - `advisor-button` — fixed bottom-right floating button with Sparkles icon, pulse animation when readiness signals fire, placeholder toast for phase 6
 - `question-chips` — contextual chips shown below product info, each dismissible, animated entrance. clicking shows placeholder toast for phase 6
 
