@@ -10,6 +10,8 @@ import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
 import { Separator } from "@zalem/ui/components/optics/separator";
 import { Spinner } from "@zalem/ui/components/optics/spinner";
+import { useFavoritedIds } from "@/hooks/use-favorited-ids";
+import { cn } from "@zalem/ui/lib/utils";
 
 export default function CartPage() {
   const { isSignedIn } = useAuth();
@@ -17,6 +19,11 @@ export default function CartPage() {
   const removeFromCart = useMutation(api.cart.remove);
   const updateQuantity = useMutation(api.cart.updateQuantity);
   const toggleFavorite = useMutation(api.favorites.toggle);
+
+  const productIds =
+    (cartItems?.map((item) => item?.product?._id).filter(Boolean) as string[]) ?? [];
+  const favoritedIds = useFavoritedIds(productIds);
+  const favSet = new Set(favoritedIds);
 
   if (!isSignedIn) {
     return (
@@ -62,6 +69,7 @@ export default function CartPage() {
           {cartItems.map((item) => {
             if (!item?.product) return null;
             const { product } = item;
+            const isFav = favSet.has(product._id);
             return (
               <div key={item._id} className="flex gap-4 rounded-lg border p-4">
                 <Link
@@ -110,12 +118,15 @@ export default function CartPage() {
 
                     <button
                       onClick={async () => {
-                        await toggleFavorite({ productId: product._id });
-                        toast.success("Saved to favorites");
+                        const added = await toggleFavorite({ productId: product._id });
+                        toast.success(added ? "Saved to favorites" : "Removed from favorites");
                       }}
-                      className="text-muted-foreground hover:text-foreground"
+                      className={cn(
+                        "hover:text-foreground",
+                        isFav ? "text-red-500" : "text-muted-foreground",
+                      )}
                     >
-                      <Heart className="size-4" />
+                      <Heart className="size-4" fill={isFav ? "currentColor" : "none"} />
                     </button>
 
                     <button
