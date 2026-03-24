@@ -1,18 +1,21 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@zalem/ui/components/optics/button";
 import { Separator } from "@zalem/ui/components/optics/separator";
 import { StarRating } from "@zalem/ui/components/optics/star-rating";
+import { Slider } from "@zalem/ui/components/optics/slider";
 
 const PRICE_RANGES = [
-  { label: "Under 50 lei", max: 50 },
-  { label: "50 - 100 lei", min: 50, max: 100 },
-  { label: "100 - 300 lei", min: 100, max: 300 },
-  { label: "300 - 500 lei", min: 300, max: 500 },
-  { label: "Over 500 lei", min: 500 },
+  { label: "Under 50", max: 50 },
+  { label: "50 – 100", min: 50, max: 100 },
+  { label: "100 – 300", min: 100, max: 300 },
+  { label: "300 – 500", min: 300, max: 500 },
+  { label: "500+", min: 500 },
 ];
 
+const MAX_PRICE = 1000;
 const RATING_OPTIONS = [4, 3, 2, 1];
 
 export function ProductFilters({
@@ -28,6 +31,17 @@ export function ProductFilters({
   const currentMaxPrice = searchParams.maxPrice ? Number(searchParams.maxPrice) : undefined;
   const currentMinRating = searchParams.minRating ? Number(searchParams.minRating) : undefined;
   const currentInStock = searchParams.inStock === "true";
+
+  // local slider state — synced with URL params but allows dragging without navigating on every tick
+  const [sliderValue, setSliderValue] = useState<[number, number]>([
+    currentMinPrice ?? 0,
+    currentMaxPrice ?? MAX_PRICE,
+  ]);
+
+  // sync slider when URL params change externally
+  useEffect(() => {
+    setSliderValue([currentMinPrice ?? 0, currentMaxPrice ?? MAX_PRICE]);
+  }, [currentMinPrice, currentMaxPrice]);
 
   const updateParams = (updates: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
@@ -62,6 +76,14 @@ export function ProductFilters({
     currentMinRating !== undefined ||
     currentInStock;
 
+  const handleSliderCommit = (values: number[]) => {
+    const [min, max] = values;
+    updateParams({
+      minPrice: min > 0 ? min.toString() : undefined,
+      maxPrice: max < MAX_PRICE ? max.toString() : undefined,
+    });
+  };
+
   return (
     <div className="space-y-5">
       {hasFilters && (
@@ -70,10 +92,12 @@ export function ProductFilters({
         </Button>
       )}
 
-      {/* price range */}
+      {/* price */}
       <div>
-        <h3 className="mb-2 text-sm font-semibold">Price</h3>
-        <div className="space-y-1">
+        <h3 className="mb-3 text-sm font-semibold">Price</h3>
+
+        {/* quick picks */}
+        <div className="mb-4 flex flex-wrap gap-1.5">
           {PRICE_RANGES.map((range) => {
             const isActive = currentMinPrice === range.min && currentMaxPrice === range.max;
             return (
@@ -85,14 +109,35 @@ export function ProductFilters({
                     maxPrice: range.max?.toString(),
                   })
                 }
-                className={`hover:bg-accent w-full rounded px-2 py-1 text-left text-sm ${
-                  isActive ? "bg-accent font-medium" : ""
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-border hover:bg-accent"
                 }`}
               >
                 {range.label}
               </button>
             );
           })}
+        </div>
+
+        {/* range slider */}
+        <div className="space-y-3 px-1">
+          <Slider
+            value={sliderValue}
+            min={0}
+            max={MAX_PRICE}
+            step={10}
+            minStepsBetweenValues={1}
+            onValueChange={(values: number[]) => setSliderValue(values as [number, number])}
+            onValueCommitted={handleSliderCommit}
+          />
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
+            <span className="tabular-nums">{sliderValue[0]} lei</span>
+            <span className="tabular-nums">
+              {sliderValue[1] >= MAX_PRICE ? `${MAX_PRICE}+` : `${sliderValue[1]}`} lei
+            </span>
+          </div>
         </div>
       </div>
 
@@ -112,7 +157,7 @@ export function ProductFilters({
                   minRating: currentMinRating === rating ? undefined : rating.toString(),
                 })
               }
-              onKeyDown={(e) => {
+              onKeyDown={(e: React.KeyboardEvent) => {
                 if (e.key === "Enter")
                   updateParams({
                     minRating: currentMinRating === rating ? undefined : rating.toString(),
