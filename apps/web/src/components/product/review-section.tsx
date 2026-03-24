@@ -4,12 +4,22 @@ import { useState, useMemo } from "react";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { MessageSquare, User } from "lucide-react";
+import { MessageSquare, Pen, User } from "lucide-react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import type { Id } from "@zalem/backend/convex/_generated/dataModel";
 import { Button } from "@zalem/ui/components/optics/button";
 import { Separator } from "@zalem/ui/components/optics/separator";
 import { StarRating } from "@zalem/ui/components/optics/star-rating";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogPopup,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@zalem/ui/components/optics/dialog";
 import {
   Pagination,
   PaginationContent,
@@ -36,33 +46,29 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
   const [reviewRating, setReviewRating] = useState(5);
   const [text, setText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showForm, setShowForm] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  // client-side pagination over loaded results
   const totalPages = Math.max(1, Math.ceil(results.length / REVIEWS_PER_PAGE));
   const paginatedReviews = useMemo(() => {
     const start = (currentPage - 1) * REVIEWS_PER_PAGE;
     return results.slice(start, start + REVIEWS_PER_PAGE);
   }, [results, currentPage]);
 
-  // load more from Convex if we need pages beyond what's loaded
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    const needed = page * REVIEWS_PER_PAGE;
-    if (needed > results.length && status === "CanLoadMore") {
+    if (page * REVIEWS_PER_PAGE > results.length && status === "CanLoadMore") {
       loadMore(50);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!text.trim()) return;
     setIsSubmitting(true);
     try {
       await createReview({ productId, rating: reviewRating, text: text.trim() });
       setText("");
       setReviewRating(5);
-      setShowForm(false);
+      setDialogOpen(false);
       setCurrentPage(1);
       toast.success("Review submitted");
     } catch {
@@ -72,7 +78,6 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
     }
   };
 
-  // visible page numbers
   const pageNumbers = useMemo(() => {
     const pages: number[] = [];
     const maxVisible = 5;
@@ -85,101 +90,109 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
 
   return (
     <div className="space-y-8">
-      {/* aggregate rating */}
-      {aggregate && aggregate.total > 0 && (
-        <div className="grid max-w-lg gap-8 sm:grid-cols-[180px_1fr]">
-          {/* big rating */}
-          <div className="flex flex-col items-center justify-center rounded-xl border p-6">
-            <span className="text-5xl font-bold tracking-tight">
-              {aggregate.average.toFixed(1)}
-            </span>
-            <div className="mt-2">
-              <StarRating defaultValue={Math.round(aggregate.average)} size="sm" disabled />
+      {/* aggregate rating + write button row */}
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+        {/* aggregate */}
+        {aggregate && aggregate.total > 0 && (
+          <div className="grid max-w-md gap-6 sm:grid-cols-[160px_1fr]">
+            <div className="flex flex-col items-center justify-center rounded-xl border p-5">
+              <span className="text-5xl font-bold tracking-tight">
+                {aggregate.average.toFixed(1)}
+              </span>
+              <div className="mt-2">
+                <StarRating defaultValue={Math.round(aggregate.average)} size="sm" disabled />
+              </div>
+              <p className="text-muted-foreground mt-2 text-sm">
+                {aggregate.total} {aggregate.total === 1 ? "review" : "reviews"}
+              </p>
             </div>
-            <p className="text-muted-foreground mt-2 text-sm">
-              {aggregate.total} {aggregate.total === 1 ? "review" : "reviews"}
-            </p>
-          </div>
 
-          {/* distribution bars */}
-          <div className="flex flex-col justify-center gap-2.5">
-            {[5, 4, 3, 2, 1].map((star) => {
-              const count = aggregate.distribution[star - 1];
-              const pct = aggregate.total > 0 ? (count / aggregate.total) * 100 : 0;
-              return (
-                <div key={star} className="flex items-center gap-3">
-                  <span className="text-muted-foreground w-4 text-right text-sm">{star}</span>
-                  <StarRating defaultValue={1} totalStars={1} size="sm" disabled />
-                  <div className="bg-muted h-2.5 flex-1 overflow-hidden rounded-full">
-                    <div
-                      className="h-full rounded-full bg-yellow-400 transition-all duration-500"
-                      style={{ width: `${pct}%` }}
+            <div className="flex flex-col justify-center gap-2">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = aggregate.distribution[star - 1];
+                const pct = aggregate.total > 0 ? (count / aggregate.total) * 100 : 0;
+                return (
+                  <div key={star} className="flex items-center gap-2.5">
+                    <span className="text-muted-foreground w-3 text-right text-xs">{star}</span>
+                    <StarRating defaultValue={1} totalStars={1} size="sm" disabled />
+                    <div className="bg-muted h-2 w-full max-w-32 overflow-hidden rounded-full">
+                      <div
+                        className="h-full rounded-full bg-yellow-400 transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-muted-foreground w-6 text-right text-xs">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* write review dialog trigger */}
+        {isSignedIn && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger
+              render={
+                <Button variant="outline" size="lg" className="shrink-0 gap-2 text-sm">
+                  <Pen className="size-4" />
+                  Write a review
+                </Button>
+              }
+            />
+            <DialogPopup className="sm:max-w-md" animationPreset="bottomSlide">
+              <DialogHeader>
+                <DialogTitle>Write a review</DialogTitle>
+                <DialogDescription>
+                  Share your honest experience with this product.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-5 px-1">
+                <div>
+                  <p className="text-muted-foreground mb-3 text-sm">How would you rate it?</p>
+                  <div className="flex justify-center">
+                    <StarRating
+                      defaultValue={reviewRating}
+                      size="lg"
+                      onRate={(star: number) => setReviewRating(star)}
                     />
                   </div>
-                  <span className="text-muted-foreground w-8 text-right text-xs">{count}</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
-      {/* write review */}
-      {isSignedIn && (
-        <div>
-          {!showForm ? (
-            <Button
-              variant="outline"
-              size="lg"
-              className="gap-2 text-sm"
-              onClick={() => setShowForm(true)}
-            >
-              <MessageSquare className="size-4" />
-              Write a review
-            </Button>
-          ) : (
-            <div className="rounded-xl border p-5">
-              <h3 className="mb-4 font-semibold">Write a review</h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <p className="text-muted-foreground mb-2 text-sm">Your rating</p>
-                  <StarRating
-                    defaultValue={reviewRating}
-                    size="lg"
-                    onRate={(star: number) => setReviewRating(star)}
+                  <p className="text-muted-foreground mb-2 text-sm">Your review</p>
+                  <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="What did you like or dislike? Would you recommend it?"
+                    rows={4}
+                    className="bg-background w-full rounded-lg border px-4 py-3 text-sm leading-relaxed focus:outline-none"
                   />
                 </div>
-                <textarea
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="What did you think of this product? What did you like or dislike?"
-                  rows={4}
-                  className="bg-background w-full rounded-lg border px-4 py-3 text-sm leading-relaxed"
+              </div>
+
+              <DialogFooter>
+                <DialogClose
+                  render={
+                    <Button variant="ghost" size="lg" className="text-sm">
+                      Cancel
+                    </Button>
+                  }
                 />
-                <div className="flex gap-2">
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="text-sm"
-                    disabled={isSubmitting || !text.trim()}
-                  >
-                    {isSubmitting ? "Submitting..." : "Submit review"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="lg"
-                    className="text-sm"
-                    onClick={() => setShowForm(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )}
-        </div>
-      )}
+                <Button
+                  size="lg"
+                  className="text-sm"
+                  disabled={isSubmitting || !text.trim()}
+                  onClick={handleSubmit}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit review"}
+                </Button>
+              </DialogFooter>
+            </DialogPopup>
+          </Dialog>
+        )}
+      </div>
 
       <Separator />
 
