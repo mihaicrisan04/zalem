@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
-import { Heart, ShoppingCart, User } from "lucide-react";
+import { Heart, ShoppingCart, User, Sparkles } from "lucide-react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
 import { Badge } from "@zalem/ui/components/optics/badge";
-import { ModeToggle } from "./mode-toggle";
 import { SearchBar } from "./search-bar";
 
 export function StoreHeader() {
@@ -17,36 +16,37 @@ export function StoreHeader() {
 
   return (
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
-      <div className="container mx-auto flex h-14 items-center gap-4 px-4">
+      <div className="container mx-auto flex h-16 items-center gap-6 px-4">
         {/* logo */}
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold">
-          zalem
+        <Link href="/" className="flex shrink-0 items-center gap-2">
+          <Sparkles className="text-primary size-5" />
+          <span className="text-xl font-bold tracking-tight">zalem</span>
         </Link>
 
-        {/* search bar - takes most width */}
-        <div className="mx-auto max-w-2xl flex-1">
+        {/* search bar */}
+        <div className="mx-auto max-w-xl flex-1">
           <SearchBar />
         </div>
 
         {/* right section */}
-        <div className="flex items-center gap-1">
-          <ModeToggle />
-
+        <div className="flex shrink-0 items-center gap-2">
           {isSignedIn ? (
             <>
               <div className="relative">
                 <Button
                   render={<Link href={"/favorites" as any} />}
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   nativeButton={false}
+                  className="gap-1.5"
                 >
-                  <Heart className="size-5" />
+                  <Heart className="size-4" />
+                  <span className="hidden sm:inline">Favorites</span>
                 </Button>
                 {favCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-xs"
+                    className="absolute -top-1.5 -right-1.5 size-5 justify-center rounded-full p-0 text-[10px]"
                   >
                     {favCount > 99 ? "99+" : favCount}
                   </Badge>
@@ -57,15 +57,17 @@ export function StoreHeader() {
                 <Button
                   render={<Link href={"/cart" as any} />}
                   variant="ghost"
-                  size="icon"
+                  size="sm"
                   nativeButton={false}
+                  className="gap-1.5"
                 >
-                  <ShoppingCart className="size-5" />
+                  <ShoppingCart className="size-4" />
+                  <span className="hidden sm:inline">Cart</span>
                 </Button>
                 {cartCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1 -right-1 size-5 justify-center rounded-full p-0 text-xs"
+                    className="absolute -top-1.5 -right-1.5 size-5 justify-center rounded-full p-0 text-[10px]"
                   >
                     {cartCount > 99 ? "99+" : cartCount}
                   </Badge>
@@ -79,14 +81,17 @@ export function StoreHeader() {
               <Button
                 render={<Link href={"/cart" as any} />}
                 variant="ghost"
-                size="icon"
+                size="sm"
                 nativeButton={false}
+                className="gap-1.5"
               >
-                <ShoppingCart className="size-5" />
+                <ShoppingCart className="size-4" />
+                <span className="hidden sm:inline">Cart</span>
               </Button>
               <SignInButton mode="modal">
-                <Button variant="ghost" size="icon">
-                  <User className="size-5" />
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <User className="size-4" />
+                  <span className="hidden sm:inline">Sign in</span>
                 </Button>
               </SignInButton>
             </>

@@ -4,11 +4,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import Image from "next/image";
+import Link from "next/link";
 import { Search, X } from "lucide-react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Input } from "@zalem/ui/components/optics/input";
 import { Spinner } from "@zalem/ui/components/optics/spinner";
-import Link from "next/link";
+import { ScrollArea } from "@zalem/ui/components/optics/scroll-area";
 
 export function SearchBar() {
   const router = useRouter();
@@ -18,7 +19,6 @@ export function SearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // debounce the query
   useEffect(() => {
     if (query.length < 2) {
       setDebouncedQuery("");
@@ -33,7 +33,6 @@ export function SearchBar() {
     debouncedQuery.length >= 2 ? { query: debouncedQuery } : "skip",
   );
 
-  // close dropdown when clicking outside
   useEffect(() => {
     function handleClick(e: globalThis.MouseEvent) {
       if (
@@ -71,7 +70,7 @@ export function SearchBar() {
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Search products..."
+            placeholder="Search for products, brands, categories..."
             value={query}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setQuery(e.target.value);
@@ -99,40 +98,46 @@ export function SearchBar() {
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="bg-popover text-popover-foreground absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-md border shadow-md"
+          className="bg-popover text-popover-foreground absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-lg border shadow-lg"
         >
           {results === undefined ? (
             <div className="flex items-center justify-center p-4">
               <Spinner size="sm" />
             </div>
           ) : results.length === 0 ? (
-            <div className="text-muted-foreground p-4 text-center text-sm">No products found</div>
-          ) : (
-            <div className="max-h-80 overflow-y-auto">
-              {results.map((product: (typeof results)[number]) => (
-                <Link
-                  key={product._id}
-                  href={`/products/${product._id}` as any}
-                  onClick={() => {
-                    setIsOpen(false);
-                    setQuery("");
-                  }}
-                  className="hover:bg-accent flex items-center gap-3 px-4 py-2"
-                >
-                  <Image
-                    src={product.image}
-                    alt=""
-                    width={40}
-                    height={40}
-                    className="size-10 rounded object-cover"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{product.title}</p>
-                    <p className="text-muted-foreground text-sm">{product.price.toFixed(2)} lei</p>
-                  </div>
-                </Link>
-              ))}
+            <div className="text-muted-foreground p-4 text-center text-sm">
+              No products found for &ldquo;{debouncedQuery}&rdquo;
             </div>
+          ) : (
+            <ScrollArea className="max-h-80" maskHeight={24}>
+              <div>
+                {results.map((product: (typeof results)[number]) => (
+                  <Link
+                    key={product._id}
+                    href={`/products/${product._id}` as any}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setQuery("");
+                    }}
+                    className="hover:bg-accent flex items-center gap-3 px-4 py-2.5"
+                  >
+                    <Image
+                      src={product.image}
+                      alt=""
+                      width={40}
+                      height={40}
+                      className="size-10 rounded object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{product.title}</p>
+                      <p className="text-muted-foreground text-sm">
+                        {product.price.toFixed(2)} lei
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </ScrollArea>
           )}
         </div>
       )}
