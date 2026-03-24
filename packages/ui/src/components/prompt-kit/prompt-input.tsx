@@ -112,25 +112,19 @@ function PromptInputTextarea({
   const adjustHeight = useCallback(
     (el: HTMLTextAreaElement | null) => {
       if (!el || disableAutosize) return;
-      // skip if element has no visible width (e.g. sidebar is animating open)
-      if (el.offsetWidth === 0) return;
-      el.style.overflow = "hidden";
-      el.style.height = "0px";
+      el.style.height = "auto";
       const scrollH = el.scrollHeight;
       if (typeof maxHeight === "number") {
         el.style.height = `${Math.min(scrollH, maxHeight)}px`;
       } else {
         el.style.height = `min(${scrollH}px, ${maxHeight})`;
       }
-      el.style.overflow = "";
     },
     [disableAutosize, maxHeight],
   );
 
   const handleRef = (el: HTMLTextAreaElement | null) => {
     (textareaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
-    // defer initial measurement to after layout/transitions settle
-    requestAnimationFrame(() => adjustHeight(el));
   };
 
   useLayoutEffect(() => {
@@ -157,9 +151,14 @@ function PromptInputTextarea({
       onChange={handleChange}
       onKeyDown={handleKeyDown}
       className={cn(
-        "text-foreground w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground",
+        "text-foreground max-h-[--prompt-max-height] w-full resize-none border-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-muted-foreground [field-sizing:content]",
         className,
       )}
+      style={
+        {
+          "--prompt-max-height": typeof maxHeight === "number" ? `${maxHeight}px` : maxHeight,
+        } as React.CSSProperties
+      }
       rows={1}
       disabled={disabled}
       {...props}
