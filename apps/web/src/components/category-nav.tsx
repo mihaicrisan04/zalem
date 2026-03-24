@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import {
@@ -32,11 +31,9 @@ export function CategoryNav() {
               if (children.length === 0) {
                 return (
                   <NavigationMenuItem key={category._id}>
-                    <NavigationMenuLink
-                      render={
-                        <Link href={`/categories/${category.slug}` as any}>{category.name}</Link>
-                      }
-                    />
+                    <NavigationMenuLink href={`/categories/${category.slug}`}>
+                      {category.name}
+                    </NavigationMenuLink>
                   </NavigationMenuItem>
                 );
               }
@@ -48,23 +45,17 @@ export function CategoryNav() {
                     <ul className="w-52 p-1.5">
                       <li className="mb-1">
                         <NavigationMenuLink
-                          render={
-                            <Link
-                              href={`/categories/${category.slug}` as any}
-                              className="text-foreground font-medium"
-                            >
-                              All {category.name}
-                            </Link>
-                          }
-                        />
+                          href={`/categories/${category.slug}`}
+                          className="text-foreground font-medium"
+                        >
+                          All {category.name}
+                        </NavigationMenuLink>
                       </li>
                       {children.map((child: (typeof categories)[number]) => (
                         <li key={child._id}>
-                          <NavigationMenuLink
-                            render={
-                              <Link href={`/categories/${child.slug}` as any}>{child.name}</Link>
-                            }
-                          />
+                          <NavigationMenuLink href={`/categories/${child.slug}`}>
+                            {child.name}
+                          </NavigationMenuLink>
                         </li>
                       ))}
                     </ul>

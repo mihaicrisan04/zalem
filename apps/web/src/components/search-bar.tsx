@@ -98,7 +98,7 @@ export function SearchBar() {
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="bg-popover text-popover-foreground absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-lg border shadow-lg"
+          className="bg-popover text-popover-foreground absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border shadow-lg"
         >
           {results === undefined ? (
             <div className="flex items-center justify-center p-4">
@@ -109,7 +109,7 @@ export function SearchBar() {
               No products found for &ldquo;{debouncedQuery}&rdquo;
             </div>
           ) : (
-            <ScrollArea className="max-h-80" maskHeight={24}>
+            <ScrollArea className="h-auto max-h-80" viewportClassName="max-h-80" maskHeight={24}>
               <div>
                 {results.map((product: (typeof results)[number]) => (
                   <Link
