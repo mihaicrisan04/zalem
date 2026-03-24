@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, Sparkles, X } from "lucide-react";
+import { MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
@@ -121,19 +121,19 @@ export function AdvisorSidebar() {
         className="absolute top-0 -left-1 z-10 h-full w-2 cursor-col-resize"
       />
 
-      {/* header */}
-      <div className="flex shrink-0 items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="text-primary size-4" />
-          <span className="text-sm font-semibold">Shopping Advisor</span>
-        </div>
-        <button
-          onClick={close}
-          className="text-muted-foreground hover:text-foreground cursor-pointer rounded-md p-1 transition-colors"
-        >
-          <X className="size-4" />
-        </button>
-      </div>
+      {/* floating controls */}
+      <button
+        className="text-muted-foreground hover:text-foreground hover:bg-accent absolute top-3 left-3 z-20 cursor-pointer rounded-md p-1.5 transition-colors"
+        title="New chat"
+      >
+        <MessageSquarePlus className="size-4" />
+      </button>
+      <button
+        onClick={close}
+        className="text-muted-foreground hover:text-foreground hover:bg-accent absolute top-3 right-3 z-20 cursor-pointer rounded-md p-1.5 transition-colors"
+      >
+        <X className="size-4" />
+      </button>
 
       {/* messages */}
       <ScrollArea className="min-h-0 flex-1" maskHeight={20}>
@@ -200,7 +200,7 @@ export function AdvisorSidebar() {
       </ScrollArea>
 
       {/* input */}
-      <div className="shrink-0 border-t p-3">
+      <div className="shrink-0 px-3 pb-3">
         <PromptInput
           value={input}
           onValueChange={setInput}
