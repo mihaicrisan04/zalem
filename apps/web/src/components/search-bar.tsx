@@ -111,7 +111,8 @@ export function SearchBar() {
           ) : (
             <ScrollArea
               className="h-auto max-h-80"
-              viewportClassName="max-h-80 scrollbar-none"
+              viewportClassName="max-h-80"
+              hideScrollbar
               maskHeight={24}
             >
               <div>

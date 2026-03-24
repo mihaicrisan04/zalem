@@ -36,7 +36,7 @@ export function ProductRow({
         )}
       </div>
 
-      <ScrollArea className="-mx-4" viewportClassName="px-4 scrollbar-none" maskHeight={40}>
+      <ScrollArea className="-mx-4" viewportClassName="px-4" maskHeight={40} hideScrollbar>
         <div className="flex gap-4 pb-2">
           {isLoading
             ? Array.from({ length: 5 }).map((_, i) => (

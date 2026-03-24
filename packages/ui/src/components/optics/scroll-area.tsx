@@ -15,6 +15,7 @@ const ScrollArea = React.forwardRef(
       maskClassName = "",
       maskHeight = 30,
       maskColor = undefined,
+      hideScrollbar = false,
       ...props
     },
     ref,
@@ -78,7 +79,10 @@ const ScrollArea = React.forwardRef(
           ref={viewportRef}
           data-slot="scroll-area-viewport"
           className={cn(
-            "size-full overflow-auto rounded-[inherit] scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent",
+            "size-full overflow-auto rounded-[inherit]",
+            hideScrollbar
+              ? "scrollbar-none"
+              : "scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent",
             viewportClassName,
           )}
           tabIndex={0}
