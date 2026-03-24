@@ -9,13 +9,16 @@ export function AdvisorButton({ shouldPulse = false }: { shouldPulse?: boolean }
   return (
     <div
       className={cn(
-        "fixed right-6 bottom-6 z-40 transition-transform",
-        shouldPulse && "animate-[breathe_4s_ease-in-out_infinite]",
+        "fixed right-6 bottom-6 z-40",
+        shouldPulse && "animate-[breathe_2.5s_ease-in-out_infinite]",
       )}
     >
       <Button
         size="lg"
-        className="h-12 gap-2 rounded-full px-5 text-sm shadow-lg"
+        className={cn(
+          "h-12 gap-2 rounded-full px-5 text-sm shadow-lg transition-shadow",
+          shouldPulse && "shadow-primary/30 shadow-xl",
+        )}
         onClick={() => {
           toast.info("AI advisor coming in phase 6", {
             description:
@@ -30,7 +33,7 @@ export function AdvisorButton({ shouldPulse = false }: { shouldPulse?: boolean }
       <style>{`
         @keyframes breathe {
           0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.06); opacity: 0.85; }
+          50% { transform: scale(1.1); opacity: 0.8; }
         }
       `}</style>
     </div>

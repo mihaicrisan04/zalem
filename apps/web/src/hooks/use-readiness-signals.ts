@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { BehaviorTrackerState } from "./use-behavior-tracker";
 
 export type ReadinessChip = {
@@ -23,21 +23,12 @@ export function useReadinessSignals(
     hasCartItems?: boolean;
   },
 ): ReadinessResult {
-  const [dismissed, setDismissed] = useState<Map<string, number>>(new Map());
-  const cooldownMs = 60000; // 60 seconds
+  // permanently dismissed chips (no cooldown — once dismissed, stays dismissed for the session)
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   const dismissChip = useCallback((type: string) => {
-    setDismissed((prev) => new Map(prev).set(type, Date.now()));
+    setDismissed((prev) => new Set(prev).add(type));
   }, []);
-
-  const isDismissed = useCallback(
-    (type: string) => {
-      const dismissedAt = dismissed.get(type);
-      if (!dismissedAt) return false;
-      return Date.now() - dismissedAt < cooldownMs;
-    },
-    [dismissed],
-  );
 
   const result = useMemo(() => {
     const chips: ReadinessChip[] = [];
@@ -55,24 +46,24 @@ export function useReadinessSignals(
       }
     }
 
-    // signal: deep scroll (>50% on product detail page) → pulse advisor only, no chip
+    // signal: deep scroll (>50% on product detail page) → pulse advisor only
     if (options?.isProductDetailPage && currentProduct) {
       if (currentProduct.scrollDepth > 0.5) {
         shouldPulse = true;
       }
     }
 
-    // signal: review engagement (>5s viewing reviews)
+    // signal: review engagement (viewed reviews section)
     if (
       options?.isProductDetailPage &&
       options?.activeTab === "reviews" &&
       currentProduct?.viewedReviews &&
-      !isDismissed("review_engagement")
+      !dismissed.has("review_engagement")
     ) {
       chips.push({ text: "What do buyers think?", type: "review_engagement" });
     }
 
-    // signal: comparison behavior (3+ products in same category, no add-to-cart)
+    // signal: comparison behavior (3+ products in same category)
     const categoryGroups = new Map<string, number>();
     for (const [, product] of state.productsViewed) {
       if (product.category) {
@@ -80,24 +71,24 @@ export function useReadinessSignals(
       }
     }
     for (const [, count] of categoryGroups) {
-      if (count >= 3 && !isDismissed("comparison_behavior")) {
+      if (count >= 3 && !dismissed.has("comparison_behavior")) {
         chips.push({ text: "Compare these products?", type: "comparison_behavior" });
         shouldPulse = true;
         break;
       }
     }
 
-    // signal: cart deliberation (items in cart + navigating away from product)
+    // signal: cart deliberation (items in cart + navigating away)
     if (
       options?.hasCartItems &&
       !options?.isProductDetailPage &&
-      !isDismissed("cart_deliberation")
+      !dismissed.has("cart_deliberation")
     ) {
       chips.push({ text: "Need help deciding?", type: "cart_deliberation" });
     }
 
     return { shouldPulseAdvisor: shouldPulse, activeChips: chips, dismissChip };
-  }, [state, options, isDismissed, dismissChip]);
+  }, [state, options, dismissed, dismissChip]);
 
   return result;
 }

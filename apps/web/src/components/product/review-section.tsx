@@ -87,7 +87,7 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
     <div className="space-y-8">
       {/* aggregate rating */}
       {aggregate && aggregate.total > 0 && (
-        <div className="grid gap-8 sm:grid-cols-[200px_1fr]">
+        <div className="grid max-w-lg gap-8 sm:grid-cols-[180px_1fr]">
           {/* big rating */}
           <div className="flex flex-col items-center justify-center rounded-xl border p-6">
             <span className="text-5xl font-bold tracking-tight">
