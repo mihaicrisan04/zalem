@@ -46,7 +46,11 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
   const { isSignedIn } = useAuth();
   const addToCart = useMutation(api.cart.add);
   const toggleFavorite = useMutation(api.favorites.toggle);
-  const { addToRecentlyViewed } = useRecentlyViewed();
+  const { recentlyViewedIds, addToRecentlyViewed } = useRecentlyViewed();
+  const recentProducts = useQuery(
+    api.products.getByIds,
+    recentlyViewedIds.length > 0 ? { ids: recentlyViewedIds as any } : "skip",
+  );
 
   // image gallery state
   const [selectedImage, setSelectedImage] = useState(0);
@@ -386,6 +390,18 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
         isLoading={similarProducts === undefined}
         favoritedIds={relatedFavIds}
       />
+
+      {/* recently viewed */}
+      {recentProducts && recentProducts.length > 1 && (
+        <>
+          <Separator className="my-10" />
+          <ProductRow
+            title="Recently viewed"
+            products={recentProducts.filter((p: any) => p._id !== productId) as any}
+            favoritedIds={relatedFavIds}
+          />
+        </>
+      )}
     </div>
   );
 }
