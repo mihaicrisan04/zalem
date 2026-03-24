@@ -2,20 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@zalem/ui/components/optics/tooltip";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@zalem/ui/components/optics/tooltip";
 import { ScrollArea } from "@zalem/ui/components/optics/scroll-area";
 import { cn } from "@zalem/ui/lib/utils";
-import {
-  MessageContent,
-  PromptInput,
-  PromptInputTextarea,
-  PromptInputActions,
-  PromptSuggestion,
-  Loader,
-} from "@zalem/ui/components/prompt-kit";
+import { MessageContent, PromptSuggestion, Loader } from "@zalem/ui/components/prompt-kit";
 import { useAdvisor } from "@/hooks/use-advisor";
 
 const MIN_WIDTH = 340;
@@ -34,6 +27,7 @@ export function AdvisorSidebar() {
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const messagesResult = useUIMessages(
     api.ai.queries.listThreadMessages,
@@ -52,6 +46,13 @@ export function AdvisorSidebar() {
       sendMessage(pendingQuestion);
     }
   }, [pendingQuestion, isOpen]);
+
+  // focus textarea when sidebar opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => textareaRef.current?.focus(), 350);
+    }
+  }, [isOpen]);
 
   const getMaxWidth = useCallback(() => {
     return Math.floor(window.innerWidth / 3);
@@ -104,6 +105,22 @@ export function AdvisorSidebar() {
     if (!trimmed || isLoading) return;
     setInput("");
     sendMessage(trimmed);
+    // reset textarea height
+    if (textareaRef.current) textareaRef.current.style.height = "";
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    const el = e.target;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   };
 
   return (
@@ -198,26 +215,29 @@ export function AdvisorSidebar() {
         </div>
       </ScrollArea>
 
-      {/* input area */}
+      {/* input */}
       <div className="shrink-0 px-3 pb-3">
-        <PromptInput
-          value={input}
-          onValueChange={setInput}
-          onSubmit={handleSubmit}
-          isLoading={isLoading}
-          maxHeight={120}
-        >
-          <PromptInputTextarea placeholder="Ask anything..." rows={1} />
-          <PromptInputActions className="justify-between">
+        <div className="border-input bg-background rounded-2xl border p-2 shadow-xs">
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={handleInput}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask anything..."
+            rows={1}
+            disabled={isLoading}
+            className="text-foreground placeholder:text-muted-foreground w-full resize-none border-none bg-transparent px-2 py-1.5 text-sm outline-none"
+          />
+          <div className="flex items-center justify-between px-1">
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="text-muted-foreground size-8 shrink-0"
+                    className="text-muted-foreground size-7 shrink-0"
                   >
-                    <MessageSquarePlus className="size-4" />
+                    <MessageSquarePlus className="size-3.5" />
                   </Button>
                 }
               />
@@ -226,14 +246,14 @@ export function AdvisorSidebar() {
             <Button
               size="icon"
               variant={input.trim() ? "default" : "ghost"}
-              className="size-8 shrink-0"
+              className="size-7 shrink-0"
               disabled={isLoading || !input.trim()}
               onClick={handleSubmit}
             >
-              <Send className="size-4" />
+              <Send className="size-3.5" />
             </Button>
-          </PromptInputActions>
-        </PromptInput>
+          </div>
+        </div>
       </div>
     </aside>
   );

@@ -6,6 +6,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* transparent scrollbar track — only thumb visible */
+[data-slot="scroll-area-viewport"] {
+  scrollbar-color: oklch(0.708 0 0) transparent;
+}
+.dark [data-slot="scroll-area-viewport"] {
+  scrollbar-color: oklch(0.4 0 0) transparent;
+}
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar {
+  width: 6px;
+}
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb {
+  background: oklch(0.708 0 0);
+  border-radius: 3px;
+}
+.dark [data-slot="scroll-area-viewport"]::-webkit-scrollbar-thumb {
+  background: oklch(0.4 0 0);
+}
+
 /* hide scrollbar while keeping scroll functionality */
 [data-hide-scrollbar] {
   scrollbar-width: none; /* Firefox */
