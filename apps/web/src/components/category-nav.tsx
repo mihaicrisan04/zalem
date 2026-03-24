@@ -10,7 +10,6 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "@zalem/ui/components/optics/navigation-menu";
 
 export function CategoryNav() {
@@ -22,7 +21,7 @@ export function CategoryNav() {
 
   return (
     <nav className="border-b">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-4 py-1">
         <NavigationMenu viewport={null}>
           <NavigationMenuList className="flex-wrap justify-start gap-0">
             {topLevel.map((category: (typeof categories)[number]) => {
@@ -35,14 +34,9 @@ export function CategoryNav() {
                   <NavigationMenuItem key={category._id}>
                     <NavigationMenuLink
                       render={
-                        <Link
-                          href={`/categories/${category.slug}` as any}
-                          className={navigationMenuTriggerStyle()}
-                        />
+                        <Link href={`/categories/${category.slug}` as any}>{category.name}</Link>
                       }
-                    >
-                      {category.name}
-                    </NavigationMenuLink>
+                    />
                   </NavigationMenuItem>
                 );
               }
@@ -51,19 +45,26 @@ export function CategoryNav() {
                 <NavigationMenuItem key={category._id}>
                   <NavigationMenuTrigger>{category.name}</NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="w-48 p-1">
+                    <ul className="w-52 p-1.5">
+                      <li className="mb-1">
+                        <NavigationMenuLink
+                          render={
+                            <Link
+                              href={`/categories/${category.slug}` as any}
+                              className="text-foreground font-medium"
+                            >
+                              All {category.name}
+                            </Link>
+                          }
+                        />
+                      </li>
                       {children.map((child: (typeof categories)[number]) => (
                         <li key={child._id}>
                           <NavigationMenuLink
                             render={
-                              <Link
-                                href={`/categories/${child.slug}` as any}
-                                className="hover:bg-accent block rounded-md px-3 py-2 text-sm"
-                              />
+                              <Link href={`/categories/${child.slug}` as any}>{child.name}</Link>
                             }
-                          >
-                            {child.name}
-                          </NavigationMenuLink>
+                          />
                         </li>
                       ))}
                     </ul>
