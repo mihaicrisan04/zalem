@@ -103,20 +103,28 @@ export function ProductFilters({
         <h3 className="mb-2 text-sm font-semibold">Minimum rating</h3>
         <div className="space-y-1">
           {RATING_OPTIONS.map((rating) => (
-            <button
+            <div
               key={rating}
+              role="button"
+              tabIndex={0}
               onClick={() =>
                 updateParams({
                   minRating: currentMinRating === rating ? undefined : rating.toString(),
                 })
               }
-              className={`hover:bg-accent flex w-full items-center gap-2 rounded px-2 py-1 text-sm ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter")
+                  updateParams({
+                    minRating: currentMinRating === rating ? undefined : rating.toString(),
+                  });
+              }}
+              className={`hover:bg-accent flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm ${
                 currentMinRating === rating ? "bg-accent font-medium" : ""
               }`}
             >
               <StarRating defaultValue={rating} size="sm" disabled />
               <span>& up</span>
-            </button>
+            </div>
           ))}
         </div>
       </div>
