@@ -32,6 +32,7 @@ export default defineSchema({
     isDeal: v.boolean(),
     dealExpiresAt: v.optional(v.number()),
     purchaseCount: v.number(),
+    trendingScore: v.optional(v.number()),
     useCases: v.optional(v.array(v.string())),
     goodFor: v.optional(v.array(v.string())),
     discountPercent: v.optional(v.number()),

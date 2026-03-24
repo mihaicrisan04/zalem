@@ -23,12 +23,19 @@ import { useFavoritedIds } from "@/hooks/use-favorited-ids";
 export function ProductDetailClient({ productId }: { productId: Id<"products"> }) {
   const product = useQuery(api.products.get, { id: productId });
   const isFavorited = useQuery(api.favorites.isProductFavorited, { productId });
-  const similarProducts = useQuery(api.products.listTrending, {
-    category: product?.category,
+  const similarProducts = useQuery(api.recommendations.similarProducts, {
+    productId,
     limit: 10,
   });
-  const similarFiltered = similarProducts?.filter((p) => p._id !== productId);
-  const similarFavIds = useFavoritedIds(similarFiltered?.map((p) => p._id) ?? []);
+  const fbtProducts = useQuery(api.recommendations.frequentlyBoughtTogether, {
+    productId,
+    limit: 4,
+  });
+  const allRelatedIds = [
+    ...(similarProducts?.map((p) => p._id) ?? []),
+    ...(fbtProducts?.map((p: any) => p._id) ?? []),
+  ];
+  const relatedFavIds = useFavoritedIds(allRelatedIds);
   const { isSignedIn } = useAuth();
   const addToCart = useMutation(api.cart.add);
   const toggleFavorite = useMutation(api.favorites.toggle);
@@ -230,13 +237,26 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
         </div>
       </div>
 
+      {/* frequently bought together */}
+      {fbtProducts && fbtProducts.length > 0 && (
+        <>
+          <Separator className="my-8" />
+          <ProductRow
+            title="Frequently bought together"
+            products={fbtProducts as any}
+            isLoading={false}
+            favoritedIds={relatedFavIds}
+          />
+        </>
+      )}
+
       {/* similar products */}
       <Separator className="my-8" />
       <ProductRow
         title="Similar products"
-        products={similarFiltered}
+        products={similarProducts}
         isLoading={similarProducts === undefined}
-        favoritedIds={similarFavIds}
+        favoritedIds={relatedFavIds}
       />
     </div>
   );

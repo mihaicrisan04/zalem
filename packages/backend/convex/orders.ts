@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v, ConvexError } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
+import { internal } from "./_generated/api";
 
 export const listByUser = query({
   args: {
@@ -105,6 +106,11 @@ export const checkout = mutation({
     for (const cartItem of cartItems) {
       await ctx.db.delete(cartItem._id);
     }
+
+    // derive user preferences from updated order history
+    await ctx.scheduler.runAfter(0, internal.recommendations.deriveUserPreferencesForUser, {
+      clerkUserId: identity.subject,
+    });
 
     return orderId;
   },

@@ -11,6 +11,7 @@ import { Button } from "@zalem/ui/components/optics/button";
 import { Separator } from "@zalem/ui/components/optics/separator";
 import { Spinner } from "@zalem/ui/components/optics/spinner";
 import { useFavoritedIds } from "@/hooks/use-favorited-ids";
+import { ProductRow } from "@/components/product-row";
 import { cn } from "@zalem/ui/lib/utils";
 
 export default function CartPage() {
@@ -20,9 +21,11 @@ export default function CartPage() {
   const updateQuantity = useMutation(api.cart.updateQuantity);
   const toggleFavorite = useMutation(api.favorites.toggle);
 
+  const cartForRecs = useQuery(api.recommendations.forCart, {});
   const productIds =
     (cartItems?.map((item) => item?.product?._id).filter(Boolean) as string[]) ?? [];
-  const favoritedIds = useFavoritedIds(productIds);
+  const allIds = [...productIds, ...(cartForRecs?.map((p) => p._id) ?? [])];
+  const favoritedIds = useFavoritedIds(allIds);
   const favSet = new Set(favoritedIds);
 
   if (!isSignedIn) {
@@ -176,6 +179,17 @@ export default function CartPage() {
           </Button>
         </div>
       </div>
+
+      {/* recommendations */}
+      {cartForRecs && cartForRecs.length > 0 && (
+        <div className="mt-10">
+          <ProductRow
+            title="You might also like"
+            products={cartForRecs as any}
+            favoritedIds={favoritedIds}
+          />
+        </div>
+      )}
     </div>
   );
 }

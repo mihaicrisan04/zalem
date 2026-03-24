@@ -10,16 +10,17 @@ import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import { useFavoritedIds } from "@/hooks/use-favorited-ids";
 
 export default function HomePage() {
-  const trending = useQuery(api.products.listTrending, {});
+  const trending = useQuery(api.recommendations.trending, {});
+  const forYou = useQuery(api.recommendations.forYou, {});
   const { recentlyViewedIds } = useRecentlyViewed();
   const recentProducts = useQuery(
     api.products.getByIds,
     recentlyViewedIds.length > 0 ? { ids: recentlyViewedIds as any } : "skip",
   );
 
-  // collect all product IDs across all rows for a single batchCheck
   const allProductIds = [
     ...(trending?.map((p) => p._id) ?? []),
+    ...(forYou?.map((p) => p._id) ?? []),
     ...((recentProducts as any[])?.map((p: any) => p._id) ?? []),
   ];
   const favoritedIds = useFavoritedIds(allProductIds);
@@ -36,8 +37,8 @@ export default function HomePage() {
       />
       <ProductRow
         title="Recommended for you"
-        products={trending}
-        isLoading={trending === undefined}
+        products={forYou}
+        isLoading={forYou === undefined}
         favoritedIds={favoritedIds}
       />
       <CategoryGrid />
