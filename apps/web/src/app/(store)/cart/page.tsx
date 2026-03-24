@@ -122,8 +122,10 @@ export default function CartPage() {
                         toast.success(added ? "Saved to favorites" : "Removed from favorites");
                       }}
                       className={cn(
-                        "hover:text-foreground",
-                        isFav ? "text-red-500" : "text-muted-foreground",
+                        "cursor-pointer transition-all hover:scale-110 active:scale-95",
+                        isFav
+                          ? "text-red-500 hover:text-red-600"
+                          : "text-muted-foreground hover:text-red-500",
                       )}
                     >
                       <Heart className="size-4" fill={isFav ? "currentColor" : "none"} />

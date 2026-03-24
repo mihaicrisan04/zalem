@@ -85,8 +85,10 @@ export function ProductCard({
       <button
         onClick={handleToggleFavorite}
         className={cn(
-          "absolute top-2.5 right-2.5 rounded-full bg-white/80 p-2 shadow-sm transition-colors hover:bg-white dark:bg-black/50 dark:hover:bg-black/70",
-          isFavorited && "text-red-500",
+          "absolute top-2.5 right-2.5 cursor-pointer rounded-full bg-white/80 p-2 shadow-sm transition-all hover:bg-white hover:scale-110 active:scale-95 dark:bg-black/50 dark:hover:bg-black/70",
+          isFavorited
+            ? "text-red-500 hover:text-red-600"
+            : "text-muted-foreground hover:text-red-500",
         )}
       >
         <Heart className="size-[18px]" fill={isFavorited ? "currentColor" : "none"} />

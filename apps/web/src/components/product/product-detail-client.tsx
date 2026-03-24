@@ -169,7 +169,15 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
               <ShoppingCart className="mr-2 size-5" />
               Add to cart
             </Button>
-            <Button variant="outline" size="lg" className="h-11" onClick={handleToggleFavorite}>
+            <Button
+              variant="outline"
+              size="lg"
+              className={cn(
+                "h-11 cursor-pointer",
+                isFavorited ? "text-red-500 hover:text-red-600" : "hover:text-red-500",
+              )}
+              onClick={handleToggleFavorite}
+            >
               <Heart className="size-5" fill={isFavorited ? "currentColor" : "none"} />
             </Button>
           </div>
