@@ -109,7 +109,7 @@ export function AdvisorSidebar() {
     <aside
       data-advisor-sidebar
       className={cn(
-        "bg-background relative flex h-full shrink-0 flex-col border-l",
+        "bg-background group/sidebar relative flex h-full shrink-0 flex-col border-l",
         !isResizing && "transition-[width,opacity] duration-300 ease-out",
         isOpen ? "" : "w-0 overflow-hidden opacity-0",
       )}
@@ -121,35 +121,27 @@ export function AdvisorSidebar() {
         className="absolute top-0 -left-1 z-10 h-full w-2 cursor-col-resize"
       />
 
-      {/* floating controls */}
-      <Button
-        variant="raised"
-        size="icon"
-        className="absolute top-3 left-3 z-20 size-8"
-        title="New chat"
-      >
-        <MessageSquarePlus className="size-4" />
-      </Button>
-      <Button
-        variant="raised"
-        size="icon"
-        className="absolute top-3 right-3 z-20 size-8"
+      {/* close — appears on sidebar hover */}
+      <button
         onClick={close}
+        className="absolute top-2.5 right-2.5 z-20 cursor-pointer rounded-full p-1 opacity-0 transition-opacity group-hover/sidebar:opacity-60 hover:!opacity-100"
       >
-        <X className="size-4" />
-      </Button>
+        <X className="text-muted-foreground size-3.5" />
+      </button>
 
       {/* messages */}
-      <ScrollArea className="min-h-0 flex-1" maskHeight={48}>
+      <ScrollArea className="min-h-0 flex-1" maskHeight={20}>
         <div className="flex flex-col gap-4 p-4">
           {messages.length === 0 && !isLoading && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12">
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
               <div className="text-muted-foreground text-center">
-                <Sparkles className="mx-auto mb-3 size-8 opacity-30" />
-                <p className="text-sm font-medium">How can I help?</p>
-                <p className="mt-1 text-xs">Ask about products, comparisons, or recommendations.</p>
+                <Sparkles className="mx-auto mb-3 size-8 opacity-20" />
+                <p className="text-sm font-semibold">Shopping Advisor</p>
+                <p className="mt-1.5 max-w-[220px] text-xs leading-relaxed opacity-70">
+                  Ask about products, compare options, or get recommendations.
+                </p>
               </div>
-              <div className="flex flex-wrap justify-center gap-2">
+              <div className="flex flex-wrap justify-center gap-2 px-2">
                 {SUGGESTIONS.map((s) => (
                   <PromptSuggestion
                     key={s}
@@ -203,7 +195,7 @@ export function AdvisorSidebar() {
         </div>
       </ScrollArea>
 
-      {/* input */}
+      {/* input area */}
       <div className="shrink-0 px-3 pb-3">
         <PromptInput
           value={input}
@@ -213,7 +205,15 @@ export function AdvisorSidebar() {
           maxHeight={120}
         >
           <PromptInputTextarea placeholder="Ask anything..." rows={1} />
-          <PromptInputActions className="justify-end">
+          <PromptInputActions className="justify-between">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-muted-foreground size-8 shrink-0"
+              title="New chat"
+            >
+              <MessageSquarePlus className="size-4" />
+            </Button>
             <Button
               size="icon"
               variant="ghost"
