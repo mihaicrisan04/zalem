@@ -104,12 +104,15 @@ function PromptInputTextarea({
 
   const adjustHeight = (el: HTMLTextAreaElement | null) => {
     if (!el || disableAutosize) return;
-    el.style.height = "auto";
+    el.style.overflow = "hidden";
+    el.style.height = "0px";
+    const scrollH = el.scrollHeight;
     if (typeof maxHeight === "number") {
-      el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
+      el.style.height = `${Math.min(scrollH, maxHeight)}px`;
     } else {
-      el.style.height = `min(${el.scrollHeight}px, ${maxHeight})`;
+      el.style.height = `min(${scrollH}px, ${maxHeight})`;
     }
+    el.style.overflow = "";
   };
 
   const handleRef = (el: HTMLTextAreaElement | null) => {
@@ -118,14 +121,7 @@ function PromptInputTextarea({
   };
 
   useLayoutEffect(() => {
-    if (!textareaRef.current || disableAutosize) return;
-    const el = textareaRef.current;
-    el.style.height = "auto";
-    if (typeof maxHeight === "number") {
-      el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
-    } else {
-      el.style.height = `min(${el.scrollHeight}px, ${maxHeight})`;
-    }
+    adjustHeight(textareaRef.current);
   }, [value, maxHeight, disableAutosize]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

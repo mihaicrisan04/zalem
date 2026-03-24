@@ -24,9 +24,9 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
   return (
     <BehaviorTrackerContext value={tracker}>
       <AdvisorProvider>
-        <div className="flex h-svh">
-          {/* main content — scrollable */}
-          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <div className="flex min-h-svh">
+          {/* main content — natural scroll via browser */}
+          <div className="flex min-w-0 flex-1 flex-col">
             {mounted ? (
               <>
                 <StoreHeader />
@@ -42,7 +42,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
             {mounted && <StoreFooter />}
           </div>
 
-          {/* advisor sidebar */}
+          {/* advisor sidebar — sticky so it stays visible while page scrolls */}
           {mounted && <AdvisorSidebar />}
         </div>
 

@@ -109,7 +109,7 @@ export function AdvisorSidebar() {
     <aside
       data-advisor-sidebar
       className={cn(
-        "bg-background flex shrink-0 flex-col border-l",
+        "bg-background sticky top-0 flex h-svh shrink-0 flex-col border-l",
         !isResizing && "transition-[width,opacity] duration-300 ease-out",
         isOpen ? "" : "w-0 overflow-hidden opacity-0",
       )}
@@ -208,7 +208,7 @@ export function AdvisorSidebar() {
           isLoading={isLoading}
           maxHeight={120}
         >
-          <PromptInputTextarea placeholder="Ask anything..." />
+          <PromptInputTextarea placeholder="Ask anything..." rows={1} />
           <PromptInputActions className="justify-end">
             <Button
               size="icon"
