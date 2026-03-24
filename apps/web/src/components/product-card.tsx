@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, ShoppingCart } from "lucide-react";
@@ -38,6 +39,7 @@ export function ProductCard({
   const { isSignedIn } = useAuth();
   const addToCart = useMutation(api.cart.add);
   const toggleFavorite = useMutation(api.favorites.toggle);
+  const [animKey, setAnimKey] = useState(0);
 
   const handleAddToCart = async () => {
     if (!isSignedIn) {
@@ -54,6 +56,7 @@ export function ProductCard({
       return;
     }
     const added = await toggleFavorite({ productId: product._id });
+    setAnimKey((k) => k + 1);
     toast.success(added ? "Added to favorites" : "Removed from favorites");
   };
 
@@ -94,6 +97,7 @@ export function ProductCard({
         )}
       >
         <motion.div
+          key={animKey}
           animate={{
             scale: isFavorited ? [1, 1.3, 1] : 1,
             rotate: isFavorited ? [0, -10, 10, 0] : 0,
