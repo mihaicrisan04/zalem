@@ -24,27 +24,30 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
   return (
     <BehaviorTrackerContext value={tracker}>
       <AdvisorProvider>
-        <div className="flex min-h-svh flex-col">
-          {mounted ? (
-            <>
-              <StoreHeader />
-              <CategoryNav />
-            </>
-          ) : (
-            <>
-              <div className="h-16 border-b" />
-              <div className="border-b py-3" />
-            </>
-          )}
-          <main className="flex-1">{children}</main>
-          {mounted && (
-            <>
-              <StoreFooter />
-              <AdvisorButton shouldPulse={readiness.shouldPulseAdvisor} />
-              <AdvisorSidebar />
-            </>
-          )}
+        <div className="flex h-svh overflow-hidden">
+          {/* main content area — scrollable */}
+          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+            {mounted ? (
+              <>
+                <StoreHeader />
+                <CategoryNav />
+              </>
+            ) : (
+              <>
+                <div className="h-16 border-b" />
+                <div className="border-b py-3" />
+              </>
+            )}
+            <main className="flex-1">{children}</main>
+            {mounted && <StoreFooter />}
+          </div>
+
+          {/* advisor sidebar — pushes content when open */}
+          {mounted && <AdvisorSidebar />}
         </div>
+
+        {/* floating button — outside the flex container */}
+        {mounted && <AdvisorButton shouldPulse={readiness.shouldPulseAdvisor} />}
       </AdvisorProvider>
     </BehaviorTrackerContext>
   );
