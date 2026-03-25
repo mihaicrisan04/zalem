@@ -47,7 +47,7 @@ export default function CheckoutPage() {
   if (cartEmpty) return null;
 
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + (item?.product?.price ?? 0) * item.quantity,
+    (sum, item) => sum + (item?.product?.price ?? 0) * (item?.quantity ?? 0),
     0,
   );
 

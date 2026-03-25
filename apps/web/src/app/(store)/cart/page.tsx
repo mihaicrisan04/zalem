@@ -25,7 +25,7 @@ export default function CartPage() {
   const cartForRecs = useQuery(api.recommendations.forCart, {});
   const productIds =
     (cartItems?.map((item) => item?.product?._id).filter(Boolean) as string[]) ?? [];
-  const allIds = [...productIds, ...(cartForRecs?.map((p) => p._id) ?? [])];
+  const allIds = [...productIds, ...(cartForRecs?.map((p) => p!._id) ?? [])];
   const favoritedIds = useFavoritedIds(allIds);
   const favSet = new Set(favoritedIds);
 
@@ -59,7 +59,7 @@ export default function CartPage() {
   }
 
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + (item?.product?.price ?? 0) * item.quantity,
+    (sum, item) => sum + (item?.product?.price ?? 0) * (item?.quantity ?? 0),
     0,
   );
 

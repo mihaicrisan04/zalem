@@ -42,7 +42,7 @@ export default function FavoritesPage() {
     );
   }
 
-  const products = favorites.map((f) => f.product).filter(Boolean);
+  const products = favorites.map((f) => f!.product).filter(Boolean);
   const favoritedIds = products.map((p) => p!._id);
 
   return (

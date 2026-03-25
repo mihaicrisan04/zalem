@@ -5,7 +5,17 @@ import * as React from "react";
 
 import { cn } from "@zalem/ui/lib/utils";
 
-const ScrollArea = React.forwardRef(
+const ScrollArea = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentPropsWithoutRef<"div"> & {
+    viewportClassName?: string;
+    maskClassName?: string;
+    maskHeight?: number;
+    maskColor?: string;
+    hideScrollbar?: boolean;
+    scrollHideDelay?: number;
+  }
+>(
   (
     {
       className = "",

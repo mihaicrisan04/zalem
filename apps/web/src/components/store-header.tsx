@@ -71,7 +71,7 @@ function CartPreview({ cartItems }: { cartItems: any[] }) {
   }
   const items = cartItems.slice(0, 3);
   const total = cartItems.reduce(
-    (sum, item) => sum + (item?.product?.price ?? 0) * item.quantity,
+    (sum, item) => sum + (item?.product?.price ?? 0) * (item?.quantity ?? 0),
     0,
   );
   return (

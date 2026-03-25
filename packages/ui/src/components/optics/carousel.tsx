@@ -27,7 +27,7 @@ function Carousel({
   className = "",
   children = null,
   ...props
-}) {
+}: any) {
   const [carouselRef, api] = useEmblaCarousel(
     {
       ...opts,

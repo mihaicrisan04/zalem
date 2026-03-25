@@ -27,8 +27,14 @@ const themes = [
 
 export const ThemeSwitcher = forwardRef(
   (
-    { value = undefined, onChange = undefined, defaultValue = "system", className = "", ...props },
-    ref,
+    {
+      value = undefined,
+      onChange = undefined,
+      defaultValue = "system",
+      className = "",
+      ...props
+    }: any,
+    ref: any,
   ) => {
     const [theme, setTheme] = useControlledState({
       defaultValue: defaultValue,

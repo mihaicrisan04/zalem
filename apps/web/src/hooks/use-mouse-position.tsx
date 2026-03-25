@@ -11,7 +11,7 @@ export interface Position {
   elementPositionY?: number;
 }
 
-export function useMousePosition<T extends HTMLElement>(): [Position, React.RefObject<T>] {
+export function useMousePosition<T extends HTMLElement>(): [Position, React.RefObject<T | null>] {
   const [state, setState] = React.useState<Position>({
     x: 0,
     y: 0,
