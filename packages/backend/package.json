@@ -18,8 +18,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^24.3.0",
+    "@types/node": "^25.5.0",
     "@zalem/config": "workspace:*",
-    "typescript": "^5"
+    "typescript": "^6"
   }
 }

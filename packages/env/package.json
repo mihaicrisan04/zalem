@@ -12,8 +12,8 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^25",
     "@zalem/config": "workspace:*",
-    "typescript": "^5"
+    "typescript": "^6"
   }
 }
