@@ -55,12 +55,11 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
       setPendingQuestion(null);
 
       try {
-        const isNewThread = !threadId;
         const result = await requestAdvice({
           threadId: threadId ?? undefined,
           question,
           productId: productIdRef.current ?? undefined,
-          recentlyViewedIds: isNewThread ? recentlyViewedIds : undefined,
+          recentlyViewedIds: recentlyViewedIds.length > 0 ? recentlyViewedIds : undefined,
         });
 
         if (result.threadId && result.threadId !== threadId) {
