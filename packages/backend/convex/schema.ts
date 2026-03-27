@@ -65,9 +65,58 @@ export default defineSchema({
     rating: v.number(),
     text: v.string(),
     createdAt: v.number(),
+    embedding: v.optional(v.array(v.float64())),
   })
     .index("by_product", ["productId", "createdAt"])
-    .index("by_user", ["clerkUserId"]),
+    .index("by_user", ["clerkUserId"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 3072,
+      filterFields: ["productId"],
+    }),
+
+  // -- review summaries (phase 6.4) --
+  reviewSummaries: defineTable({
+    productId: v.id("products"),
+    reviewCount: v.number(),
+    averageRating: v.number(),
+    positives: v.array(
+      v.object({
+        theme: v.string(),
+        count: v.number(),
+        quote: v.string(),
+        reviewId: v.id("reviews"),
+      }),
+    ),
+    negatives: v.array(
+      v.object({
+        theme: v.string(),
+        count: v.number(),
+        quote: v.string(),
+        reviewId: v.id("reviews"),
+      }),
+    ),
+    conflicts: v.array(
+      v.object({
+        topic: v.string(),
+        positiveCount: v.number(),
+        negativeCount: v.number(),
+        summary: v.string(),
+      }),
+    ),
+    bestFor: v.array(v.string()),
+    generatedAt: v.number(),
+    modelUsed: v.string(),
+    validationPassed: v.boolean(),
+    validationDetails: v.optional(
+      v.object({
+        quotesVerified: v.number(),
+        quotesFailed: v.number(),
+        themesVerified: v.number(),
+        themesFailed: v.number(),
+      }),
+    ),
+  }).index("by_product", ["productId"]),
 
   // -- cart items --
   cartItems: defineTable({

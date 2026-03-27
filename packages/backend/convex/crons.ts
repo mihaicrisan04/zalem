@@ -19,4 +19,12 @@ crons.cron(
   {},
 );
 
+// regenerate stale review summaries daily at 4:00 AM UTC
+crons.cron(
+  "generate review summaries",
+  "0 4 * * *",
+  internal.ai.reviewSummariesHelpers.generateAll,
+  {},
+);
+
 export default crons;

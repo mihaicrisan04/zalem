@@ -448,6 +448,14 @@ on the product detail page, inside or directly above the reviews tab:
 
 this is a **core** AI surface because it grounds the assistant in real customer feedback and directly supports trust. it's also our biggest opportunity to demonstrably outperform Rufus in the thesis evaluation.
 
+**implementation update (2026-03-26):**
+
+- migrated from direct Google API (`@ai-sdk/google`) to **OpenRouter** (`@openrouter/ai-sdk-provider`) for all LLM calls — solves rate limiting on free Google tier. same Gemini models, paid via OpenRouter credits.
+- review data upgraded: replaced faker-generated lorem reviews with **AI-generated realistic reviews** (4836 total) via batch generation. each product has 15-50 reviews with realistic opinions, recurring themes, and sentiment profiles (loved/polarizing/mediocre/few).
+- **embedding-backed validation approach**: reviews are embedded via `google/gemini-embedding-001` (3072-dim, through OpenRouter). after Flash-Lite extracts themes, we validate by: (1) exact quote verification against source reviews, (2) cosine similarity between claimed theme embeddings and review embeddings — theme must semantically match 2+ reviews. this catches fabricated themes that string matching would miss.
+- schema: added `reviewSummaries` table (themes, conflicts, bestFor, validation metadata) + `embedding` vector field on reviews table with vector index for semantic search
+- architecture: `reviewSummaries.generateForProduct` (Node.js action) → embed reviews → Flash-Lite structured extraction → quote validation → embedding-backed theme validation → upsert cached summary. batch orchestrator with staleness detection + daily cron at 4 AM UTC.
+
 ### 5. compare mode (core decision-support surface)
 
 when a user views or pins 2-3 products in the same category:

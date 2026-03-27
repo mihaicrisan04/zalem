@@ -252,7 +252,7 @@ the AI layer. sits on top of everything built so far. uses `@convex-dev/agent` f
 | 6.1       | agent infrastructure (Gemini 3 Flash, system prompt, model router)    | done        |
 | 6.2       | advisor sidebar UI (push-content, resizable, prompt-kit components)   | done        |
 | 6.3       | agent tools (product details, search, recommendations, cart, reviews) | done        |
-| 6.4       | review summarization (batch, Flash-Lite, conflict surfacing)          | not started |
+| 6.4       | review summarization (batch, Flash-Lite, conflict surfacing)          | in progress |
 | 6.5       | AI comparison mode (structured side-by-side analysis)                 | not started |
 | 6.6       | polish & safety (rate limiting, feedback, output validation)          | not started |
 

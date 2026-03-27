@@ -1,4 +1,6 @@
-import { google } from "@ai-sdk/google";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+
+const openrouter = createOpenRouter();
 
 export type QueryType =
   | "conversational"
@@ -8,8 +10,8 @@ export type QueryType =
   | "quick_qa"
   | "homepage_hero";
 
-const FLASH = "gemini-3-flash-preview";
-const FLASH_LITE = "gemini-3.1-flash-lite-preview";
+const FLASH = "google/gemini-3-flash-preview";
+const FLASH_LITE = "google/gemini-3.1-flash-lite-preview";
 
 const MODEL_MAP: Record<QueryType, string> = {
   conversational: FLASH,
@@ -21,5 +23,7 @@ const MODEL_MAP: Record<QueryType, string> = {
 };
 
 export function selectModel(queryType: QueryType) {
-  return google(MODEL_MAP[queryType]);
+  return openrouter(MODEL_MAP[queryType]);
 }
+
+export const embeddingModel = openrouter.textEmbeddingModel("google/gemini-embedding-001");

@@ -10,9 +10,14 @@
 
 import type * as ai_advisor from "../ai/advisor.js";
 import type * as ai_agent from "../ai/agent.js";
+import type * as ai_generateReviews from "../ai/generateReviews.js";
+import type * as ai_generateReviewsHelpers from "../ai/generateReviewsHelpers.js";
+import type * as ai_generateReviewsOrchestrator from "../ai/generateReviewsOrchestrator.js";
 import type * as ai_models from "../ai/models.js";
 import type * as ai_prompt from "../ai/prompt.js";
 import type * as ai_queries from "../ai/queries.js";
+import type * as ai_reviewSummaries from "../ai/reviewSummaries.js";
+import type * as ai_reviewSummariesHelpers from "../ai/reviewSummariesHelpers.js";
 import type * as ai_tools from "../ai/tools.js";
 import type * as behavior from "../behavior.js";
 import type * as cart from "../cart.js";
@@ -36,9 +41,14 @@ import type {
 declare const fullApi: ApiFromModules<{
   "ai/advisor": typeof ai_advisor;
   "ai/agent": typeof ai_agent;
+  "ai/generateReviews": typeof ai_generateReviews;
+  "ai/generateReviewsHelpers": typeof ai_generateReviewsHelpers;
+  "ai/generateReviewsOrchestrator": typeof ai_generateReviewsOrchestrator;
   "ai/models": typeof ai_models;
   "ai/prompt": typeof ai_prompt;
   "ai/queries": typeof ai_queries;
+  "ai/reviewSummaries": typeof ai_reviewSummaries;
+  "ai/reviewSummariesHelpers": typeof ai_reviewSummariesHelpers;
   "ai/tools": typeof ai_tools;
   behavior: typeof behavior;
   cart: typeof cart;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
@@ -29,11 +29,13 @@ import {
   PaginationPrevious,
 } from "@zalem/ui/components/optics/pagination";
 import { cn } from "@zalem/ui/lib/utils";
+import { ReviewSummary } from "./review-summary";
 
 const REVIEWS_PER_PAGE = 5;
 
 export function ReviewSection({ productId }: { productId: Id<"products"> }) {
   const aggregate = useQuery(api.reviews.getAggregateByProduct, { productId });
+  const summary = useQuery(api.ai.reviewSummariesHelpers.getSummary, { productId });
   const { results, status, loadMore } = usePaginatedQuery(
     api.reviews.listByProduct,
     { productId },
@@ -41,6 +43,8 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
   );
   const { isSignedIn } = useAuth();
   const createReview = useMutation(api.reviews.create);
+  const reviewListRef = useRef<HTMLDivElement>(null);
+  const [highlightedReviewId, setHighlightedReviewId] = useState<Id<"reviews"> | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [reviewRating, setReviewRating] = useState(5);
@@ -78,6 +82,32 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
     }
   };
 
+  const handleScrollToReview = useCallback(
+    (reviewId: Id<"reviews">) => {
+      // load all remaining reviews if needed
+      if (status === "CanLoadMore") {
+        loadMore(500);
+      }
+
+      const reviewIndex = results.findIndex((r) => r._id === reviewId);
+      if (reviewIndex === -1) return;
+
+      const targetPage = Math.floor(reviewIndex / REVIEWS_PER_PAGE) + 1;
+      setCurrentPage(targetPage);
+
+      // highlight after page change renders
+      setTimeout(() => {
+        setHighlightedReviewId(reviewId);
+        const el = document.getElementById(`review-${reviewId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        setTimeout(() => setHighlightedReviewId(null), 1500);
+      }, 100);
+    },
+    [results, status, loadMore],
+  );
+
   const pageNumbers = useMemo(() => {
     const pages: number[] = [];
     const maxVisible = 5;
@@ -90,40 +120,51 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
 
   return (
     <div className="space-y-8">
-      {/* aggregate rating */}
+      {/* aggregate rating + AI insights */}
       {aggregate && aggregate.total > 0 && (
-        <div className="grid max-w-lg gap-6 sm:grid-cols-[160px_1fr]">
-          <div className="flex flex-col items-center justify-center rounded-xl border p-5">
-            <span className="text-5xl font-bold tracking-tight">
-              {aggregate.average.toFixed(1)}
-            </span>
-            <div className="mt-2">
-              <StarRating defaultValue={Math.round(aggregate.average)} size="sm" disabled />
+        <div className="space-y-5">
+          {/* top row: score + histogram side by side */}
+          <div className="grid gap-6 sm:grid-cols-[140px_1fr]">
+            <div className="flex flex-col items-center justify-center rounded-xl border p-5">
+              <span className="text-5xl font-bold tracking-tight">
+                {aggregate.average.toFixed(1)}
+              </span>
+              <div className="mt-2">
+                <StarRating defaultValue={Math.round(aggregate.average)} size="sm" disabled />
+              </div>
+              <p className="text-muted-foreground mt-2 text-sm">
+                {aggregate.total} {aggregate.total === 1 ? "review" : "reviews"}
+              </p>
             </div>
-            <p className="text-muted-foreground mt-2 text-sm">
-              {aggregate.total} {aggregate.total === 1 ? "review" : "reviews"}
-            </p>
+
+            <div className="flex flex-col justify-center gap-2.5">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = aggregate.distribution[star - 1];
+                const pct = aggregate.total > 0 ? (count / aggregate.total) * 100 : 0;
+                return (
+                  <div key={star} className="flex items-center gap-3">
+                    <span className="text-muted-foreground w-4 text-right text-sm">{star}</span>
+                    <StarRating defaultValue={1} totalStars={1} size="sm" disabled />
+                    <div className="bg-muted h-2.5 flex-1 overflow-hidden rounded-full">
+                      <div
+                        className="h-full rounded-full bg-yellow-400 transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-muted-foreground w-8 text-right text-xs">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex flex-col justify-center gap-2.5">
-            {[5, 4, 3, 2, 1].map((star) => {
-              const count = aggregate.distribution[star - 1];
-              const pct = aggregate.total > 0 ? (count / aggregate.total) * 100 : 0;
-              return (
-                <div key={star} className="flex items-center gap-3">
-                  <span className="text-muted-foreground w-4 text-right text-sm">{star}</span>
-                  <StarRating defaultValue={1} totalStars={1} size="sm" disabled />
-                  <div className="bg-muted h-2.5 flex-1 overflow-hidden rounded-full">
-                    <div
-                      className="h-full rounded-full bg-yellow-400 transition-all duration-500"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="text-muted-foreground w-8 text-right text-xs">{count}</span>
-                </div>
-              );
-            })}
-          </div>
+          {/* AI insights — full width below */}
+          {summary && (
+            <>
+              <Separator className="border-dashed" />
+              <ReviewSummary summary={summary} onScrollToReview={handleScrollToReview} />
+            </>
+          )}
         </div>
       )}
 
@@ -203,9 +244,16 @@ export function ReviewSection({ productId }: { productId: Id<"products"> }) {
           <p className="text-sm">Be the first to share your experience.</p>
         </div>
       ) : (
-        <div className="space-y-0 divide-y">
+        <div ref={reviewListRef} className="space-y-0 divide-y">
           {paginatedReviews.map((review) => (
-            <div key={review._id} className="py-5 first:pt-0">
+            <div
+              key={review._id}
+              id={`review-${review._id}`}
+              className={cn(
+                "py-5 first:pt-0 transition-colors duration-700",
+                highlightedReviewId === review._id && "bg-yellow-100/60 dark:bg-yellow-900/20",
+              )}
+            >
               <div className="flex items-start gap-3">
                 <div className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-full">
                   <User className="text-muted-foreground size-4" />
