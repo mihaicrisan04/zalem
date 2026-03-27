@@ -13,6 +13,7 @@ type AdvisorState = {
   isLoading: boolean;
   open: (question?: string) => void;
   close: () => void;
+  newChat: () => void;
   sendMessage: (question: string) => void;
   setProductId: (id: string | null) => void;
   pendingQuestion: string | null;
@@ -94,6 +95,12 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
     setPendingQuestion(null);
   }, []);
 
+  const newChat = useCallback(() => {
+    setThreadId(null);
+    setPendingQuestion(null);
+    sessionStorage.removeItem("zalem_advisor_thread");
+  }, []);
+
   return (
     <AdvisorContext
       value={{
@@ -102,6 +109,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         open,
         close,
+        newChat,
         sendMessage,
         setProductId,
         pendingQuestion,

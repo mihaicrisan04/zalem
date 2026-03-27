@@ -111,7 +111,8 @@ function AssistantMessage({ parts }: { parts: any[] }) {
 // -- main sidebar --
 
 export function AdvisorSidebar() {
-  const { isOpen, close, threadId, isLoading, sendMessage, pendingQuestion } = useAdvisor();
+  const { isOpen, close, newChat, threadId, isLoading, sendMessage, pendingQuestion } =
+    useAdvisor();
   const [input, setInput] = useState("");
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
@@ -344,6 +345,8 @@ export function AdvisorSidebar() {
                     size="icon"
                     variant="ghost"
                     className="text-muted-foreground size-7 shrink-0"
+                    onClick={newChat}
+                    disabled={isLoading || !threadId}
                   >
                     <MessageSquarePlus className="size-3.5" />
                   </Button>
