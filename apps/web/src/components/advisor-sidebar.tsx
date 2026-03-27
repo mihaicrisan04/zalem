@@ -58,17 +58,9 @@ function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive:
   const doneLabel = getToolLabel(toolName, false);
 
   return (
-    <div className="flex items-center gap-1.5 py-1">
-      <div
-        className={cn(
-          "size-1 rounded-full transition-colors duration-500",
-          isDone ? "bg-muted-foreground/40" : "bg-primary animate-pulse",
-        )}
-      />
+    <div className="py-1">
       {isDone ? (
-        <span className="text-muted-foreground text-xs transition-opacity duration-500">
-          {doneLabel}
-        </span>
+        <span className="text-muted-foreground text-xs">{doneLabel}</span>
       ) : (
         <TextShimmer className="text-xs" duration={2}>
           {activeLabel}...
