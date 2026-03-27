@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
 import { TextShimmer } from "@zalem/ui/components/text-shimmer";
 import { useUIMessages } from "@convex-dev/agent/react";
@@ -11,6 +11,7 @@ import { ScrollArea } from "@zalem/ui/components/optics/scroll-area";
 import { cn } from "@zalem/ui/lib/utils";
 import { MessageContent, PromptSuggestion, Loader } from "@zalem/ui/components/prompt-kit";
 import { useAdvisor } from "@/hooks/use-advisor";
+import { StreamingText } from "./streaming-text";
 
 const MIN_WIDTH = 340;
 const DEFAULT_WIDTH = 400;
@@ -38,26 +39,41 @@ function getToolLabel(toolName: string, isActive: boolean): string {
   return isActive ? `Running ${toolName}` : `Ran ${toolName}`;
 }
 
-// -- tool step indicator --
+// -- tool step indicator with minimum display time --
 
 function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive: boolean }) {
-  const label = getToolLabel(toolName, isActive);
+  // keep shimmer visible for at least 600ms even if tool finishes instantly
+  const [showActive, setShowActive] = useState(true);
+  const mountedAt = useRef(Date.now());
 
-  if (isActive) {
+  useEffect(() => {
+    if (!isActive) {
+      const elapsed = Date.now() - mountedAt.current;
+      const remaining = Math.max(0, 600 - elapsed);
+      const timer = setTimeout(() => setShowActive(false), remaining);
+      return () => clearTimeout(timer);
+    }
+    setShowActive(true);
+  }, [isActive]);
+
+  const activeLabel = getToolLabel(toolName, true);
+  const doneLabel = getToolLabel(toolName, false);
+
+  if (showActive) {
     return (
       <div className="flex items-center gap-1.5 py-1.5">
         <div className="bg-primary size-1 animate-pulse rounded-full" />
         <TextShimmer className="text-xs" duration={2}>
-          {label}...
+          {activeLabel}...
         </TextShimmer>
       </div>
     );
   }
 
   return (
-    <div className="text-muted-foreground flex items-center gap-1.5 py-1 text-xs">
+    <div className="text-muted-foreground animate-in fade-in duration-300 flex items-center gap-1.5 py-1 text-xs">
       <Check className="size-3 shrink-0" />
-      <span>{label}</span>
+      <span>{doneLabel}</span>
     </div>
   );
 }
@@ -109,15 +125,8 @@ function AssistantMessage({ parts }: { parts: any[] }) {
       {parts.map((part: any, i: number) => {
         // text parts
         if (part.type === "text" && part.text) {
-          const isStreaming = part.state === "streaming";
           return (
-            <MessageContent
-              key={i}
-              markdown
-              className={cn("bg-transparent px-0 py-0", isStreaming && "streaming-text")}
-            >
-              {part.text}
-            </MessageContent>
+            <StreamingText key={i} text={part.text} isStreaming={part.state === "streaming"} />
           );
         }
 
@@ -406,11 +415,6 @@ export function AdvisorSidebar() {
         [data-advisor-sidebar] textarea::-webkit-scrollbar-track { background: transparent; }
         [data-advisor-sidebar] textarea::-webkit-scrollbar-thumb { background: oklch(0.708 0 0); border-radius: 3px; }
         .dark [data-advisor-sidebar] textarea::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); }
-
-        .streaming-text {
-          mask-image: linear-gradient(to right, black 85%, transparent 100%);
-          -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-        }
       `}</style>
     </aside>
   );
