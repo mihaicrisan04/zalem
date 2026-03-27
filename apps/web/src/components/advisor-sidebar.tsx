@@ -115,7 +115,7 @@ export function AdvisorSidebar() {
   const [input, setInput] = useState("");
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const messagesResult = useUIMessages(
@@ -131,11 +131,13 @@ export function AdvisorSidebar() {
   const lastMessageStatus = messages.length > 0 ? messages[messages.length - 1]?.status : null;
 
   useEffect(() => {
-    const el = messagesEndRef.current;
-    if (!el) return;
-    // use requestAnimationFrame to avoid layout thrashing during streaming
+    // scroll the ScrollArea viewport directly — NOT scrollIntoView which scrolls all ancestors
+    const scrollArea = scrollAreaRef.current;
+    if (!scrollArea) return;
+    const viewport = scrollArea.querySelector("[data-slot='scroll-area-viewport']");
+    if (!viewport) return;
     const raf = requestAnimationFrame(() => {
-      el.scrollIntoView({ behavior: "smooth" });
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
     });
     return () => cancelAnimationFrame(raf);
   }, [messages.length, lastMessageKey, lastMessageStatus, isLoading]);
@@ -249,7 +251,7 @@ export function AdvisorSidebar() {
       </Button>
 
       {/* messages */}
-      <ScrollArea className="min-h-0 flex-1" maskHeight={20}>
+      <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1" maskHeight={20}>
         <div className="flex flex-col gap-4 p-4">
           {messages.length === 0 && !isLoading && (
             <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
@@ -317,7 +319,7 @@ export function AdvisorSidebar() {
             </div>
           )}
 
-          <div ref={messagesEndRef} />
+          <div aria-hidden />
         </div>
       </ScrollArea>
 
