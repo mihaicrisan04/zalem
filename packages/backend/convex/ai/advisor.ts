@@ -149,8 +149,9 @@ export const requestAdvice = action({
         { saveStreamDeltas: true },
       );
       // consume the stream so the action waits for completion
+      // text is streamed via deltas to DB, no need to return it
       await result.consumeStream();
-      return { threadId: args.threadId, text: result.text };
+      return { threadId: args.threadId };
     }
 
     // new thread
@@ -167,6 +168,6 @@ export const requestAdvice = action({
     );
     await result.consumeStream();
 
-    return { threadId, text: result.text };
+    return { threadId };
   },
 });

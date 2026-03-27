@@ -126,13 +126,19 @@ export function AdvisorSidebar() {
 
   const messages = messagesResult?.results ?? [];
 
-  // track streaming status to auto-scroll as content streams in
+  // auto-scroll: on new messages or when streaming status changes
+  const lastMessageKey = messages.length > 0 ? messages[messages.length - 1]?.key : null;
   const lastMessageStatus = messages.length > 0 ? messages[messages.length - 1]?.status : null;
-  const lastMessageText = messages.length > 0 ? messages[messages.length - 1]?.text?.length : 0;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isLoading, lastMessageStatus, lastMessageText]);
+    const el = messagesEndRef.current;
+    if (!el) return;
+    // use requestAnimationFrame to avoid layout thrashing during streaming
+    const raf = requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [messages.length, lastMessageKey, lastMessageStatus, isLoading]);
 
   useEffect(() => {
     if (pendingQuestion && isOpen && !isLoading) {
