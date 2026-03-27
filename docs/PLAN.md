@@ -253,7 +253,7 @@ the AI layer. sits on top of everything built so far. uses `@convex-dev/agent` f
 | 6.2       | advisor sidebar UI (push-content, resizable, prompt-kit components)   | done        |
 | 6.3       | agent tools (product details, search, recommendations, cart, reviews) | done        |
 | 6.4       | review summarization (batch, Flash-Lite, conflict surfacing)          | done        |
-| 6.5       | AI comparison mode (structured side-by-side analysis)                 | not started |
+| 6.5       | AI comparison mode + chat experience upgrade                          | in progress |
 | 6.6       | polish & safety (rate limiting, feedback, output validation)          | not started |
 
 **two-stage architecture:**
@@ -316,6 +316,26 @@ stage 2: LLM re-ranking + messaging (Gemini Flash, 300-500ms)
   "message": "great pick — here's a wrist rest that pairs perfectly with it"
 }
 ```
+
+**phase 6.5 sub-phases:**
+
+| sub-phase | what                                                                               | status      |
+| --------- | ---------------------------------------------------------------------------------- | ----------- |
+| 6.5.1     | richer first-message context (product, cart, recent views — hidden from chat UI)    | not started |
+| 6.5.2     | tool call step indicators (inline "Looking up..." labels from message stream)       | not started |
+| 6.5.3     | compareProducts tool (structured JSON with specs, reviews, pricing for 2-3 items)   | not started |
+| 6.5.4     | custom chat UI components (comparison table, inline product cards, no bubbles on AI) | not started |
+| 6.5.5     | speed optimizations (reduce tool calls via pre-fetched context, trim few-shots)     | not started |
+| 6.5.6     | system prompt tuning for comparison + few-shot example                              | not started |
+| 6.5.7     | polish + docs                                                                      | not started |
+
+**key design decisions for 6.5:**
+
+- **assistant messages have no bubble** — plain markdown text, no bg-muted container. only user messages stay in bubbles.
+- **richer context is invisible in chat** — first message sends product/cart/behavior context to the AI but the chat UI only shows the user's actual question text.
+- **tool calls render as step indicators** — "Looking up product..." / "Comparing products..." as muted inline labels, using `Loader` variant="text-shimmer" while active.
+- **comparison results render as custom UI** — `ComparisonTable` component with product thumbnails, side-by-side specs, review themes, pricing. not markdown.
+- **prompt-kit components used:** `Message`, `MessageContent` (text only), `Loader` (text-shimmer for steps), `PromptInput` + `PromptInputTextarea` + `PromptInputActions`, `ChatContainerRoot` for auto-scroll, `ScrollButton`.
 
 ---
 

@@ -470,6 +470,17 @@ when a user views or pins 2-3 products in the same category:
 
 this is a **core** AI surface because comparison is one of the highest-value shopping tasks and one of the clearest ways to demonstrate thesis value.
 
+**implementation update (2026-03-27): phase 6.5 — chat experience upgrade + comparison mode**
+
+combined effort: improve the chat backbone (speed, context richness, custom UI) and add comparison as the flagship custom UI component.
+
+- **richer first-message context:** on the first advisor call, the backend assembles full product details + cart + recently viewed products server-side. this context is injected as a system-level prefix that the AI sees but the chat UI hides — the user only sees their own question. eliminates 1-2 tool calls on most first messages.
+- **tool call step indicators:** message parts with `type === "tool-call"` render as inline muted labels ("Looking up product details...", "Comparing products...") with `Loader variant="text-shimmer"` while active. gives users visibility into what the agent is doing without cluttering the chat.
+- **compareProducts tool:** new agent tool that takes 2-3 product IDs, fetches full details + review summaries + pricing for each, returns structured JSON. the agent calls this when users ask to compare.
+- **custom UI components in chat:** message renderer switches on part type. text parts → markdown (no bubble on assistant messages). `compareProducts` tool results → `ComparisonTable` component with product thumbnails, side-by-side specs columns, review theme comparison, pricing. product detail tool results → optional inline product card.
+- **assistant messages have no bubble/card:** plain markdown text rendered directly, no `bg-muted` wrapper. only user messages stay in pill bubbles. this makes the chat feel more like a document/article than a chatbot.
+- **speed:** richer first-message context reduces tool calls. trimmed few-shot examples from 4 pairs to 2. streaming already handled by `@convex-dev/agent` via `syncStreams`.
+
 ### 6. cart cross-sell banner
 
 on the cart page, after the order summary:
