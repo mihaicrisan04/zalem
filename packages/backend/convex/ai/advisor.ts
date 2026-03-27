@@ -59,7 +59,7 @@ export const requestAdvice = action({
             : `$${product.price}`;
 
           contextParts.push(
-            `CURRENT PRODUCT: ${product.title} by ${product.brand}\nCategory: ${product.category}${product.subcategory ? ` > ${product.subcategory}` : ""}\nPrice: ${priceLine}\nRating: ${product.rating}/5 (${product.reviewCount} reviews)\n${desc}${specsLine}`,
+            `CURRENT PRODUCT (ID: ${product._id}): ${product.title} by ${product.brand}\nCategory: ${product.category}${product.subcategory ? ` > ${product.subcategory}` : ""}\nPrice: ${priceLine}\nRating: ${product.rating}/5 (${product.reviewCount} reviews)\n${desc}${specsLine}`,
           );
         }
 
