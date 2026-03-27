@@ -42,31 +42,32 @@ function getToolLabel(toolName: string, isActive: boolean): string {
 // -- tool step indicator with minimum display time --
 
 function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive: boolean }) {
-  const [isDone, setIsDone] = useState(false);
+  const [isDone, setIsDone] = useState(!isActive);
+  const doneRef = useRef(!isActive);
   const mountedAt = useRef(Date.now());
 
   useEffect(() => {
-    if (!isActive && !isDone) {
+    if (doneRef.current) return; // already done, never go back
+    if (!isActive) {
       const elapsed = Date.now() - mountedAt.current;
       const remaining = Math.max(0, 800 - elapsed);
-      const timer = setTimeout(() => setIsDone(true), remaining);
+      const timer = setTimeout(() => {
+        doneRef.current = true;
+        setIsDone(true);
+      }, remaining);
       return () => clearTimeout(timer);
     }
-  }, [isActive, isDone]);
+  }, [isActive]);
 
   const activeLabel = getToolLabel(toolName, true);
   const doneLabel = getToolLabel(toolName, false);
 
-  return (
-    <div className="py-1">
-      {isDone ? (
-        <span className="text-muted-foreground text-xs">{doneLabel}</span>
-      ) : (
-        <TextShimmer className="text-xs" duration={2}>
-          {activeLabel}...
-        </TextShimmer>
-      )}
-    </div>
+  return isDone ? (
+    <span className="text-muted-foreground text-sm">{doneLabel}</span>
+  ) : (
+    <TextShimmer className="text-sm" duration={2}>
+      {activeLabel}...
+    </TextShimmer>
   );
 }
 

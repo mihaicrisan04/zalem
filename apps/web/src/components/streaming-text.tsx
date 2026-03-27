@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@zalem/ui/lib/utils";
 import { Markdown } from "@zalem/ui/components/prompt-kit";
 
-// reveal speed: ms per word. higher = slower, smoother
 const MS_PER_WORD = 140;
 
 export function StreamingText({
@@ -17,48 +16,62 @@ export function StreamingText({
   className?: string;
 }) {
   const [displayedText, setDisplayedText] = useState("");
+  const displayedLenRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const queueRef = useRef<string[]>([]);
-  const processingRef = useRef(false);
 
-  // when new text arrives, queue the new words
+  const revealNextWord = useCallback(() => {
+    timerRef.current = setTimeout(() => {
+      const current = displayedLenRef.current;
+      const fullText = textRef.current;
+
+      if (current >= fullText.length) {
+        // caught up, check again soon in case more text arrives
+        if (streamingRef.current) {
+          timerRef.current = setTimeout(() => revealNextWord(), MS_PER_WORD);
+        }
+        return;
+      }
+
+      // find next word boundary
+      let end = current + 1;
+      while (end < fullText.length && fullText[end] !== " " && fullText[end] !== "\n") {
+        end++;
+      }
+      // include trailing space/newline
+      while (end < fullText.length && (fullText[end] === " " || fullText[end] === "\n")) {
+        end++;
+      }
+
+      displayedLenRef.current = end;
+      setDisplayedText(fullText.slice(0, end));
+      revealNextWord();
+    }, MS_PER_WORD);
+  }, []);
+
+  // refs to avoid stale closures
+  const textRef = useRef(text);
+  const streamingRef = useRef(isStreaming);
+  textRef.current = text;
+  streamingRef.current = isStreaming;
+
+  // start revealing when streaming begins
   useEffect(() => {
-    const currentLen = queueRef.current.join("").length + displayedText.length;
-    const newContent = text.slice(currentLen);
-    if (!newContent) return;
-
-    // split new content into words (preserving spaces/newlines)
-    const words = newContent.match(/\S+\s*|\s+/g) ?? [newContent];
-    queueRef.current.push(...words);
-
-    // start draining if not already
-    if (!processingRef.current) {
-      processingRef.current = true;
-      drainQueue();
+    if (isStreaming && !timerRef.current) {
+      revealNextWord();
     }
-  }, [text]);
+  }, [isStreaming, text, revealNextWord]);
 
-  // when streaming ends, flush everything
+  // flush when streaming ends
   useEffect(() => {
     if (!isStreaming) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      processingRef.current = false;
-      queueRef.current = [];
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      displayedLenRef.current = text.length;
       setDisplayedText(text);
     }
   }, [isStreaming, text]);
-
-  function drainQueue() {
-    timerRef.current = setTimeout(() => {
-      const next = queueRef.current.shift();
-      if (next) {
-        setDisplayedText((prev) => prev + next);
-        drainQueue();
-      } else {
-        processingRef.current = false;
-      }
-    }, MS_PER_WORD);
-  }
 
   // cleanup
   useEffect(() => {
@@ -67,19 +80,7 @@ export function StreamingText({
     };
   }, []);
 
-  // static render when done
-  if (!isStreaming && displayedText === text) {
-    return (
-      <div
-        className={cn(
-          "prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed",
-          className,
-        )}
-      >
-        <Markdown>{text}</Markdown>
-      </div>
-    );
-  }
+  const content = isStreaming ? displayedText : text;
 
   return (
     <div
@@ -88,7 +89,7 @@ export function StreamingText({
         className,
       )}
     >
-      <Markdown>{displayedText}</Markdown>
+      <Markdown>{content || " "}</Markdown>
     </div>
   );
 }
