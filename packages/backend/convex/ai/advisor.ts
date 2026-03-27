@@ -141,10 +141,15 @@ export const requestAdvice = action({
       const { thread } = await shoppingAdvisor.continueThread(ctx, {
         threadId: args.threadId,
       });
-      const result = await thread.generateText({
-        prompt: args.question,
-        messages: contextMessages,
-      });
+      const result = await thread.streamText(
+        {
+          prompt: args.question,
+          messages: contextMessages,
+        },
+        { saveStreamDeltas: true },
+      );
+      // consume the stream so the action waits for completion
+      await result.consumeStream();
       return { threadId: args.threadId, text: result.text };
     }
 
@@ -153,10 +158,14 @@ export const requestAdvice = action({
       userId,
     });
 
-    const result = await thread.generateText({
-      prompt: args.question,
-      messages: [...contextMessages, ...FEW_SHOT_EXAMPLES],
-    });
+    const result = await thread.streamText(
+      {
+        prompt: args.question,
+        messages: [...contextMessages, ...FEW_SHOT_EXAMPLES],
+      },
+      { saveStreamDeltas: true },
+    );
+    await result.consumeStream();
 
     return { threadId, text: result.text };
   },

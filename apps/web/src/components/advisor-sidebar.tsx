@@ -126,9 +126,13 @@ export function AdvisorSidebar() {
 
   const messages = messagesResult?.results ?? [];
 
+  // track streaming status to auto-scroll as content streams in
+  const lastMessageStatus = messages.length > 0 ? messages[messages.length - 1]?.status : null;
+  const lastMessageText = messages.length > 0 ? messages[messages.length - 1]?.text?.length : 0;
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, isLoading]);
+  }, [messages.length, isLoading, lastMessageStatus, lastMessageText]);
 
   useEffect(() => {
     if (pendingQuestion && isOpen && !isLoading) {
