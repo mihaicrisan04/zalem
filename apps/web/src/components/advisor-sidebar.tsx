@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
+import { MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
 import { TextShimmer } from "@zalem/ui/components/text-shimmer";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
@@ -42,56 +42,38 @@ function getToolLabel(toolName: string, isActive: boolean): string {
 // -- tool step indicator with minimum display time --
 
 function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive: boolean }) {
-  const [phase, setPhase] = useState<"active" | "fading" | "done">("active");
+  const [isDone, setIsDone] = useState(false);
   const mountedAt = useRef(Date.now());
 
   useEffect(() => {
-    if (!isActive && phase === "active") {
-      // ensure shimmer shows for at least 800ms
+    if (!isActive && !isDone) {
       const elapsed = Date.now() - mountedAt.current;
       const remaining = Math.max(0, 800 - elapsed);
-      const timer = setTimeout(() => setPhase("fading"), remaining);
+      const timer = setTimeout(() => setIsDone(true), remaining);
       return () => clearTimeout(timer);
     }
-  }, [isActive, phase]);
-
-  useEffect(() => {
-    if (phase === "fading") {
-      // hold the fade transition for 400ms then switch to done
-      const timer = setTimeout(() => setPhase("done"), 400);
-      return () => clearTimeout(timer);
-    }
-  }, [phase]);
+  }, [isActive, isDone]);
 
   const activeLabel = getToolLabel(toolName, true);
   const doneLabel = getToolLabel(toolName, false);
 
   return (
-    <div className="relative overflow-hidden py-1">
-      {/* active state */}
+    <div className="flex items-center gap-1.5 py-1">
       <div
         className={cn(
-          "flex items-center gap-1.5 transition-all duration-400 ease-out",
-          phase !== "active" && "absolute -translate-y-2 opacity-0",
+          "size-1 rounded-full transition-colors duration-500",
+          isDone ? "bg-muted-foreground/40" : "bg-primary animate-pulse",
         )}
-      >
-        <div className="bg-primary size-1 animate-pulse rounded-full" />
+      />
+      {isDone ? (
+        <span className="text-muted-foreground text-xs transition-opacity duration-500">
+          {doneLabel}
+        </span>
+      ) : (
         <TextShimmer className="text-xs" duration={2}>
           {activeLabel}...
         </TextShimmer>
-      </div>
-
-      {/* done state */}
-      <div
-        className={cn(
-          "text-muted-foreground flex items-center gap-1.5 text-xs transition-all duration-400 ease-out",
-          phase === "active" && "absolute translate-y-2 opacity-0",
-          phase === "fading" && "translate-y-0 opacity-100",
-        )}
-      >
-        <Check className="size-3 shrink-0" />
-        <span>{doneLabel}</span>
-      </div>
+      )}
     </div>
   );
 }
