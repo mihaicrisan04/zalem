@@ -64,6 +64,7 @@ export default function CartPage() {
   );
 
   return (
+    <>
     <div className="container mx-auto px-4 py-6">
       <h1 className="mb-6 text-2xl font-bold">My Cart ({cartItems.length} items)</h1>
 
@@ -189,16 +190,18 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* recommendations */}
-      {cartForRecs && cartForRecs.length > 0 && (
-        <div className="mt-10">
-          <ProductRow
-            title="You might also like"
-            products={cartForRecs as any}
-            favoritedIds={favoritedIds}
-          />
-        </div>
-      )}
     </div>
+
+    {/* recommendations — full width */}
+    {cartForRecs && cartForRecs.length > 0 && (
+      <div className="py-10">
+        <ProductRow
+          title="You might also like"
+          products={cartForRecs as any}
+          favoritedIds={favoritedIds}
+        />
+      </div>
+    )}
+    </>
   );
 }

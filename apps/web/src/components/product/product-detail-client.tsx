@@ -154,7 +154,8 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
   };
 
   return (
-    <div ref={engagementRef} className="container mx-auto px-4 py-6">
+    <div ref={engagementRef}>
+    <div className="container mx-auto px-4 py-6">
       {/* breadcrumb */}
       <nav className="text-muted-foreground mb-6 flex items-center gap-1 text-sm">
         <Link href="/" className="hover:text-foreground">
@@ -378,23 +379,21 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
         </div>
       </div>
 
-      {/* frequently bought together */}
+    </div>
+
+    {/* product rows — full width, outside the container */}
+    <div className="space-y-10 py-10">
       {fbtProducts && fbtProducts.length > 0 && (
-        <>
-          <Separator className="my-10" />
-          <ProductRow
-            title="Frequently bought together"
-            products={fbtProducts as any}
-            isLoading={false}
-            favoritedIds={relatedFavIds}
-          />
-        </>
+        <ProductRow
+          title="Frequently bought together"
+          products={fbtProducts as any}
+          isLoading={false}
+          favoritedIds={relatedFavIds}
+        />
       )}
 
-      {/* similar products */}
-      <Separator className="my-10" />
       {readiness.activeChips.find((c) => c.type === "comparison_behavior") && (
-        <div className="mb-4">
+        <div className="px-4">
           <QuestionChip
             chip={readiness.activeChips.find((c) => c.type === "comparison_behavior")!}
             onDismiss={readiness.dismissChip}
@@ -408,17 +407,14 @@ export function ProductDetailClient({ productId }: { productId: Id<"products"> }
         favoritedIds={relatedFavIds}
       />
 
-      {/* recently viewed */}
       {recentProducts && recentProducts.length > 1 && (
-        <>
-          <Separator className="my-10" />
-          <ProductRow
-            title="Recently viewed"
-            products={recentProducts.filter((p: any) => p._id !== productId) as any}
-            favoritedIds={relatedFavIds}
-          />
-        </>
+        <ProductRow
+          title="Recently viewed"
+          products={recentProducts.filter((p: any) => p._id !== productId) as any}
+          favoritedIds={relatedFavIds}
+        />
       )}
+    </div>
     </div>
   );
 }

@@ -26,8 +26,10 @@ export default function HomePage() {
   const favoritedIds = useFavoritedIds(allProductIds);
 
   return (
-    <div className="container mx-auto space-y-10 px-4 py-6">
-      <HeroCarousel />
+    <div className="space-y-10 py-6">
+      <div className="container mx-auto px-4">
+        <HeroCarousel />
+      </div>
       <DealsSection />
       <ProductRow
         title="Trending"
@@ -41,7 +43,9 @@ export default function HomePage() {
         isLoading={forYou === undefined}
         favoritedIds={favoritedIds}
       />
-      <CategoryGrid />
+      <div className="container mx-auto px-4">
+        <CategoryGrid />
+      </div>
       {recentProducts && recentProducts.length > 0 && (
         <ProductRow
           title="Recently viewed"

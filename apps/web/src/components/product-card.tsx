@@ -77,7 +77,7 @@ export function ProductCard({
       </Link>
 
       {/* discount badge */}
-      {product.discountPercent && product.discountPercent > 0 && (
+      {product.discountPercent != null && product.discountPercent > 0 && (
         <Badge variant="destructive" className="absolute top-2.5 left-2.5">
           -{product.discountPercent}%
         </Badge>

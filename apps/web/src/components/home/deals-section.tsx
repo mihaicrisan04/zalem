@@ -11,7 +11,7 @@ export function DealsSection() {
   const favoritedIds = useFavoritedIds(deals?.map((d) => d._id) ?? []);
 
   return (
-    <section>
+    <section className="container mx-auto px-4">
       <div className="mb-4 flex items-center gap-3">
         <h2 className="text-xl font-bold">Deals of the day</h2>
         <span className="bg-destructive text-destructive-foreground rounded-md px-2 py-0.5 text-xs font-medium">
