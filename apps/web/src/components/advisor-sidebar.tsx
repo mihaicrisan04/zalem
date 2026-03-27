@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
+import { Check, MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
@@ -20,6 +20,95 @@ const SUGGESTIONS = [
   "Compare the top-rated phones",
   "What are the best deals right now?",
 ];
+
+// -- tool name → human-readable label --
+
+const TOOL_LABELS: Record<string, { active: string; done: string }> = {
+  getProductDetails: { active: "Looking up product details", done: "Looked up product details" },
+  searchProducts: { active: "Searching products", done: "Searched products" },
+  getRecommendations: { active: "Finding recommendations", done: "Found recommendations" },
+  getCartContents: { active: "Checking your cart", done: "Checked your cart" },
+  getReviewsSummary: { active: "Reading reviews", done: "Read reviews" },
+};
+
+function getToolLabel(toolName: string, isActive: boolean): string {
+  const labels = TOOL_LABELS[toolName];
+  if (labels) return isActive ? labels.active : labels.done;
+  return isActive ? `Running ${toolName}` : `Ran ${toolName}`;
+}
+
+// -- tool step indicator --
+
+function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive: boolean }) {
+  const label = getToolLabel(toolName, isActive);
+
+  if (isActive) {
+    return (
+      <div className="py-1">
+        <Loader variant="text-shimmer" text={label} size="sm" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-muted-foreground flex items-center gap-1.5 py-1 text-xs">
+      <Check className="size-3" />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+// -- extract tool name from a part --
+
+function extractToolName(part: any): string | null {
+  if (part.type === "dynamic-tool") return part.toolName;
+  if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+    return part.toolName ?? part.type.replace("tool-", "");
+  }
+  return null;
+}
+
+function isToolActive(part: any): boolean {
+  return part.state === "call" || part.state === "input-streaming" || part.state === "partial-call";
+}
+
+// -- message parts renderer --
+
+function AssistantMessage({ parts }: { parts: any[] }) {
+  // dedupe tool steps: only show one indicator per toolCallId
+  const seenToolCalls = new Set<string>();
+
+  return (
+    <div className="space-y-1">
+      {parts.map((part: any, i: number) => {
+        // text parts
+        if (part.type === "text" && part.text) {
+          return (
+            <MessageContent key={i} markdown className="bg-transparent px-0 py-0">
+              {part.text}
+            </MessageContent>
+          );
+        }
+
+        // tool call parts
+        const toolName = extractToolName(part);
+        if (toolName) {
+          const callId = part.toolCallId ?? `${toolName}-${i}`;
+          if (seenToolCalls.has(callId)) return null;
+          seenToolCalls.add(callId);
+          return (
+            <ToolStepIndicator key={callId} toolName={toolName} isActive={isToolActive(part)} />
+          );
+        }
+
+        // skip step-start, reasoning, etc.
+        return null;
+      })}
+    </div>
+  );
+}
+
+// -- main sidebar --
 
 export function AdvisorSidebar() {
   const { isOpen, close, threadId, isLoading, sendMessage, pendingQuestion } = useAdvisor();
@@ -179,35 +268,42 @@ export function AdvisorSidebar() {
           )}
 
           {messages.map((msg) => {
-            const text =
-              msg.parts
-                ?.filter((p: any) => p.type === "text")
-                .map((p: any) => p.text)
-                .join("") ?? "";
-            if (!text) return null;
-
             const isUser = msg.role === "user";
 
+            if (isUser) {
+              const text =
+                msg.parts
+                  ?.filter((p: any) => p.type === "text")
+                  .map((p: any) => p.text)
+                  .join("") ?? "";
+              if (!text) return null;
+
+              return (
+                <div key={msg.id} className="flex justify-end">
+                  <MessageContent className="bg-primary text-primary-foreground max-w-[85%]">
+                    {text}
+                  </MessageContent>
+                </div>
+              );
+            }
+
+            // assistant message: render parts individually
+            const hasParts = msg.parts && msg.parts.length > 0;
+            const hasText = msg.parts?.some((p: any) => p.type === "text" && p.text);
+            const hasToolCalls = msg.parts?.some((p: any) => extractToolName(p) !== null);
+
+            if (!hasParts || (!hasText && !hasToolCalls)) return null;
+
             return (
-              <div key={msg.id} className={cn("flex", isUser && "justify-end")}>
-                <MessageContent
-                  markdown={!isUser}
-                  className={cn(
-                    "max-w-[85%]",
-                    isUser ? "bg-primary text-primary-foreground" : "bg-muted",
-                  )}
-                >
-                  {text}
-                </MessageContent>
+              <div key={msg.id}>
+                <AssistantMessage parts={msg.parts} />
               </div>
             );
           })}
 
           {isLoading && (
-            <div className="flex">
-              <div className="bg-muted flex items-center gap-2 rounded-2xl px-4 py-3">
-                <Loader variant="typing" size="sm" />
-              </div>
+            <div className="py-1">
+              <Loader variant="typing" size="sm" />
             </div>
           )}
 
