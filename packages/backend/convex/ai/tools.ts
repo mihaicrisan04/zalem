@@ -119,19 +119,20 @@ export const getCartContents = createTool({
 
 export const getReviewsSummary = createTool({
   description:
-    "Get review statistics and sample reviews for a product. Use when the user asks what buyers think, whether a product is good, or wants to understand pros and cons.",
+    "Get review statistics, AI-extracted themes, and sample reviews for a product. Use when the user asks what buyers think, whether a product is good, or wants to understand pros and cons. If an AI summary is available, prefer using its structured themes and conflicts over raw reviews.",
   inputSchema: z.object({
     productId: z.string().describe("The product ID to get reviews for"),
   }),
   execute: async (ctx, { productId }): Promise<Record<string, unknown>> => {
     const id = productId as Id<"products">;
 
-    const [aggregate, reviewsPage] = await Promise.all([
+    const [aggregate, reviewsPage, summary] = await Promise.all([
       ctx.runQuery(api.reviews.getAggregateByProduct, { productId: id }),
       ctx.runQuery(api.reviews.listByProduct, {
         productId: id,
         paginationOpts: { cursor: null, numItems: 5 },
       }),
+      ctx.runQuery(api.ai.reviewSummariesHelpers.getSummary, { productId: id }),
     ]);
 
     return {
@@ -143,6 +144,15 @@ export const getReviewsSummary = createTool({
         text: r.text,
         userName: r.userName,
       })),
+      summary: summary
+        ? {
+            positives: summary.positives.map((t) => ({ theme: t.theme, count: t.count })),
+            negatives: summary.negatives.map((t) => ({ theme: t.theme, count: t.count })),
+            conflicts: summary.conflicts,
+            bestFor: summary.bestFor,
+            reviewsAnalyzed: summary.reviewCount,
+          }
+        : null,
     };
   },
 });

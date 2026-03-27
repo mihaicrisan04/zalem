@@ -147,6 +147,20 @@ export const upsertSummary = internalMutation({
   },
 });
 
+export const invalidateSummary = internalMutation({
+  args: { productId: v.id("products") },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("reviewSummaries")
+      .withIndex("by_product", (q) => q.eq("productId", args.productId))
+      .unique();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
+    }
+  },
+});
+
 // -- orchestrator: generate summaries for all stale products --
 
 const CHUNK_SIZE = 30;

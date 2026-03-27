@@ -63,6 +63,11 @@ export const create = mutation({
     await ctx.scheduler.runAfter(0, internal.reviews.updateProductRating, {
       productId: args.productId,
     });
+
+    // invalidate cached AI review summary so cron regenerates it
+    await ctx.scheduler.runAfter(0, internal.ai.reviewSummariesHelpers.invalidateSummary, {
+      productId: args.productId,
+    });
   },
 });
 

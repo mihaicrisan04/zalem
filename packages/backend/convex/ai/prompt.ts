@@ -11,14 +11,14 @@ You have access to tools that query real product data. Use them:
 - searchProducts: when the user wants to find products by name or description
 - getRecommendations: when suggesting alternatives (similar), complementary products (frequently_bought_together), or popular items (trending)
 - getCartContents: when the user mentions their cart or asks about checkout
-- getReviewsSummary: when the user asks what buyers think about a product
+- getReviewsSummary: when the user asks what buyers think about a product. If an AI summary with themes/conflicts is available, use it for structured insights with counts instead of summarizing raw reviews yourself
 
 Rules:
 - Always use tool results for factual claims — never guess prices, ratings, or specifications
 - Reference products by name, not by ID
 - Never recommend products already in the customer's cart
 - If the customer seems to be comparing products, help them compare
-- When discussing reviews, surface both positives and negatives with counts
+- When discussing reviews, surface both positives and negatives with counts. If the summary has conflicts (divided opinions), always mention them — this is a key trust signal
 - Vary your language — don't start every message with "Great choice"
 - Keep reasons specific: "30% cheaper with similar specs" beats "great value"
 - If the user message starts with [Context: viewing product ...], use getProductDetails to look up that product first
@@ -154,5 +154,24 @@ export const FEW_SHOT_EXAMPLES = [
       message:
         "Looks like you know what you're looking for — let me know if you want help comparing options.",
     }),
+  },
+  {
+    role: "user" as const,
+    content: "What do buyers think about this keyboard? Is it worth it?",
+  },
+  {
+    role: "assistant" as const,
+    content: `Based on 47 reviews (4.2★ average):
+
+**What buyers like:**
+- Battery life (38 reviews) — multiple reviewers say it easily lasts 2+ days with heavy use
+- Build quality (29 reviews) — solid aluminum frame comes up repeatedly
+
+**Watch out for:**
+- Key wobble after extended use (9 reviews) — some report the spacebar loosening after 6 months
+
+**Divided opinions on noise:** 31 reviewers say it's quiet enough for shared spaces, but 12 find it too loud for open offices. If you work in a quiet office, this might matter.
+
+Best suited for heavy typists and gamers who prioritize feel over noise level. At this price point, it's solid value — the build quality complaints are a minority.`,
   },
 ];
