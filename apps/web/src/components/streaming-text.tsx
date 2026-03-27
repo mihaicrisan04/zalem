@@ -4,15 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@zalem/ui/lib/utils";
 import { Markdown } from "@zalem/ui/components/prompt-kit";
 
-/**
- * StreamingText — renders streamed markdown with word-by-word fade-in.
- *
- * How it works:
- * - receives the full text so far from the streaming part
- * - tracks which portion has been "revealed" vs. what's newly arrived
- * - newly arrived words get a CSS fade-in + blur-to-sharp animation
- * - once streaming is done, renders everything statically (no animation overhead)
- */
+// reveal speed: ms per word. higher = slower, smoother
+const MS_PER_WORD = 90;
+
 export function StreamingText({
   text,
   isStreaming,
@@ -23,27 +17,31 @@ export function StreamingText({
   className?: string;
 }) {
   const [displayedLength, setDisplayedLength] = useState(0);
-  const rafRef = useRef<number>(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const targetLengthRef = useRef(0);
 
-  // update target length as text streams in
   useEffect(() => {
     targetLengthRef.current = text.length;
   }, [text]);
 
-  // animate: catch up to target length at ~1 word per frame
+  // throttled word-by-word reveal
   useEffect(() => {
     if (!isStreaming) {
       setDisplayedLength(text.length);
+      if (timerRef.current) clearTimeout(timerRef.current);
       return;
     }
 
-    const step = () => {
+    const tick = () => {
       setDisplayedLength((prev) => {
         const target = targetLengthRef.current;
-        if (prev >= target) return prev;
+        if (prev >= target) {
+          // caught up — wait and check again
+          timerRef.current = setTimeout(tick, MS_PER_WORD);
+          return prev;
+        }
 
-        // find next word boundary to jump to
+        // advance to next word boundary
         const nextSpace = text.indexOf(" ", prev + 1);
         const nextNewline = text.indexOf("\n", prev + 1);
         let nextBoundary = target;
@@ -51,17 +49,19 @@ export function StreamingText({
         if (nextSpace !== -1 && nextSpace < nextBoundary) nextBoundary = nextSpace + 1;
         if (nextNewline !== -1 && nextNewline < nextBoundary) nextBoundary = nextNewline + 1;
 
+        timerRef.current = setTimeout(tick, MS_PER_WORD);
         return Math.min(nextBoundary, target);
       });
-      rafRef.current = requestAnimationFrame(step);
     };
 
-    rafRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafRef.current);
+    timerRef.current = setTimeout(tick, MS_PER_WORD);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [isStreaming, text]);
 
-  // once streaming is done, render everything normally
-  if (!isStreaming) {
+  // streaming done — static render
+  if (!isStreaming && displayedLength >= text.length) {
     return (
       <div
         className={cn(
@@ -74,7 +74,7 @@ export function StreamingText({
     );
   }
 
-  // while streaming: split into revealed (static) + new (animated)
+  // streaming: revealed text + fresh text with animation + cursor
   const revealed = text.slice(0, displayedLength);
   const fresh = text.slice(displayedLength);
 
@@ -86,12 +86,29 @@ export function StreamingText({
       )}
     >
       <Markdown>{revealed}</Markdown>
-      {fresh && <span className="animate-[fadeBlurIn_300ms_ease-out_forwards]">{fresh}</span>}
-      <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-current align-text-bottom opacity-50" />
+      {fresh && <span className="streaming-fresh">{fresh}</span>}
+      <span className="streaming-cursor" />
       <style>{`
+        .streaming-fresh {
+          animation: fadeBlurIn 500ms ease-out forwards;
+        }
+        .streaming-cursor {
+          display: inline-block;
+          width: 2px;
+          height: 1em;
+          margin-left: 1px;
+          background: currentColor;
+          opacity: 0.4;
+          vertical-align: text-bottom;
+          animation: cursorBlink 1s step-end infinite;
+        }
         @keyframes fadeBlurIn {
-          from { opacity: 0; filter: blur(2px); }
-          to { opacity: 1; filter: blur(0); }
+          0% { opacity: 0; filter: blur(3px); }
+          100% { opacity: 1; filter: blur(0); }
+        }
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0; }
         }
       `}</style>
     </div>

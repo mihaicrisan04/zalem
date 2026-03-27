@@ -42,38 +42,56 @@ function getToolLabel(toolName: string, isActive: boolean): string {
 // -- tool step indicator with minimum display time --
 
 function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive: boolean }) {
-  // keep shimmer visible for at least 600ms even if tool finishes instantly
-  const [showActive, setShowActive] = useState(true);
+  const [phase, setPhase] = useState<"active" | "fading" | "done">("active");
   const mountedAt = useRef(Date.now());
 
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive && phase === "active") {
+      // ensure shimmer shows for at least 800ms
       const elapsed = Date.now() - mountedAt.current;
-      const remaining = Math.max(0, 600 - elapsed);
-      const timer = setTimeout(() => setShowActive(false), remaining);
+      const remaining = Math.max(0, 800 - elapsed);
+      const timer = setTimeout(() => setPhase("fading"), remaining);
       return () => clearTimeout(timer);
     }
-    setShowActive(true);
-  }, [isActive]);
+  }, [isActive, phase]);
+
+  useEffect(() => {
+    if (phase === "fading") {
+      // hold the fade transition for 400ms then switch to done
+      const timer = setTimeout(() => setPhase("done"), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [phase]);
 
   const activeLabel = getToolLabel(toolName, true);
   const doneLabel = getToolLabel(toolName, false);
 
-  if (showActive) {
-    return (
-      <div className="flex items-center gap-1.5 py-1.5">
+  return (
+    <div className="relative overflow-hidden py-1">
+      {/* active state */}
+      <div
+        className={cn(
+          "flex items-center gap-1.5 transition-all duration-400 ease-out",
+          phase !== "active" && "absolute -translate-y-2 opacity-0",
+        )}
+      >
         <div className="bg-primary size-1 animate-pulse rounded-full" />
         <TextShimmer className="text-xs" duration={2}>
           {activeLabel}...
         </TextShimmer>
       </div>
-    );
-  }
 
-  return (
-    <div className="text-muted-foreground animate-in fade-in duration-300 flex items-center gap-1.5 py-1 text-xs">
-      <Check className="size-3 shrink-0" />
-      <span>{doneLabel}</span>
+      {/* done state */}
+      <div
+        className={cn(
+          "text-muted-foreground flex items-center gap-1.5 text-xs transition-all duration-400 ease-out",
+          phase === "active" && "absolute translate-y-2 opacity-0",
+          phase === "fading" && "translate-y-0 opacity-100",
+        )}
+      >
+        <Check className="size-3 shrink-0" />
+        <span>{doneLabel}</span>
+      </div>
     </div>
   );
 }
