@@ -5,6 +5,7 @@ import { useAction } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { api } from "@zalem/backend/convex/_generated/api";
+import { useRecentlyViewed } from "./use-recently-viewed";
 
 type AdvisorState = {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
   const productIdRef = useRef<string | null>(null);
 
   const requestAdvice = useAction(api.ai.advisor.requestAdvice);
+  const { recentlyViewedIds } = useRecentlyViewed();
 
   const setProductId = useCallback((id: string | null) => {
     productIdRef.current = id;
@@ -53,10 +55,12 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
       setPendingQuestion(null);
 
       try {
+        const isNewThread = !threadId;
         const result = await requestAdvice({
           threadId: threadId ?? undefined,
           question,
           productId: productIdRef.current ?? undefined,
+          recentlyViewedIds: isNewThread ? recentlyViewedIds : undefined,
         });
 
         if (result.threadId && result.threadId !== threadId) {
@@ -69,7 +73,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(false);
       }
     },
-    [isSignedIn, threadId, requestAdvice],
+    [isSignedIn, threadId, requestAdvice, recentlyViewedIds],
   );
 
   const open = useCallback(
