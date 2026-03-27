@@ -109,8 +109,13 @@ function AssistantMessage({ parts }: { parts: any[] }) {
       {parts.map((part: any, i: number) => {
         // text parts
         if (part.type === "text" && part.text) {
+          const isStreaming = part.state === "streaming";
           return (
-            <MessageContent key={i} markdown className="bg-transparent px-0 py-0">
+            <MessageContent
+              key={i}
+              markdown
+              className={cn("bg-transparent px-0 py-0", isStreaming && "streaming-text")}
+            >
               {part.text}
             </MessageContent>
           );
@@ -401,6 +406,11 @@ export function AdvisorSidebar() {
         [data-advisor-sidebar] textarea::-webkit-scrollbar-track { background: transparent; }
         [data-advisor-sidebar] textarea::-webkit-scrollbar-thumb { background: oklch(0.708 0 0); border-radius: 3px; }
         .dark [data-advisor-sidebar] textarea::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); }
+
+        .streaming-text {
+          mask-image: linear-gradient(to right, black 85%, transparent 100%);
+          -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+        }
       `}</style>
     </aside>
   );

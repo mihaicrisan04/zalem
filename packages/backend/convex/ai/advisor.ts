@@ -149,7 +149,12 @@ export const requestAdvice = action({
         prompt: args.question,
         messages,
       },
-      { saveStreamDeltas: true },
+      {
+        saveStreamDeltas: {
+          chunking: "word",
+          throttleMs: 50,
+        },
+      },
     );
     await result.consumeStream();
   },
