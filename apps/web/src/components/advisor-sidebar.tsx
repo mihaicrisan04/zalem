@@ -111,36 +111,60 @@ function collectToolSteps(parts: any[]): Map<string, { toolName: string; isActiv
 // -- message parts renderer --
 
 function AssistantMessage({ parts }: { parts: any[] }) {
-  const toolSteps = collectToolSteps(parts);
-  const renderedToolCalls = new Set<string>();
+  // pre-process parts into stable-keyed render items to avoid remounts
+  const items = useMemo(() => {
+    const toolSteps = collectToolSteps(parts);
+    const seenTools = new Set<string>();
+    const result: Array<
+      | { kind: "text"; key: string; text: string; isStreaming: boolean }
+      | { kind: "tool"; key: string; toolName: string; isActive: boolean }
+    > = [];
+
+    let textIndex = 0;
+
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+
+      if (part.type === "text" && part.text) {
+        result.push({
+          kind: "text",
+          key: `text-${textIndex++}`,
+          text: part.text,
+          isStreaming: part.state === "streaming",
+        });
+        continue;
+      }
+
+      const toolName = extractToolName(part);
+      if (toolName) {
+        const callId = part.toolCallId ?? toolName;
+        if (seenTools.has(callId)) continue;
+        seenTools.add(callId);
+
+        const step = toolSteps.get(callId);
+        if (step) {
+          result.push({
+            kind: "tool",
+            key: `tool-${callId}`,
+            toolName: step.toolName,
+            isActive: step.isActive,
+          });
+        }
+      }
+    }
+
+    return result;
+  }, [parts]);
 
   return (
     <div className="space-y-1">
-      {parts.map((part: any, i: number) => {
-        // text parts
-        if (part.type === "text" && part.text) {
-          return (
-            <StreamingText key={i} text={part.text} isStreaming={part.state === "streaming"} />
-          );
+      {items.map((item) => {
+        if (item.kind === "text") {
+          return <StreamingText key={item.key} text={item.text} isStreaming={item.isStreaming} />;
         }
-
-        // tool call parts — render at first occurrence, use merged state
-        const toolName = extractToolName(part);
-        if (toolName) {
-          const callId = part.toolCallId ?? `${toolName}-${i}`;
-          if (renderedToolCalls.has(callId)) return null;
-          renderedToolCalls.add(callId);
-
-          const step = toolSteps.get(callId);
-          if (!step) return null;
-
-          return (
-            <ToolStepIndicator key={callId} toolName={step.toolName} isActive={step.isActive} />
-          );
-        }
-
-        // skip step-start, reasoning, etc.
-        return null;
+        return (
+          <ToolStepIndicator key={item.key} toolName={item.toolName} isActive={item.isActive} />
+        );
       })}
     </div>
   );

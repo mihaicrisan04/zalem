@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@zalem/ui/lib/utils";
 import { Markdown } from "@zalem/ui/components/prompt-kit";
 
-const MS_PER_WORD = 60;
+const MS_PER_WORD = 30;
 
 export function StreamingText({
   text,
