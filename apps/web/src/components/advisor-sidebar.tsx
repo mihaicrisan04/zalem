@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
+import { TextShimmer } from "@zalem/ui/components/text-shimmer";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
@@ -44,15 +45,18 @@ function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive:
 
   if (isActive) {
     return (
-      <div className="py-1">
-        <Loader variant="text-shimmer" text={label} size="sm" />
+      <div className="flex items-center gap-1.5 py-1.5">
+        <div className="bg-primary size-1 animate-pulse rounded-full" />
+        <TextShimmer className="text-xs" duration={2}>
+          {label}...
+        </TextShimmer>
       </div>
     );
   }
 
   return (
     <div className="text-muted-foreground flex items-center gap-1.5 py-1 text-xs">
-      <Check className="size-3" />
+      <Check className="size-3 shrink-0" />
       <span>{label}</span>
     </div>
   );
@@ -72,11 +76,33 @@ function isToolActive(part: any): boolean {
   return part.state === "call" || part.state === "input-streaming" || part.state === "partial-call";
 }
 
+// -- collect tool states: merge call + result parts into one indicator per tool --
+
+function collectToolSteps(parts: any[]): Map<string, { toolName: string; isActive: boolean }> {
+  const tools = new Map<string, { toolName: string; isActive: boolean }>();
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    const toolName = extractToolName(part);
+    if (!toolName) continue;
+
+    const callId = part.toolCallId ?? `${toolName}-${i}`;
+    const existing = tools.get(callId);
+
+    // always update to latest state (result overrides call)
+    if (!existing || !isToolActive(part)) {
+      tools.set(callId, { toolName, isActive: isToolActive(part) });
+    }
+  }
+
+  return tools;
+}
+
 // -- message parts renderer --
 
 function AssistantMessage({ parts }: { parts: any[] }) {
-  // dedupe tool steps: only show one indicator per toolCallId
-  const seenToolCalls = new Set<string>();
+  const toolSteps = collectToolSteps(parts);
+  const renderedToolCalls = new Set<string>();
 
   return (
     <div className="space-y-1">
@@ -90,14 +116,18 @@ function AssistantMessage({ parts }: { parts: any[] }) {
           );
         }
 
-        // tool call parts
+        // tool call parts — render at first occurrence, use merged state
         const toolName = extractToolName(part);
         if (toolName) {
           const callId = part.toolCallId ?? `${toolName}-${i}`;
-          if (seenToolCalls.has(callId)) return null;
-          seenToolCalls.add(callId);
+          if (renderedToolCalls.has(callId)) return null;
+          renderedToolCalls.add(callId);
+
+          const step = toolSteps.get(callId);
+          if (!step) return null;
+
           return (
-            <ToolStepIndicator key={callId} toolName={toolName} isActive={isToolActive(part)} />
+            <ToolStepIndicator key={callId} toolName={step.toolName} isActive={step.isActive} />
           );
         }
 
@@ -314,7 +344,7 @@ export function AdvisorSidebar() {
             );
           })}
 
-          {isLoading && (
+          {isLoading && !messages.some((m) => m.status === "streaming") && (
             <div className="py-1">
               <Loader variant="typing" size="sm" />
             </div>
