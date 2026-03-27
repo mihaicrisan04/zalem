@@ -23,3 +23,7 @@ export const shoppingAdvisor = new Agent(components.agent, {
   },
   maxSteps: 5,
 });
+
+// expose as a mutation so the client can create a thread instantly
+// (before the streaming action starts, so useUIMessages can subscribe)
+export const createThread = shoppingAdvisor.createThreadMutation();

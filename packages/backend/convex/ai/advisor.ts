@@ -117,10 +117,11 @@ async function assembleContext(
 
 export const requestAdvice = action({
   args: {
-    threadId: v.optional(v.string()),
+    threadId: v.string(),
     question: v.string(),
     productId: v.optional(v.string()),
     recentlyViewedIds: v.optional(v.array(v.string())),
+    isFirstMessage: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -128,46 +129,28 @@ export const requestAdvice = action({
       throw new Error("Sign in to use the advisor");
     }
 
-    const userId = identity.subject;
-
     // assemble context on every request (not saved to thread)
     const contextMessages = await assembleContext(ctx, {
       productId: args.productId,
       recentlyViewedIds: args.recentlyViewedIds,
     });
 
-    // continue existing thread
-    if (args.threadId) {
-      const { thread } = await shoppingAdvisor.continueThread(ctx, {
-        threadId: args.threadId,
-      });
-      const result = await thread.streamText(
-        {
-          prompt: args.question,
-          messages: contextMessages,
-        },
-        { saveStreamDeltas: true },
-      );
-      // consume the stream so the action waits for completion
-      // text is streamed via deltas to DB, no need to return it
-      await result.consumeStream();
-      return { threadId: args.threadId };
-    }
+    // include few-shot examples on first message only
+    const messages = args.isFirstMessage
+      ? [...contextMessages, ...FEW_SHOT_EXAMPLES]
+      : contextMessages;
 
-    // new thread
-    const { threadId, thread } = await shoppingAdvisor.createThread(ctx, {
-      userId,
+    const { thread } = await shoppingAdvisor.continueThread(ctx, {
+      threadId: args.threadId,
     });
 
     const result = await thread.streamText(
       {
         prompt: args.question,
-        messages: [...contextMessages, ...FEW_SHOT_EXAMPLES],
+        messages,
       },
       { saveStreamDeltas: true },
     );
     await result.consumeStream();
-
-    return { threadId };
   },
 });

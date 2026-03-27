@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
-import { useAction } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useAuth } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { api } from "@zalem/backend/convex/_generated/api";
@@ -28,7 +28,7 @@ export function useAdvisor() {
 }
 
 export function AdvisorProvider({ children }: { children: React.ReactNode }) {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
@@ -38,6 +38,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
   const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const productIdRef = useRef<string | null>(null);
 
+  const createThread = useMutation(api.ai.agent.createThread);
   const requestAdvice = useAction(api.ai.advisor.requestAdvice);
   const { recentlyViewedIds } = useRecentlyViewed();
 
@@ -56,24 +57,33 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
       setPendingQuestion(null);
 
       try {
-        const result = await requestAdvice({
-          threadId: threadId ?? undefined,
+        let currentThreadId = threadId;
+        let isFirstMessage = false;
+
+        // create thread first (instant mutation) so useUIMessages can subscribe
+        if (!currentThreadId) {
+          const result = await createThread({ userId: userId ?? undefined });
+          currentThreadId = result.threadId;
+          isFirstMessage = true;
+          setThreadId(currentThreadId);
+          sessionStorage.setItem("zalem_advisor_thread", currentThreadId);
+        }
+
+        // now stream into the thread (useUIMessages is already subscribed)
+        await requestAdvice({
+          threadId: currentThreadId,
           question,
           productId: productIdRef.current ?? undefined,
           recentlyViewedIds: recentlyViewedIds.length > 0 ? recentlyViewedIds : undefined,
+          isFirstMessage,
         });
-
-        if (result.threadId && result.threadId !== threadId) {
-          setThreadId(result.threadId);
-          sessionStorage.setItem("zalem_advisor_thread", result.threadId);
-        }
       } catch {
         toast.error("Failed to get advice. Please try again.");
       } finally {
         setIsLoading(false);
       }
     },
-    [isSignedIn, threadId, requestAdvice, recentlyViewedIds],
+    [isSignedIn, userId, threadId, createThread, requestAdvice, recentlyViewedIds],
   );
 
   const open = useCallback(
