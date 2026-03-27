@@ -42,12 +42,13 @@ function getToolLabel(toolName: string, isActive: boolean): string {
 // -- tool step indicator with minimum display time --
 
 function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive: boolean }) {
-  const [isDone, setIsDone] = useState(!isActive);
-  const doneRef = useRef(!isActive);
+  // always start shimmer, show for at least 800ms
+  const [isDone, setIsDone] = useState(false);
+  const doneRef = useRef(false);
   const mountedAt = useRef(Date.now());
 
   useEffect(() => {
-    if (doneRef.current) return; // already done, never go back
+    if (doneRef.current) return;
     if (!isActive) {
       const elapsed = Date.now() - mountedAt.current;
       const remaining = Math.max(0, 800 - elapsed);
@@ -151,6 +152,7 @@ export function AdvisorSidebar() {
   const { isOpen, close, newChat, threadId, isLoading, sendMessage, pendingQuestion } =
     useAdvisor();
   const [input, setInput] = useState("");
+  const [optimisticMsg, setOptimisticMsg] = useState<string | null>(null);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -163,6 +165,13 @@ export function AdvisorSidebar() {
   );
 
   const messages = messagesResult?.results ?? [];
+
+  // clear optimistic message once real messages include it
+  useEffect(() => {
+    if (optimisticMsg && messages.some((m) => m.role === "user")) {
+      setOptimisticMsg(null);
+    }
+  }, [messages, optimisticMsg]);
 
   // auto-scroll: on new messages or when streaming status changes
   const lastMessageKey = messages.length > 0 ? messages[messages.length - 1]?.key : null;
@@ -243,8 +252,8 @@ export function AdvisorSidebar() {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
     setInput("");
+    setOptimisticMsg(trimmed);
     sendMessage(trimmed);
-    // reset textarea height
     if (textareaRef.current) textareaRef.current.style.height = "";
   };
 
@@ -306,6 +315,7 @@ export function AdvisorSidebar() {
                     key={s}
                     onClick={() => {
                       setInput("");
+                      setOptimisticMsg(s);
                       sendMessage(s);
                     }}
                     className="text-xs"
@@ -350,6 +360,15 @@ export function AdvisorSidebar() {
               </div>
             );
           })}
+
+          {/* optimistic user message (before server confirms) */}
+          {optimisticMsg && (
+            <div className="flex justify-end">
+              <MessageContent className="bg-primary text-primary-foreground max-w-[85%]">
+                {optimisticMsg}
+              </MessageContent>
+            </div>
+          )}
 
           {isLoading && !messages.some((m) => m.status === "streaming") && (
             <div className="py-1">
