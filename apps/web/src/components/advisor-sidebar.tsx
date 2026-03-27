@@ -63,9 +63,9 @@ function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive:
   const doneLabel = getToolLabel(toolName, false);
 
   return isDone ? (
-    <span className="text-muted-foreground text-sm">{doneLabel}</span>
+    <div className="text-muted-foreground text-sm">{doneLabel}</div>
   ) : (
-    <TextShimmer className="text-sm" duration={2}>
+    <TextShimmer as="div" className="text-sm" duration={2}>
       {activeLabel}...
     </TextShimmer>
   );
