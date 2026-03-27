@@ -24,6 +24,20 @@ export const shoppingAdvisor = new Agent(components.agent, {
   maxSteps: 5,
 });
 
-// expose as a mutation so the client can create a thread instantly
+import { mutation } from "../_generated/server";
+import { v } from "convex/values";
+
+// public mutation so the client can create a thread instantly
 // (before the streaming action starts, so useUIMessages can subscribe)
-export const createThread = shoppingAdvisor.createThreadMutation();
+export const createThread = mutation({
+  args: { userId: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Sign in to use the advisor");
+
+    const { threadId } = await shoppingAdvisor.createThread(ctx, {
+      userId: args.userId ?? identity.subject,
+    });
+    return { threadId };
+  },
+});
