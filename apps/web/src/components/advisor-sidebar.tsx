@@ -1,186 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MessageSquarePlus, Send, Sparkles, X } from "lucide-react";
-import { TextShimmer } from "@zalem/ui/components/text-shimmer";
+import { useCallback, useEffect, useState } from "react";
+import { X } from "lucide-react";
 import { useUIMessages } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@zalem/ui/components/optics/tooltip";
-import { ScrollArea } from "@zalem/ui/components/optics/scroll-area";
 import { cn } from "@zalem/ui/lib/utils";
-import { MessageContent, PromptSuggestion, Loader } from "@zalem/ui/components/prompt-kit";
 import { useAdvisor } from "@/hooks/use-advisor";
-import { StreamingText } from "./streaming-text";
+import { AdvisorComposer } from "./advisor/advisor-composer";
+import { AdvisorMessageList } from "./advisor/advisor-message-list";
 
 const MIN_WIDTH = 340;
 const DEFAULT_WIDTH = 400;
 const DISMISS_THRESHOLD = 200;
 
-const SUGGESTIONS = [
-  "What laptop should I get for coding?",
-  "Compare the top-rated phones",
-  "What are the best deals right now?",
-];
-
-// -- tool name → human-readable label --
-
-const TOOL_LABELS: Record<string, { active: string; done: string }> = {
-  getProductDetails: { active: "Looking up product details", done: "Looked up product details" },
-  searchProducts: { active: "Searching products", done: "Searched products" },
-  getRecommendations: { active: "Finding recommendations", done: "Found recommendations" },
-  getCartContents: { active: "Checking your cart", done: "Checked your cart" },
-  getReviewsSummary: { active: "Reading reviews", done: "Read reviews" },
-};
-
-function getToolLabel(toolName: string, isActive: boolean): string {
-  const labels = TOOL_LABELS[toolName];
-  if (labels) return isActive ? labels.active : labels.done;
-  return isActive ? `Running ${toolName}` : `Ran ${toolName}`;
-}
-
-// -- tool step indicator with minimum display time --
-
-function ToolStepIndicator({ toolName, isActive }: { toolName: string; isActive: boolean }) {
-  // always start shimmer, show for at least 800ms
-  const [isDone, setIsDone] = useState(false);
-  const doneRef = useRef(false);
-  const mountedAt = useRef(Date.now());
-
-  useEffect(() => {
-    if (doneRef.current) return;
-    if (!isActive) {
-      const elapsed = Date.now() - mountedAt.current;
-      const remaining = Math.max(0, 800 - elapsed);
-      const timer = setTimeout(() => {
-        doneRef.current = true;
-        setIsDone(true);
-      }, remaining);
-      return () => clearTimeout(timer);
-    }
-  }, [isActive]);
-
-  const activeLabel = getToolLabel(toolName, true);
-  const doneLabel = getToolLabel(toolName, false);
-
-  return isDone ? (
-    <div className="text-muted-foreground text-sm">{doneLabel}</div>
-  ) : (
-    <TextShimmer as="div" className="text-sm" duration={2}>
-      {activeLabel}...
-    </TextShimmer>
-  );
-}
-
-// -- extract tool name from a part --
-
-function extractToolName(part: any): string | null {
-  if (part.type === "dynamic-tool") return part.toolName;
-  if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-    return part.toolName ?? part.type.replace("tool-", "");
-  }
-  return null;
-}
-
-function isToolActive(part: any): boolean {
-  return part.state === "call" || part.state === "input-streaming" || part.state === "partial-call";
-}
-
-// -- collect tool states: merge call + result parts into one indicator per tool --
-
-function collectToolSteps(parts: any[]): Map<string, { toolName: string; isActive: boolean }> {
-  const tools = new Map<string, { toolName: string; isActive: boolean }>();
-
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    const toolName = extractToolName(part);
-    if (!toolName) continue;
-
-    const callId = part.toolCallId ?? `${toolName}-${i}`;
-    const existing = tools.get(callId);
-
-    // always update to latest state (result overrides call)
-    if (!existing || !isToolActive(part)) {
-      tools.set(callId, { toolName, isActive: isToolActive(part) });
-    }
-  }
-
-  return tools;
-}
-
-// -- message parts renderer --
-
-function AssistantMessage({ parts }: { parts: any[] }) {
-  // pre-process parts into stable-keyed render items to avoid remounts
-  const items = useMemo(() => {
-    const toolSteps = collectToolSteps(parts);
-    const seenTools = new Set<string>();
-    const result: Array<
-      | { kind: "text"; key: string; text: string; isStreaming: boolean }
-      | { kind: "tool"; key: string; toolName: string; isActive: boolean }
-    > = [];
-
-    let textIndex = 0;
-
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
-
-      if (part.type === "text" && part.text) {
-        result.push({
-          kind: "text",
-          key: `text-${textIndex++}`,
-          text: part.text,
-          isStreaming: part.state === "streaming",
-        });
-        continue;
-      }
-
-      const toolName = extractToolName(part);
-      if (toolName) {
-        const callId = part.toolCallId ?? toolName;
-        if (seenTools.has(callId)) continue;
-        seenTools.add(callId);
-
-        const step = toolSteps.get(callId);
-        if (step) {
-          result.push({
-            kind: "tool",
-            key: `tool-${callId}`,
-            toolName: step.toolName,
-            isActive: step.isActive,
-          });
-        }
-      }
-    }
-
-    return result;
-  }, [parts]);
-
-  return (
-    <div className="space-y-1">
-      {items.map((item) => {
-        if (item.kind === "text") {
-          return <StreamingText key={item.key} text={item.text} isStreaming={item.isStreaming} />;
-        }
-        return (
-          <ToolStepIndicator key={item.key} toolName={item.toolName} isActive={item.isActive} />
-        );
-      })}
-    </div>
-  );
-}
-
-// -- main sidebar --
-
 export function AdvisorSidebar() {
   const { isOpen, close, newChat, threadId, isLoading, sendMessage, pendingQuestion } =
     useAdvisor();
-  const [input, setInput] = useState("");
   const [optimisticMsg, setOptimisticMsg] = useState<string | null>(null);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const messagesResult = useUIMessages(
     api.ai.queries.listThreadMessages,
@@ -188,43 +27,36 @@ export function AdvisorSidebar() {
     { initialNumItems: 50, stream: true },
   );
 
-  const messages = messagesResult?.results ?? [];
+  const messages = (messagesResult?.results ?? []) as any[];
 
-  // clear optimistic message once real messages include it
+  // clear optimistic message once the matching real user message shows up
   useEffect(() => {
-    if (optimisticMsg && messages.some((m) => m.role === "user")) {
-      setOptimisticMsg(null);
-    }
+    if (!optimisticMsg) return;
+    const found = messages.some(
+      (m: any) =>
+        m.role === "user" &&
+        (m.parts as any[] | undefined)?.some(
+          (p) => p?.type === "text" && (p.text ?? "").trim() === optimisticMsg.trim(),
+        ),
+    );
+    if (found) setOptimisticMsg(null);
   }, [messages, optimisticMsg]);
 
-  // auto-scroll: on new messages or when streaming status changes
-  const lastMessageKey = messages.length > 0 ? messages[messages.length - 1]?.key : null;
-  const lastMessageStatus = messages.length > 0 ? messages[messages.length - 1]?.status : null;
-
-  useEffect(() => {
-    // scroll the ScrollArea viewport directly — NOT scrollIntoView which scrolls all ancestors
-    const scrollArea = scrollAreaRef.current;
-    if (!scrollArea) return;
-    const viewport = scrollArea.querySelector("[data-slot='scroll-area-viewport']");
-    if (!viewport) return;
-    const raf = requestAnimationFrame(() => {
-      viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [messages.length, lastMessageKey, lastMessageStatus, isLoading]);
-
+  // fire pending question on open
   useEffect(() => {
     if (pendingQuestion && isOpen && !isLoading) {
+      setOptimisticMsg(pendingQuestion);
       sendMessage(pendingQuestion);
     }
   }, [pendingQuestion, isOpen]);
 
-  // focus textarea when sidebar opens
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => textareaRef.current?.focus(), 350);
-    }
-  }, [isOpen]);
+  const handleSend = useCallback(
+    (question: string) => {
+      setOptimisticMsg(question);
+      sendMessage(question);
+    },
+    [sendMessage],
+  );
 
   const getMaxWidth = useCallback(() => {
     return Math.floor(window.innerWidth / 3);
@@ -238,8 +70,8 @@ export function AdvisorSidebar() {
       const startX = e.clientX;
       const startWidth = width;
 
-      const handleMouseMove = (e: MouseEvent) => {
-        const delta = startX - e.clientX;
+      const handleMouseMove = (ev: MouseEvent) => {
+        const delta = startX - ev.clientX;
         const newWidth = startWidth + delta;
         const maxWidth = getMaxWidth();
 
@@ -272,36 +104,13 @@ export function AdvisorSidebar() {
     [width, getMaxWidth, close],
   );
 
-  const handleSubmit = () => {
-    const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
-    setInput("");
-    setOptimisticMsg(trimmed);
-    sendMessage(trimmed);
-    if (textareaRef.current) textareaRef.current.style.height = "";
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
-
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-    const el = e.target;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  };
-
   return (
     <aside
       data-advisor-sidebar
       className={cn(
-        "bg-background group/sidebar relative flex h-full shrink-0 flex-col border-l",
+        "bg-background group/sidebar relative flex h-full shrink-0 flex-col overflow-hidden border-l",
         !isResizing && "transition-[width,opacity] duration-300 ease-out",
-        isOpen ? "" : "w-0 overflow-hidden opacity-0",
+        isOpen ? "" : "w-0 opacity-0",
       )}
       style={isOpen ? { width: `${width}px` } : undefined}
     >
@@ -311,7 +120,7 @@ export function AdvisorSidebar() {
         className="absolute top-0 -left-1 z-10 h-full w-2 cursor-col-resize"
       />
 
-      {/* close — visible on sidebar hover */}
+      {/* close button — visible on sidebar hover */}
       <Button
         variant="raised"
         size="icon"
@@ -321,137 +130,19 @@ export function AdvisorSidebar() {
         <X className="size-3.5" />
       </Button>
 
-      {/* messages */}
-      <ScrollArea ref={scrollAreaRef} className="min-h-0 flex-1" maskHeight={20}>
-        <div className="flex flex-col gap-4 p-4">
-          {messages.length === 0 && !isLoading && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16">
-              <div className="text-muted-foreground text-center">
-                <Sparkles className="mx-auto mb-3 size-8 opacity-20" />
-                <p className="text-sm font-semibold">Shopping Advisor</p>
-                <p className="mt-1.5 max-w-[220px] text-xs leading-relaxed opacity-70">
-                  Ask about products, compare options, or get recommendations.
-                </p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-2 px-2">
-                {SUGGESTIONS.map((s) => (
-                  <PromptSuggestion
-                    key={s}
-                    onClick={() => {
-                      setInput("");
-                      setOptimisticMsg(s);
-                      sendMessage(s);
-                    }}
-                    className="text-xs"
-                  >
-                    {s}
-                  </PromptSuggestion>
-                ))}
-              </div>
-            </div>
-          )}
+      <AdvisorMessageList
+        messages={messages}
+        isLoading={isLoading}
+        optimisticMsg={optimisticMsg}
+        onSuggestionClick={handleSend}
+      />
 
-          {messages.map((msg) => {
-            const isUser = msg.role === "user";
-
-            if (isUser) {
-              const text =
-                msg.parts
-                  ?.filter((p: any) => p.type === "text")
-                  .map((p: any) => p.text)
-                  .join("") ?? "";
-              if (!text) return null;
-
-              return (
-                <div key={msg.id} className="flex justify-end">
-                  <MessageContent className="bg-primary text-primary-foreground max-w-[85%]">
-                    {text}
-                  </MessageContent>
-                </div>
-              );
-            }
-
-            // assistant message: render parts individually
-            const hasParts = msg.parts && msg.parts.length > 0;
-            const hasText = msg.parts?.some((p: any) => p.type === "text" && p.text);
-            const hasToolCalls = msg.parts?.some((p: any) => extractToolName(p) !== null);
-
-            if (!hasParts || (!hasText && !hasToolCalls)) return null;
-
-            return (
-              <div key={msg.id}>
-                <AssistantMessage parts={msg.parts} />
-              </div>
-            );
-          })}
-
-          {/* optimistic user message (before server confirms) */}
-          {optimisticMsg && (
-            <div className="flex justify-end">
-              <MessageContent className="bg-primary text-primary-foreground max-w-[85%]">
-                {optimisticMsg}
-              </MessageContent>
-            </div>
-          )}
-
-          {isLoading && !messages.some((m) => m.status === "streaming") && (
-            <div className="py-1">
-              <Loader variant="typing" size="sm" />
-            </div>
-          )}
-
-          <div aria-hidden />
-        </div>
-      </ScrollArea>
-
-      {/* input */}
-      <div className="shrink-0 px-3 pb-3">
-        <div className="border-input bg-background rounded-2xl border p-2 shadow-xs">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={handleInput}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask anything..."
-            rows={1}
-            disabled={isLoading}
-            className="text-foreground placeholder:text-muted-foreground w-full resize-none border-none bg-transparent px-2 py-1.5 text-sm outline-none"
-          />
-          <div className="flex items-center justify-between px-1">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="text-muted-foreground size-7 shrink-0"
-                    onClick={newChat}
-                    disabled={isLoading || !threadId}
-                  >
-                    <MessageSquarePlus className="size-3.5" />
-                  </Button>
-                }
-              />
-              <TooltipContent side="top">New chat</TooltipContent>
-            </Tooltip>
-            <Button
-              size="icon"
-              variant={input.trim() ? "default" : "ghost"}
-              className="size-7 shrink-0"
-              disabled={isLoading || !input.trim()}
-              onClick={handleSubmit}
-            >
-              <Send className="size-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-      <style>{`
-        [data-advisor-sidebar] textarea::-webkit-scrollbar { width: 5px; }
-        [data-advisor-sidebar] textarea::-webkit-scrollbar-track { background: transparent; }
-        [data-advisor-sidebar] textarea::-webkit-scrollbar-thumb { background: oklch(0.708 0 0); border-radius: 3px; }
-        .dark [data-advisor-sidebar] textarea::-webkit-scrollbar-thumb { background: oklch(0.4 0 0); }
-      `}</style>
+      <AdvisorComposer
+        isLoading={isLoading}
+        canNewChat={!!threadId}
+        onSubmit={handleSend}
+        onNewChat={newChat}
+      />
     </aside>
   );
 }

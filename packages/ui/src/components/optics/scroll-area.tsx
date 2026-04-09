@@ -14,6 +14,7 @@ const ScrollArea = React.forwardRef<
     maskColor?: string;
     hideScrollbar?: boolean;
     scrollHideDelay?: number;
+    viewportRef?: React.Ref<HTMLDivElement>;
   }
 >(
   (
@@ -26,6 +27,7 @@ const ScrollArea = React.forwardRef<
       maskHeight = 30,
       maskColor = undefined,
       hideScrollbar = false,
+      viewportRef: externalViewportRef = undefined,
       ...props
     },
     ref,
@@ -37,6 +39,18 @@ const ScrollArea = React.forwardRef<
       right: false,
     });
     const viewportRef = React.useRef(null);
+
+    const setViewportRef = React.useCallback(
+      (node) => {
+        viewportRef.current = node;
+        if (typeof externalViewportRef === "function") {
+          externalViewportRef(node);
+        } else if (externalViewportRef && typeof externalViewportRef === "object") {
+          externalViewportRef.current = node;
+        }
+      },
+      [externalViewportRef],
+    );
 
     const checkScrollability = React.useCallback(() => {
       const element = viewportRef.current;
@@ -86,7 +100,7 @@ const ScrollArea = React.forwardRef<
         {...props}
       >
         <div
-          ref={viewportRef}
+          ref={setViewportRef}
           data-slot="scroll-area-viewport"
           data-hide-scrollbar={hideScrollbar || undefined}
           className={cn(

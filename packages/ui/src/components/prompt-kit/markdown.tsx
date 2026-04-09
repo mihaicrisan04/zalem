@@ -1,93 +1,111 @@
 "use client";
 
 import { cn } from "@zalem/ui/lib/utils";
-import { marked } from "marked";
-import { memo, useId, useMemo } from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
-import remarkBreaks from "remark-breaks";
-import remarkGfm from "remark-gfm";
+import { memo } from "react";
+import { Streamdown, type Components } from "streamdown";
 
 export type MarkdownProps = {
   children: string;
   id?: string;
   className?: string;
-  components?: Partial<Components>;
+  components?: Components;
 };
 
-function parseMarkdownIntoBlocks(markdown: string): string[] {
-  const tokens = marked.lexer(markdown);
-  return tokens.map((token) => token.raw);
-}
-
-const INITIAL_COMPONENTS: Partial<Components> = {
+const INITIAL_COMPONENTS: Components = {
   code: function CodeComponent({ className, children, ...props }: any) {
-    const isInline =
-      !props.node?.position?.start.line ||
-      props.node?.position?.start.line === props.node?.position?.end.line;
-
+    const isInline = !className?.includes("language-");
     if (isInline) {
       return (
         <code
-          className={cn("bg-primary-foreground rounded-sm px-1 font-mono text-sm", className)}
+          className={cn(
+            "bg-muted text-foreground rounded-sm border px-1 py-0.5 font-mono text-[0.85em]",
+            className,
+          )}
           {...props}
         >
           {children}
         </code>
       );
     }
-
     return (
-      <pre className="bg-muted overflow-x-auto rounded-lg p-3">
-        <code className={cn("text-sm", className)}>{children}</code>
-      </pre>
+      <code className={cn("font-mono text-sm", className)} {...props}>
+        {children}
+      </code>
     );
   },
   pre: function PreComponent({ children }: any) {
-    return <>{children}</>;
+    return (
+      <pre className="bg-muted my-2 overflow-x-auto rounded-lg border p-3 text-sm">{children}</pre>
+    );
+  },
+  a: function AComponent({ children, href, ...props }: any) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-foreground underline decoration-muted-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground"
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  },
+  blockquote: function BlockquoteComponent({ children }: any) {
+    return (
+      <blockquote className="border-muted-foreground/30 text-muted-foreground my-2 border-l-2 pl-4 italic">
+        {children}
+      </blockquote>
+    );
+  },
+  table: function TableComponent({ children }: any) {
+    return (
+      <div className="my-2 overflow-x-auto">
+        <table className="w-full border-collapse text-sm">{children}</table>
+      </div>
+    );
+  },
+  th: function ThComponent({ children }: any) {
+    return <th className="border-border border-b px-2 py-1 text-left font-medium">{children}</th>;
+  },
+  td: function TdComponent({ children }: any) {
+    return <td className="border-border border-b px-2 py-1">{children}</td>;
+  },
+  h1: function H1Component({ children }: any) {
+    return <h1 className="text-foreground mt-2 mb-1 text-lg font-semibold">{children}</h1>;
+  },
+  h2: function H2Component({ children }: any) {
+    return <h2 className="text-foreground mt-2 mb-1 text-base font-semibold">{children}</h2>;
+  },
+  h3: function H3Component({ children }: any) {
+    return <h3 className="text-foreground mt-2 mb-1 text-sm font-semibold">{children}</h3>;
+  },
+  ul: function UlComponent({ children }: any) {
+    return <ul className="my-1 list-disc space-y-0.5 pl-5">{children}</ul>;
+  },
+  ol: function OlComponent({ children }: any) {
+    return <ol className="my-1 list-decimal space-y-0.5 pl-5">{children}</ol>;
+  },
+  li: function LiComponent({ children }: any) {
+    return <li className="leading-relaxed">{children}</li>;
+  },
+  p: function PComponent({ children }: any) {
+    return <p className="leading-relaxed">{children}</p>;
+  },
+  hr: function HrComponent() {
+    return <hr className="border-border my-3" />;
   },
 };
 
-const MemoizedMarkdownBlock = memo(
-  function MarkdownBlock({
-    content,
-    components = INITIAL_COMPONENTS,
-  }: {
-    content: string;
-    components?: Partial<Components>;
-  }) {
-    return (
-      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={components}>
-        {content}
-      </ReactMarkdown>
-    );
-  },
-  function propsAreEqual(prevProps, nextProps) {
-    return prevProps.content === nextProps.content;
-  },
-);
-
-MemoizedMarkdownBlock.displayName = "MemoizedMarkdownBlock";
-
 function MarkdownComponent({
   children,
-  id,
   className,
   components = INITIAL_COMPONENTS,
 }: MarkdownProps) {
-  const generatedId = useId();
-  const blockId = id ?? generatedId;
-  const blocks = useMemo(() => parseMarkdownIntoBlocks(children), [children]);
-
   return (
-    <div className={className}>
-      {blocks.map((block, index) => (
-        <MemoizedMarkdownBlock
-          key={`${blockId}-block-${index}`}
-          content={block}
-          components={components}
-        />
-      ))}
-    </div>
+    <Streamdown className={cn("flex flex-col gap-2", className)} components={components}>
+      {children}
+    </Streamdown>
   );
 }
 
