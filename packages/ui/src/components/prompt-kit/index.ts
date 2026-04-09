@@ -46,3 +46,4 @@ export { PromptSuggestion, type PromptSuggestionProps } from "./prompt-suggestio
 export { ScrollButton, type ScrollButtonProps } from "./scroll-button";
 export { Tool, type ToolPart, type ToolProps, type ToolState } from "./tool";
 export { MessageActionsBar, type MessageActionsBarProps } from "./message-actions-bar";
+export { Thinking, type ThinkingProps } from "./thinking";

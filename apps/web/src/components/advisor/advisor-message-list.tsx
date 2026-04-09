@@ -14,22 +14,32 @@ const SUGGESTIONS = [
   "What are the best deals right now?",
 ];
 
+type MessagePart = {
+  type?: string;
+  text?: string;
+  state?: string;
+  toolName?: string;
+  toolCallId?: string;
+  input?: Record<string, unknown>;
+  output?: unknown;
+};
+
 type UIMessage = {
   id?: string;
   key?: string;
   role?: string;
   status?: string;
-  parts?: Array<{
-    type?: string;
-    text?: string;
-    state?: string;
-    toolName?: string;
-    toolCallId?: string;
-    input?: Record<string, unknown>;
-    output?: unknown;
-  }>;
+  parts?: MessagePart[];
   _creationTime?: number;
 };
+
+function isRenderablePart(p: MessagePart): boolean {
+  if (p.type === "text") return (p.text ?? "").trim().length > 0;
+  if (p.type === "reasoning") return true;
+  if (p.type === "dynamic-tool") return true;
+  if (typeof p.type === "string" && p.type.startsWith("tool-")) return true;
+  return false;
+}
 
 export type AdvisorMessageListProps = {
   messages: UIMessage[];
@@ -50,8 +60,20 @@ export function AdvisorMessageList({
   });
 
   const isEmpty = messages.length === 0 && !optimisticMsg && !isLoading;
-  const hasStreaming = messages.some((m) => m.status === "streaming");
-  const showTypingIndicator = (isLoading || !!optimisticMsg) && !hasStreaming;
+
+  // show the typing indicator while we're waiting for the assistant's first
+  // renderable delta. we can't rely on the latest real message because on a
+  // fresh send the new user message hasn't round-tripped yet — the latest
+  // message in the list is still the PREVIOUS assistant turn, which has
+  // renderable content, so without the optimistic check the dots would only
+  // appear 1-2s later once useUIMessages catches up.
+  const lastMsg = messages[messages.length - 1];
+  const waitingForFirstDelta =
+    !!optimisticMsg ||
+    !lastMsg ||
+    lastMsg.role !== "assistant" ||
+    !(lastMsg.parts ?? []).some(isRenderablePart);
+  const showTypingIndicator = (isLoading || !!optimisticMsg) && waitingForFirstDelta;
 
   const lastAssistantIndex = (() => {
     for (let i = messages.length - 1; i >= 0; i--) {

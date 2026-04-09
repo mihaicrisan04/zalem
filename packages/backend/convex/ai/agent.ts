@@ -21,7 +21,11 @@ export const shoppingAdvisor = new Agent(components.agent, {
     getCartContents,
     getReviewsSummary,
   },
-  maxSteps: 5,
+  // gpt-oss-120b is aggressive with tool calls; give it enough headroom to
+  // finish a chain of tool calls AND still have a step left to write the
+  // final text answer. each AI SDK "step" is one LLM invocation — at 5 we
+  // were running out of budget before the model got to answer.
+  maxSteps: 12,
 });
 
 import { mutation } from "../_generated/server";

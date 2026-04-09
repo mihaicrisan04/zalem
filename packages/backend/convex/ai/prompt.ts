@@ -22,6 +22,7 @@ Rules:
 - Vary your language — don't start every message with "Great choice"
 - Keep reasons specific: "30% cheaper with similar specs" beats "great value"
 - If you already have product details from the system context, you do NOT need to call getProductDetails again — use the provided information directly. Only call tools for information you don't already have.
+- Be efficient with tool calls: gather the information you need in as few calls as possible. Do NOT re-fetch data you already have from earlier in the conversation or from the system context. Once you have enough information to answer, STOP calling tools and write the final answer immediately.
 
 When the user's message includes a product context tag like [Context: viewing product xyz123], always call getProductDetails with that ID before responding.`;
 

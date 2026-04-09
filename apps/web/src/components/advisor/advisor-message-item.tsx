@@ -1,7 +1,13 @@
 "use client";
 
 import { cn } from "@zalem/ui/lib/utils";
-import { Markdown, MessageActionsBar, Tool, type ToolPart } from "@zalem/ui/components/prompt-kit";
+import {
+  Markdown,
+  MessageActionsBar,
+  Thinking,
+  Tool,
+  type ToolPart,
+} from "@zalem/ui/components/prompt-kit";
 import { memo } from "react";
 import { extractToolName, getToolLabel } from "./tool-labels";
 
@@ -39,6 +45,14 @@ function textFromMessage(msg: UIMessage): string {
   );
 }
 
+function reasoningSignature(msg: UIMessage): string {
+  if (!msg.parts) return "";
+  return msg.parts
+    .filter((p) => p.type === "reasoning")
+    .map((p) => `${p.state ?? ""}|${(p.text ?? "").length}`)
+    .join("||");
+}
+
 function toolPartsSignature(msg: UIMessage): string {
   if (!msg.parts) return "";
   return msg.parts
@@ -68,6 +82,16 @@ function partToToolPart(part: MessagePart): ToolPart | null {
 }
 
 function renderAssistantPart(part: MessagePart, index: number): React.ReactNode {
+  if (part.type === "reasoning") {
+    const text = part.text ?? "";
+    if (!text && part.state !== "streaming") return null;
+    return (
+      <div key={`reasoning-${index}`} className="py-0.5">
+        <Thinking text={text} isStreaming={part.state === "streaming"} />
+      </div>
+    );
+  }
+
   if (part.type === "text") {
     const text = part.text ?? "";
     if (!text.trim()) return null;
@@ -115,7 +139,10 @@ function AdvisorMessageItemComponent({ message, forceActionsVisible }: AdvisorMe
 
   const parts = message.parts ?? [];
   const hasRenderable = parts.some(
-    (p) => (p.type === "text" && (p.text ?? "").trim()) || extractToolName(p) !== null,
+    (p) =>
+      (p.type === "text" && (p.text ?? "").trim()) ||
+      p.type === "reasoning" ||
+      extractToolName(p) !== null,
   );
   if (!hasRenderable) return null;
 
@@ -141,6 +168,7 @@ function areEqual(prev: AdvisorMessageItemProps, next: AdvisorMessageItemProps):
   if ((a.role ?? "") !== (b.role ?? "")) return false;
   if ((a.status ?? "") !== (b.status ?? "")) return false;
   if (textFromMessage(a) !== textFromMessage(b)) return false;
+  if (reasoningSignature(a) !== reasoningSignature(b)) return false;
   if (toolPartsSignature(a) !== toolPartsSignature(b)) return false;
   if ((a._creationTime ?? 0) !== (b._creationTime ?? 0)) return false;
   return true;
