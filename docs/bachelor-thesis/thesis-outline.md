@@ -173,7 +173,18 @@ split this chapter into 3 parts:
 - token usage
 - estimated cost per session
 
-#### 6.3 user evaluation
+#### 6.3 custom LLM eval harness
+
+- motivation: defend model/prompt/parameter choices with measured evidence
+- dataset: ~25 curated shopping questions with expected behavior tags
+- runner: Convex action that sweeps configurations and captures parts/usage/timing
+- scoring pipeline: programmatic scorers + LLM-as-judge scorers
+- composite scoring and pareto reporting
+- dashboard for ranking and comparing runs
+- canonical sweep across models, reasoning effort levels, step budgets, and prompt variants
+- full design lives in `docs/eval-system-plan.md`
+
+#### 6.4 user evaluation
 
 - participant profile
 - number of participants
@@ -186,6 +197,8 @@ split this chapter into 3 parts:
 - trust / usefulness / intrusiveness measures
 - review-summary usefulness measures
 - confidence in AI-assisted comparison
+
+the eval harness in 6.3 and the user study in 6.4 are complementary layers: the harness measures whether the system is technically sound, cheap, and grounded; the user study measures whether humans find it trustworthy and useful. neither replaces the other.
 
 ---
 

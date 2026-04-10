@@ -146,6 +146,22 @@ why it matters:
 
 - without this, it is not a strong thesis
 
+### 9. custom LLM eval harness (phase 1 scope)
+
+minimum:
+
+- a curated dataset of ~25 shopping questions with expected-behavior tags
+- a Convex action that runs a configuration against the dataset and stores per-question results
+- 5 programmatic scorers: hasFinalAnswer, groundedness, factuality, expectedToolCoverage, stepBudgetUsage
+- one canonical sweep across 3-4 configurations (baseline vs gpt-oss-120b at low/medium/high reasoning effort)
+- results exported as a table ready for chapter 7
+
+why it matters:
+
+- defends model and parameter choices with numbers, not intuition
+- catches `maxSteps` cutoff and hallucination regressions automatically
+- full design in `docs/eval-system-plan.md`
+
 ---
 
 ## should-build

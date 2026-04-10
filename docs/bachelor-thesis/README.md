@@ -10,11 +10,13 @@ this folder keeps the thesis-specific material separate from the product/system 
 
 - `supervisor-package.md` — the best single file to show a supervisor: final title, abstract, research questions, hypotheses, methodology, and one-page proposal
 - `current-direction.md` — the recommended thesis framing for `zalem`
-- `evaluation-plan.md` — concrete evaluation design: baseline vs AI conditions, review-summary/comparison metrics, and sample questionnaire items
+- `evaluation-plan.md` — concrete evaluation design: baseline vs AI conditions, the custom LLM eval harness, review-summary/comparison metrics, and sample questionnaire items
 - `thesis-outline.md` — chapter-by-chapter thesis structure
 - `titles-and-abstracts.md` — final title candidates and abstract drafts
 - `thesis-mvp.md` — thesis-safe MVP scope and execution plan
 - `other-thesis-ideas-2026.md` — 10 unrelated CS thesis ideas for 2026 with practical LLM integration
+
+the custom eval harness itself is designed in `docs/eval-system-plan.md` at the repository root. the thesis docs reference it but the full architecture / scoring pipeline / dataset design lives there.
 
 ---
 

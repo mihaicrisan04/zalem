@@ -31,7 +31,7 @@ the main claim to test is:
 
 ## evaluation structure
 
-the evaluation should have three layers:
+the evaluation should have four layers:
 
 ### 1. offline recommender evaluation
 
@@ -41,9 +41,15 @@ measures the quality of the non-AI recommendation backbone.
 
 measures performance, latency, and cost.
 
-### 3. user evaluation
+### 3. custom LLM eval harness
+
+a purpose-built automated harness that measures model/prompt/parameter choices for the advisor on quality, cost, latency, and tool-call efficiency. full design in `docs/eval-system-plan.md`. this is the layer that justifies every model and parameter choice with numbers instead of vibes, and that catches regressions when the model or prompt is changed.
+
+### 4. user evaluation
 
 measures perceived usefulness, trust, intrusiveness, and decision confidence.
+
+the custom LLM eval harness and the user evaluation are complementary, not competing. the harness answers "is the system technically sound and cheap enough to ship?" and the user study answers "does a human find it trustworthy and useful?". both are needed; neither replaces the other.
 
 ---
 
@@ -134,7 +140,67 @@ this justifies the hybrid architecture and shows that your design decisions are 
 
 ---
 
-## 3. user evaluation
+## 3. custom LLM eval harness
+
+### purpose
+
+defend every LLM-related design choice with measured evidence, not intuition. without this layer, the thesis has no principled answer to questions like "why gpt-oss-120b and not gemini-3-flash?", "why medium reasoning effort and not low?", or "why maxSteps = 12?".
+
+see `docs/eval-system-plan.md` for the full design. this section covers only the thesis-facing summary.
+
+### what the harness measures
+
+for any configuration `(model, reasoningEffort, maxSteps, promptVariant, provider)` the harness runs a curated dataset of ~25 shopping questions and records:
+
+- programmatic scores (free, deterministic):
+  - `hasFinalAnswer` — catches the `maxSteps` cutoff failure mode where the model exhausts its step budget on tool calls and never writes text
+  - `groundedness` — every product ID cited must exist in the Convex catalog
+  - `factuality` — prices / ratings in the answer must match the live DB snapshot
+  - `expectedToolCoverage` — the right tools must fire
+  - `toolCallEfficiency` — penalizes duplicate or unused tool calls
+  - `stepBudgetUsage` — ratio of steps used to `maxSteps`
+  - `reasoningRatio` — reasoning tokens / total output tokens
+- LLM-as-judge scores (small cheap model, different from the candidates):
+  - `completeness`, `helpfulness`, `tradeoffSurfacing`, `toolAppropriateness`, `toneAlignment`
+- operational metrics:
+  - token usage broken down by input / output / reasoning
+  - end-to-end latency, time-to-first-content
+  - cost in USD at current provider rates
+
+a composite score per run aggregates these into a single number for ranking, but the thesis reports the cost/quality pareto front separately — aggregating away tradeoffs is the opposite of what the harness is for.
+
+### configurations compared
+
+the first canonical sweep will compare at least these nine runs:
+
+| label               | model                         | reasoning | maxSteps | prompt       |
+| ------------------- | ----------------------------- | --------- | -------- | ------------ |
+| baseline-flash      | google/gemini-3-flash-preview | n/a       | 12       | current      |
+| gpt-oss-120b-med    | openai/gpt-oss-120b           | medium    | 12       | current      |
+| gpt-oss-120b-low    | openai/gpt-oss-120b           | low       | 12       | current      |
+| gpt-oss-120b-high   | openai/gpt-oss-120b           | high      | 12       | current      |
+| gpt-oss-20b-med     | openai/gpt-oss-20b            | medium    | 12       | current      |
+| gpt-oss-20b-low     | openai/gpt-oss-20b            | low       | 12       | current      |
+| oss-120b-tight      | openai/gpt-oss-120b           | medium    | 8        | be-efficient |
+| oss-120b-loose      | openai/gpt-oss-120b           | medium    | 15       | current      |
+| oss-120b-no-fewshot | openai/gpt-oss-120b           | medium    | 12       | no-few-shot  |
+
+nine runs × 25 questions = 225 advisor turns per sweep. judge calls on top. the whole sweep costs well under a dollar at current gpt-oss pricing and takes minutes, not hours.
+
+### thesis value
+
+this layer is what upgrades the thesis from "an AI shopping app with measurements" to "an AI shopping app whose every LLM design decision is defended by a reproducible, measured experiment." it directly produces the tables for chapter 7 and the pareto plots for chapter 8. it also demonstrates engineering maturity: measuring before choosing, and catching regressions the moment a new prompt or model is introduced.
+
+### validity threats specific to the harness
+
+- small dataset (25 questions) — mitigated by reporting per-category breakdowns and expanding the set over time
+- LLM-as-judge biases toward longer / more confident / same-family outputs — mitigated by using a judge model that is different from every candidate, and by reporting programmatic scores separately from judge scores
+- judge cost is not free — every sweep pays for judge tokens too, tracked in the harness cost column
+- seeded catalog is small and synthetic — noted in the discussion chapter; the harness still measures relative differences between configurations correctly even on a small catalog
+
+---
+
+## 4. user evaluation
 
 ### purpose
 
@@ -366,14 +432,20 @@ this is strong because comparison is one of the clearest “AI as decision suppo
 - diversity
 - coverage
 
-### table 3 — user perception
+### table 3 — custom LLM eval harness: config ranking
+
+- composite score per configuration
+- quality / cost / latency breakdown per configuration
+- pareto front highlighting the shipped configuration
+
+### table 4 — user perception
 
 - usefulness
 - trust
 - intrusiveness
 - confidence
 
-### table 4 — feature-specific perception
+### table 5 — feature-specific perception
 
 - review summary usefulness
 - review summary trustworthiness
@@ -457,15 +529,16 @@ if time becomes tight, do at least this:
 
 1. offline recommender evaluation
 2. latency/cost table
-3. one A vs B user study
-4. questionnaire sections for:
+3. custom LLM eval harness with at least the phase 1 minimum (dataset + runner + 5 programmatic scorers + simple admin page) and one canonical sweep across 3-4 configurations
+4. one A vs B user study
+5. questionnaire sections for:
    - trust
    - usefulness
    - intrusiveness
    - review summary usefulness
    - comparison confidence
 
-that is enough for a solid bachelor thesis.
+that is enough for a solid bachelor thesis. the eval harness is listed here because its phase 1 scope is small (a few Convex tables + an action + 5 scorers) but the payoff for the thesis evaluation chapter is large.
 
 ---
 

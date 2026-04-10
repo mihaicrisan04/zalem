@@ -102,8 +102,9 @@ realistic and defensible contributions for a bachelor thesis:
 4. a review-grounded summarization mechanism that explicitly surfaces conflicting opinions (addressing Rufus's most-criticized feature)
 5. an AI-assisted comparison flow for similar products
 6. a behavior-driven readiness mechanism based on lightweight browsing signals
-7. an empirical evaluation of recommendation quality, trust, usefulness, latency, and cost
-8. practical design recommendations for trustworthy AI shopping assistance, benchmarked against documented failures of production systems
+7. a custom LLM eval harness that ranks model/prompt/parameter configurations on quality, cost, latency, and tool efficiency — turning advisor configuration into a data-driven decision and producing thesis-quality evidence
+8. an empirical evaluation of recommendation quality, trust, usefulness, latency, and cost
+9. practical design recommendations for trustworthy AI shopping assistance, benchmarked against documented failures of production systems
 
 ---
 
@@ -180,7 +181,19 @@ purpose:
 - justify architecture decisions
 - show practical feasibility
 
-### 3. user evaluation
+### 3. custom LLM eval harness
+
+a purpose-built harness inside the Convex backend that sweeps advisor configurations (model, reasoning effort, `maxSteps`, prompt variant, provider) over a curated dataset of shopping questions, then scores each run with programmatic checks (final answer present, groundedness, factuality against the live catalog, tool-call efficiency, step-budget usage) and cheap LLM-as-judge checks (completeness, helpfulness, tradeoff surfacing, tool appropriateness, tone). results are stored in Convex tables and surfaced through an admin dashboard with pareto charts and run-to-run comparison.
+
+purpose:
+
+- defend every LLM design choice with numbers instead of intuition
+- produce thesis results tables and cost/quality pareto plots
+- catch regressions when the prompt or model is changed
+
+full design in `docs/eval-system-plan.md`.
+
+### 4. user evaluation
 
 a small structured user study will compare:
 

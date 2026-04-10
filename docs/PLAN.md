@@ -15,6 +15,7 @@ e-commerce store with AI-powered shopping assistant
 | 5     | behavior-driven readiness signals | phase 3, 4                  | done        |
 | 6     | LLM integration (Gemini 3 Flash)  | phase 3, 5                  | in progress |
 | 7     | optimization & extras             | phase 6                     | not started |
+| 8     | custom eval system                | phase 6                     | not started |
 
 UI-first approach: design the store experience first, then build the data layer to support it.
 
@@ -38,6 +39,7 @@ UI-first approach: design the store experience first, then build the data layer 
 - `docs/data-layer-plan.md` — Convex schema, queries, mutations, indexes (phase 2)
 - `docs/recommendations-plan.md` — algorithm selection, scoring, cold-start (phase 3)
 - `docs/ai-integration-plan.md` — LLM selection, UX, business case, architecture (phases 5-7)
+- `docs/eval-system-plan.md` — custom eval harness for ranking models, prompts, and parameters on quality/cost/latency (phase 8)
 - `docs/rufus-research.md` — Amazon Rufus deep dive: architecture, features, failures, and actionable lessons for zalem (cross-cutting)
 - `docs/scale-considerations.md` — what breaks at 10K+ products and architectural fixes (cross-cutting)
 - `docs/architecture-research.md` — Convex components, monorepo strategy, service boundaries (cross-cutting)
@@ -319,15 +321,15 @@ stage 2: LLM re-ranking + messaging (Gemini Flash, 300-500ms)
 
 **phase 6.5 sub-phases:**
 
-| sub-phase | what                                                                               | status      |
-| --------- | ---------------------------------------------------------------------------------- | ----------- |
-| 6.5.1     | richer first-message context (product, cart, recent views — hidden from chat UI)    | not started |
-| 6.5.2     | tool call step indicators (inline "Looking up..." labels from message stream)       | not started |
-| 6.5.3     | compareProducts tool (structured JSON with specs, reviews, pricing for 2-3 items)   | not started |
+| sub-phase | what                                                                                 | status      |
+| --------- | ------------------------------------------------------------------------------------ | ----------- |
+| 6.5.1     | richer first-message context (product, cart, recent views — hidden from chat UI)     | not started |
+| 6.5.2     | tool call step indicators (inline "Looking up..." labels from message stream)        | not started |
+| 6.5.3     | compareProducts tool (structured JSON with specs, reviews, pricing for 2-3 items)    | not started |
 | 6.5.4     | custom chat UI components (comparison table, inline product cards, no bubbles on AI) | not started |
-| 6.5.5     | speed optimizations (reduce tool calls via pre-fetched context, trim few-shots)     | not started |
-| 6.5.6     | system prompt tuning for comparison + few-shot example                              | not started |
-| 6.5.7     | polish + docs                                                                      | not started |
+| 6.5.5     | speed optimizations (reduce tool calls via pre-fetched context, trim few-shots)      | not started |
+| 6.5.6     | system prompt tuning for comparison + few-shot example                               | not started |
+| 6.5.7     | polish + docs                                                                        | not started |
 
 **key design decisions for 6.5:**
 
@@ -351,6 +353,34 @@ polish, performance, and experimental features.
 - **performance** — profile behavior tracking overhead, tune throttle/debounce intervals
 - **(optional) WebGazer.js** — eye tracking experiment as supplementary signal, requires webcam consent
 - **(optional) heatmaps** — use `useMousePosition` data to generate product page heatmaps for analytics
+
+---
+
+## phase 8 — custom eval system
+
+a purpose-built eval harness for monitoring and ranking LLM configurations (model, reasoning effort, step budget, system prompt variants) on cost, latency, and quality. turns model selection into a data-driven process and produces thesis-quality evidence for chapter 6.2 (system evaluation).
+
+**sub-phase progress:**
+
+| sub-phase | what                                                                                   | status      |
+| --------- | -------------------------------------------------------------------------------------- | ----------- |
+| 8.1       | curated eval dataset (~25 shopping questions with expected behavior tags)              | not started |
+| 8.2       | eval runner action + `evalRuns` / `evalRunResults` / `evalDatasets` Convex tables      | not started |
+| 8.3       | programmatic scorers (hasFinalAnswer, groundedness, factuality, tool efficiency, etc.) | not started |
+| 8.4       | LLM-as-judge scorers (completeness, helpfulness, tradeoff surfacing, tone alignment)   | not started |
+| 8.5       | admin dashboard at `/admin/evals` (run list, per-run detail, comparison view)          | not started |
+| 8.6       | pareto charts (cost vs quality, latency vs quality) + CSV/JSON export                  | not started |
+| 8.7       | first canonical sweep across 9 configurations + thesis-ready result tables             | not started |
+
+**key motivation:** the `maxSteps: 5 → 12` fix we shipped was a reactive patch, not a measured decision. for the thesis, every model/prompt/parameter choice needs to be defended with numbers. see `docs/eval-system-plan.md` for the full architecture, dataset design, scoring pipeline, and dashboard plan.
+
+**what this is NOT:**
+
+- not a replacement for the small user study — user perception (trust, intrusiveness, control) still requires human evaluation
+- not a general-purpose eval framework — scoped strictly to the shopping-advisor use case
+- not a CI gate — runs are triggered manually
+
+**thesis fit:** the harness is both an engineering contribution (chapter 5) and the measurement instrument for chapter 6.2 system evaluation. it produces the latency/cost/quality tables that go into chapter 7 and the pareto plots that justify the final shipped configuration. the user study in section 6.3 remains a separate, complementary layer.
 
 ---
 
