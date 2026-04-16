@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { useUIMessages } from "@convex-dev/agent/react";
+import { useUIMessages, type UIMessagesQueryResult } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
 import { cn } from "@zalem/ui/lib/utils";
@@ -10,9 +10,11 @@ import { useAdvisor } from "@/hooks/use-advisor";
 import { AdvisorComposer } from "./advisor/advisor-composer";
 import { AdvisorMessageList } from "./advisor/advisor-message-list";
 
-const MIN_WIDTH = 340;
-const DEFAULT_WIDTH = 400;
-const DISMISS_THRESHOLD = 200;
+type AdvisorMessage = UIMessagesQueryResult<typeof api.ai.queries.listThreadMessages>;
+
+const MIN_WIDTH_PX = 340;
+const DEFAULT_WIDTH_PX = 400;
+const DISMISS_THRESHOLD_PX = 200;
 
 export function AdvisorSidebar() {
   const {
@@ -26,7 +28,7 @@ export function AdvisorSidebar() {
     pendingQuestion,
   } = useAdvisor();
   const [optimisticMsg, setOptimisticMsg] = useState<string | null>(null);
-  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [width, setWidth] = useState(DEFAULT_WIDTH_PX);
   const [isResizing, setIsResizing] = useState(false);
 
   const messagesResult = useUIMessages(
@@ -35,16 +37,16 @@ export function AdvisorSidebar() {
     { initialNumItems: 50, stream: true },
   );
 
-  const messages = (messagesResult?.results ?? []) as any[];
+  const messages: AdvisorMessage[] = messagesResult?.results ?? [];
 
   // clear optimistic message once the matching real user message shows up
   useEffect(() => {
     if (!optimisticMsg) return;
     const found = messages.some(
-      (m: any) =>
+      (m) =>
         m.role === "user" &&
-        (m.parts as any[] | undefined)?.some(
-          (p) => p?.type === "text" && (p.text ?? "").trim() === optimisticMsg.trim(),
+        m.parts?.some(
+          (p) => p.type === "text" && "text" in p && (p.text ?? "").trim() === optimisticMsg.trim(),
         ),
     );
     if (found) setOptimisticMsg(null);
@@ -83,10 +85,10 @@ export function AdvisorSidebar() {
         const newWidth = startWidth + delta;
         const maxWidth = getMaxWidth();
 
-        if (newWidth < DISMISS_THRESHOLD) {
+        if (newWidth < DISMISS_THRESHOLD_PX) {
           setWidth(Math.max(0, newWidth));
         } else {
-          setWidth(Math.max(MIN_WIDTH, Math.min(maxWidth, newWidth)));
+          setWidth(Math.max(MIN_WIDTH_PX, Math.min(maxWidth, newWidth)));
         }
       };
 
@@ -98,9 +100,9 @@ export function AdvisorSidebar() {
         document.body.style.userSelect = "";
 
         const sidebar = document.querySelector("[data-advisor-sidebar]");
-        if (sidebar && sidebar.clientWidth < DISMISS_THRESHOLD) {
+        if (sidebar && sidebar.clientWidth < DISMISS_THRESHOLD_PX) {
           close();
-          setWidth(DEFAULT_WIDTH);
+          setWidth(DEFAULT_WIDTH_PX);
         }
       };
 

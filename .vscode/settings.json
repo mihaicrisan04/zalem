@@ -1,0 +1,26 @@
+{
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.defaultFormatter": "nicolo-ribaudo.oxfmt-vscode",
+  "[javascript]": {
+    "editor.defaultFormatter": "nicolo-ribaudo.oxfmt-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "nicolo-ribaudo.oxfmt-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "nicolo-ribaudo.oxfmt-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "nicolo-ribaudo.oxfmt-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "nicolo-ribaudo.oxfmt-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "nicolo-ribaudo.oxfmt-vscode"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "explicit"
+  }
+}

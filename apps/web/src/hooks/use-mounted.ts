@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
+
+const emptySubscribe = () => () => {};
 
 /**
  * Returns false during SSR/first render, true after hydration.
- * Use to defer rendering of components that generate client-side IDs
- * (Base UI components) to avoid hydration mismatch warnings.
+ * Uses useSyncExternalStore for zero-flash, single-render detection.
  */
 export function useMounted() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted;
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 }

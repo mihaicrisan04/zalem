@@ -31,7 +31,8 @@
     "lint": "oxlint",
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
-    "check": "oxlint && oxfmt --check"
+    "check": "oxlint && oxfmt --check",
+    "ci": "bun run check && bun run check-types"
   },
   "dependencies": {
     "@zalem/env": "workspace:*",

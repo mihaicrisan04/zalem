@@ -8,6 +8,8 @@ import { api } from "@zalem/backend/convex/_generated/api";
 import type { Id } from "@zalem/backend/convex/_generated/dataModel";
 import type { ProductEngagement } from "./use-product-engagement";
 
+const FLUSH_INTERVAL_MS = 5_000;
+
 // -- types --
 
 export type BehaviorTrackerState = {
@@ -147,7 +149,7 @@ export function useBehaviorTracker() {
 
   // flush every 5 seconds
   useEffect(() => {
-    const interval = setInterval(flush, 5000);
+    const interval = setInterval(flush, FLUSH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [flush]);
 

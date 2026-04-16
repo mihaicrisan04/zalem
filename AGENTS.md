@@ -16,9 +16,14 @@ bun run lint          # oxlint
 bun run format        # oxfmt --write
 bun run format:check  # oxfmt --check
 bun run check         # both lint + format check
+bun run ci            # full quality gate: check + check-types
+
+# testing (bun built-in runner, tests co-located with source)
+bun test              # run all tests
+bun test path/to/file.test.ts  # run a single test file
 ```
 
-Always run `bun run check` before committing to catch lint/format issues.
+Always run `bun run ci` before committing to catch lint/format/type issues.
 
 ## Architecture
 
@@ -37,6 +42,17 @@ Turborepo monorepo using bun workspaces. Package manager is **bun** (v1.3.10).
 - Shared UI components go in `packages/ui`, app-specific components go in `apps/web/src/components`
 - Add shadcn components: `npx shadcn@latest add <component> -c packages/ui`
 - Env vars: Convex env in `packages/backend/.env.local`, web app env in `apps/web/.env`
+
+## Code style
+
+- files: `kebab-case.ts` / `kebab-case.tsx`
+- types/interfaces: `PascalCase`
+- functions/variables: `camelCase`
+- constants: `UPPER_SNAKE_CASE` — time constants must have `_MS` suffix (e.g., `FLUSH_INTERVAL_MS = 5_000`)
+- prefer named exports over default exports (except Next.js page/layout conventions)
+- avoid `any` — use proper types. for Convex `useUIMessages`, use `UIMessagesQueryResult<typeof api.your.query>` to extract the message type
+- tests co-located next to source files as `.test.ts` / `.test.tsx`
+- when a bug or gotcha is discovered, add it to `docs/lessons-learned.md`
 
 ## Project documentation approach
 

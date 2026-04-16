@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+const TICK_INTERVAL_MS = 100;
+
 export function useDwellTime() {
   const [element, setElement] = useState<HTMLElement | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -38,8 +40,8 @@ export function useDwellTime() {
   useEffect(() => {
     if (!isHovered) return;
     const interval = setInterval(() => {
-      setCurrentMs((prev) => prev + 100);
-    }, 100);
+      setCurrentMs((prev) => prev + TICK_INTERVAL_MS);
+    }, TICK_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [isHovered]);
 
