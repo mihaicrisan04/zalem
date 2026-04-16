@@ -23,6 +23,11 @@ export default function CheckoutPage() {
     phone: "",
   });
 
+  const cartEmpty = cartItems !== undefined && cartItems.length === 0;
+  useEffect(() => {
+    if (cartEmpty) router.push("/cart" as any);
+  }, [cartEmpty, router]);
+
   if (!isSignedIn) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -38,11 +43,6 @@ export default function CheckoutPage() {
       </div>
     );
   }
-
-  const cartEmpty = cartItems.length === 0;
-  useEffect(() => {
-    if (cartEmpty) router.push("/cart" as any);
-  }, [cartEmpty, router]);
 
   if (cartEmpty) return null;
 

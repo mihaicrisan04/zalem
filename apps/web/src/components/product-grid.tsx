@@ -21,7 +21,12 @@ export function ProductGrid({
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {products.map((product) => (
-        <ProductCard key={product._id} product={product} isFavorited={favSet.has(product._id)} />
+        <div
+          key={product._id}
+          style={{ contentVisibility: "auto", containIntrinsicSize: "auto 400px" }}
+        >
+          <ProductCard product={product} isFavorited={favSet.has(product._id)} />
+        </div>
       ))}
     </div>
   );

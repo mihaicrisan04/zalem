@@ -1,15 +1,11 @@
 "use client";
 
 import { cn } from "@zalem/ui/lib/utils";
-import {
-  Markdown,
-  MessageActionsBar,
-  Thinking,
-  Tool,
-  type ToolPart,
-} from "@zalem/ui/components/prompt-kit";
-import { memo } from "react";
+import { Markdown, MessageActionsBar, Tool, type ToolPart } from "@zalem/ui/components/prompt-kit";
+import { ThinkingBlock } from "@zalem/ui/components/prompt-kit/thinking-block";
+import { memo, useMemo, useRef } from "react";
 import { extractToolName, getToolLabel } from "./tool-labels";
+import { AssistantMessageGroups } from "./assistant-message-groups";
 
 type MessagePart = {
   type?: string;
@@ -33,8 +29,94 @@ type UIMessage = {
 
 export type AdvisorMessageItemProps = {
   message: UIMessage;
+  isStreaming: boolean;
   forceActionsVisible?: boolean;
 };
+
+// ---------------------------------------------------------------------------
+// Grouping logic — mirrors open-agents: consecutive reasoning parts are
+// grouped together, everything else is an individual group.
+// ---------------------------------------------------------------------------
+
+type ReasoningPart = MessagePart & { type: "reasoning" };
+
+type RenderGroup =
+  | { type: "reasoning-group"; parts: ReasoningPart[]; startIndex: number }
+  | { type: "part"; part: MessagePart; index: number };
+
+function buildGroups(parts: MessagePart[]): RenderGroup[] {
+  const groups: RenderGroup[] = [];
+  let currentReasoningGroup: ReasoningPart[] = [];
+  let reasoningGroupStartIndex = 0;
+
+  const flushReasoningGroup = () => {
+    if (currentReasoningGroup.length === 0) return;
+    groups.push({
+      type: "reasoning-group",
+      parts: currentReasoningGroup,
+      startIndex: reasoningGroupStartIndex,
+    });
+    currentReasoningGroup = [];
+  };
+
+  parts.forEach((part, index) => {
+    if (part.type === "reasoning") {
+      if (currentReasoningGroup.length === 0) {
+        reasoningGroupStartIndex = index;
+      }
+      currentReasoningGroup.push(part as ReasoningPart);
+      return;
+    }
+    flushReasoningGroup();
+    groups.push({ type: "part", part, index });
+  });
+
+  flushReasoningGroup();
+  return groups;
+}
+
+function isCollapsiblePart(part: MessagePart): boolean {
+  if (part.type === "reasoning") return true;
+  return extractToolName(part) !== null;
+}
+
+function hasRenderableAssistantPart(part: MessagePart): boolean {
+  if (part.type === "text") return (part.text ?? "").length > 0;
+  if (part.type === "reasoning") return (part.text ?? "").length > 0 || part.state === "streaming";
+  if (extractToolName(part) !== null) return true;
+  return false;
+}
+
+function getReasoningGroupText(parts: ReasoningPart[]): string {
+  return parts.map((p) => p.text ?? "").join("\n\n");
+}
+
+function shouldKeepReasoningStreaming(opts: {
+  isMessageStreaming: boolean;
+  hasStreamingPart: boolean;
+  hasRenderableContentAfter: boolean;
+}): boolean {
+  if (!opts.isMessageStreaming) return false;
+  if (opts.hasStreamingPart) return true;
+  return !opts.hasRenderableContentAfter;
+}
+
+function partToToolPart(part: MessagePart): ToolPart | null {
+  const toolName = extractToolName(part);
+  if (!toolName) return null;
+  return {
+    toolName,
+    state: part.state ?? "call",
+    input: part.input,
+    output: part.output,
+    toolCallId: part.toolCallId,
+    errorText: part.errorText,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Signature functions for memo comparison
+// ---------------------------------------------------------------------------
 
 function textFromMessage(msg: UIMessage): string {
   return (
@@ -68,101 +150,153 @@ function toolPartsSignature(msg: UIMessage): string {
     .join("||");
 }
 
-function partToToolPart(part: MessagePart): ToolPart | null {
-  const toolName = extractToolName(part);
-  if (!toolName) return null;
-  return {
-    toolName,
-    state: part.state ?? "call",
-    input: part.input,
-    output: part.output,
-    toolCallId: part.toolCallId,
-    errorText: part.errorText,
-  };
-}
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
-function renderAssistantPart(part: MessagePart, index: number): React.ReactNode {
-  if (part.type === "reasoning") {
-    const text = part.text ?? "";
-    if (!text && part.state !== "streaming") return null;
-    return (
-      <div key={`reasoning-${index}`} className="py-0.5">
-        <Thinking text={text} isStreaming={part.state === "streaming"} />
-      </div>
-    );
-  }
-
-  if (part.type === "text") {
-    const text = part.text ?? "";
-    if (!text.trim()) return null;
-    return (
-      <div key={`text-${index}`} className="text-foreground text-sm leading-relaxed">
-        <Markdown>{text}</Markdown>
-      </div>
-    );
-  }
-
-  const toolPart = partToToolPart(part);
-  if (toolPart) {
-    const label = getToolLabel(toolPart.toolName);
-    return (
-      <div key={`tool-${toolPart.toolCallId ?? index}`} className="py-0.5">
-        <Tool toolPart={toolPart} label={label} />
-      </div>
-    );
-  }
-
-  return null;
-}
-
-function AdvisorMessageItemComponent({ message, forceActionsVisible }: AdvisorMessageItemProps) {
+function AdvisorMessageItemComponent({
+  message,
+  isStreaming: isMessageStreaming,
+  forceActionsVisible,
+}: AdvisorMessageItemProps) {
   const isUser = message.role === "user";
   const text = textFromMessage(message);
   const timestamp = message._creationTime;
+  const sendTimestampRef = useRef<number | null>(isMessageStreaming ? Date.now() : null);
 
+  // User message
   if (isUser) {
     if (!text) return null;
     return (
-      <div className="group flex flex-col items-end gap-1">
-        <div className="bg-primary text-primary-foreground max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words whitespace-pre-wrap">
-          {text}
+      <div className="flex justify-end py-2">
+        <div className="group relative w-fit min-w-0 max-w-[80%]">
+          <div className="bg-secondary rounded-3xl px-4 py-2">
+            <p className="break-words whitespace-pre-wrap">{text}</p>
+          </div>
         </div>
-        <MessageActionsBar
-          text={text}
-          align="end"
-          timestamp={timestamp}
-          forceVisible={forceActionsVisible}
-        />
       </div>
     );
   }
 
+  // Assistant message
   const parts = message.parts ?? [];
-  const hasRenderable = parts.some(
-    (p) =>
-      (p.type === "text" && (p.text ?? "").trim()) ||
-      p.type === "reasoning" ||
-      extractToolName(p) !== null,
-  );
+  const hasRenderable = parts.some(hasRenderableAssistantPart);
   if (!hasRenderable) return null;
 
+  const groups = buildGroups(parts);
+
+  const renderGroups = (isToolCallsExpanded: boolean) =>
+    groups.map((group, gi) => {
+      // --- Reasoning group ---
+      if (group.type === "reasoning-group") {
+        if (!isToolCallsExpanded) return null;
+        const hasContentAfter = parts
+          .slice(group.startIndex + group.parts.length)
+          .some(hasRenderableAssistantPart);
+
+        return (
+          <div key={`reasoning-${gi}`} className="max-w-full pl-[22px]">
+            <ThinkingBlock
+              text={getReasoningGroupText(group.parts)}
+              isStreaming={shouldKeepReasoningStreaming({
+                isMessageStreaming,
+                hasStreamingPart: group.parts.some((p) => p.state === "streaming"),
+                hasRenderableContentAfter: hasContentAfter,
+              })}
+              partCount={group.parts.length}
+            />
+          </div>
+        );
+      }
+
+      // --- Individual part ---
+      const p = group.part;
+
+      // Standalone reasoning part (shouldn't happen after grouping, but safety)
+      if (p.type === "reasoning") {
+        if (!isToolCallsExpanded) return null;
+        const hasContentAfter = parts.slice(group.index + 1).some(hasRenderableAssistantPart);
+        return (
+          <div key={`reasoning-${gi}`} className="max-w-full pl-[22px]">
+            <ThinkingBlock
+              text={p.text ?? ""}
+              isStreaming={shouldKeepReasoningStreaming({
+                isMessageStreaming,
+                hasStreamingPart: p.state === "streaming",
+                hasRenderableContentAfter: hasContentAfter,
+              })}
+            />
+          </div>
+        );
+      }
+
+      // Text part
+      if (p.type === "text") {
+        if ((p.text ?? "").length === 0) return null;
+
+        const isFinalTextPart = !parts.slice(group.index + 1).some((mp) => mp.type === "text");
+
+        // When collapsed, hide every text part except the final one
+        if (!isToolCallsExpanded && !isFinalTextPart) return null;
+
+        return (
+          <div
+            key={`text-${gi}`}
+            className={cn(
+              "flex min-w-0 py-2",
+              // Breathing room above final text after tool calls
+              isFinalTextPart && group.index > 0 && "mt-2",
+              // Indent non-final text parts
+              !isFinalTextPart && "pl-[22px]",
+            )}
+          >
+            <div className="group min-w-0 w-full overflow-hidden">
+              <div className="text-foreground text-sm leading-relaxed">
+                <Markdown>{p.text ?? ""}</Markdown>
+              </div>
+              {isFinalTextPart && !isMessageStreaming && (p.text ?? "").trim().length > 0 && (
+                <MessageActionsBar
+                  text={text}
+                  align="start"
+                  timestamp={timestamp}
+                  forceVisible={forceActionsVisible}
+                />
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      // Tool call
+      const tp = partToToolPart(p);
+      if (tp) {
+        if (!isToolCallsExpanded) return null;
+        const label = getToolLabel(tp.toolName);
+        return (
+          <div key={`tool-${tp.toolCallId ?? gi}`} className="max-w-full pl-[22px]">
+            <Tool toolPart={tp} label={label} />
+          </div>
+        );
+      }
+
+      return null;
+    });
+
   return (
-    <div className={cn("group flex flex-col items-start gap-1")}>
-      <div className="w-full space-y-1">{parts.map(renderAssistantPart)}</div>
-      {text ? (
-        <MessageActionsBar
-          text={text}
-          align="start"
-          timestamp={timestamp}
-          forceVisible={forceActionsVisible}
-        />
-      ) : null}
-    </div>
+    <AssistantMessageGroups
+      message={message}
+      isStreaming={isMessageStreaming}
+      durationMs={null}
+      startedAt={sendTimestampRef.current}
+    >
+      {renderGroups}
+    </AssistantMessageGroups>
   );
 }
 
 function areEqual(prev: AdvisorMessageItemProps, next: AdvisorMessageItemProps): boolean {
   if (prev.forceActionsVisible !== next.forceActionsVisible) return false;
+  if (prev.isStreaming !== next.isStreaming) return false;
   const a = prev.message;
   const b = next.message;
   if ((a.role ?? "") !== (b.role ?? "")) return false;

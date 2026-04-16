@@ -42,7 +42,10 @@ export function ProductRow({
 
   return (
     <section>
-      <div ref={containerRef} className="container mx-auto mb-3 flex items-center justify-between px-4">
+      <div
+        ref={containerRef}
+        className="container mx-auto mb-3 flex items-center justify-between px-4"
+      >
         <h2 className="text-xl font-bold">{title}</h2>
         {seeAllHref && (
           <Link

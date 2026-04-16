@@ -15,6 +15,7 @@ type AdvisorState = {
   close: () => void;
   newChat: () => void;
   sendMessage: (question: string) => void;
+  stopGeneration: () => void;
   setProductId: (id: string | null) => void;
   pendingQuestion: string | null;
 };
@@ -105,6 +106,11 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
     setPendingQuestion(null);
   }, []);
 
+  const stopGeneration = useCallback(() => {
+    setIsLoading(false);
+    setPendingQuestion(null);
+  }, []);
+
   const newChat = useCallback(() => {
     setThreadId(null);
     setPendingQuestion(null);
@@ -121,6 +127,7 @@ export function AdvisorProvider({ children }: { children: React.ReactNode }) {
         close,
         newChat,
         sendMessage,
+        stopGeneration,
         setProductId,
         pendingQuestion,
       }}

@@ -15,8 +15,16 @@ const DEFAULT_WIDTH = 400;
 const DISMISS_THRESHOLD = 200;
 
 export function AdvisorSidebar() {
-  const { isOpen, close, newChat, threadId, isLoading, sendMessage, pendingQuestion } =
-    useAdvisor();
+  const {
+    isOpen,
+    close,
+    newChat,
+    threadId,
+    isLoading,
+    sendMessage,
+    stopGeneration,
+    pendingQuestion,
+  } = useAdvisor();
   const [optimisticMsg, setOptimisticMsg] = useState<string | null>(null);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
@@ -142,6 +150,7 @@ export function AdvisorSidebar() {
         canNewChat={!!threadId}
         onSubmit={handleSend}
         onNewChat={newChat}
+        onStop={stopGeneration}
       />
     </aside>
   );

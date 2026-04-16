@@ -2,7 +2,7 @@
 
 import { cn } from "@zalem/ui/lib/utils";
 import { memo } from "react";
-import { Streamdown, type Components } from "streamdown";
+import { Streamdown, type BundledTheme, type Components } from "streamdown";
 
 export type MarkdownProps = {
   children: string;
@@ -10,6 +10,8 @@ export type MarkdownProps = {
   className?: string;
   components?: Components;
 };
+
+const SHIKI_THEME: [BundledTheme, BundledTheme] = ["github-light", "github-dark"];
 
 const INITIAL_COMPONENTS: Components = {
   code: function CodeComponent({ className, children, ...props }: any) {
@@ -103,7 +105,11 @@ function MarkdownComponent({
   components = INITIAL_COMPONENTS,
 }: MarkdownProps) {
   return (
-    <Streamdown className={cn("flex flex-col gap-2", className)} components={components}>
+    <Streamdown
+      className={cn("flex flex-col gap-2", className)}
+      components={components}
+      shikiTheme={SHIKI_THEME}
+    >
       {children}
     </Streamdown>
   );

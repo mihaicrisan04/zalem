@@ -45,5 +45,9 @@ export {
 export { PromptSuggestion, type PromptSuggestionProps } from "./prompt-suggestion";
 export { ScrollButton, type ScrollButtonProps } from "./scroll-button";
 export { Tool, type ToolPart, type ToolProps, type ToolState } from "./tool";
+export { ToolLayout, type ToolLayoutProps, type ToolRenderState } from "./tool-layout";
+export { ThinkingBlock, type ThinkingBlockProps } from "./thinking-block";
+export { ToolCallsSummaryBar, type ToolCallsSummaryBarProps } from "./tool-calls-summary-bar";
 export { MessageActionsBar, type MessageActionsBarProps } from "./message-actions-bar";
+/** @deprecated Use `ThinkingBlock` instead. */
 export { Thinking, type ThinkingProps } from "./thinking";
