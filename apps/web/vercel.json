@@ -1,3 +1,0 @@
-{
-  "buildCommand": "cd ../.. && npx convex deploy --cmd 'cd apps/web && npx next build' --cmd-url-env-var-name NEXT_PUBLIC_CONVEX_URL"
-}
