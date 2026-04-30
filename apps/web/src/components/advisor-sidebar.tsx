@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { X } from "lucide-react";
-import { useUIMessages, type UIMessagesQueryResult } from "@convex-dev/agent/react";
+import { useUIMessages, type UIMessagesQuery } from "@convex-dev/agent/react";
 import { api } from "@zalem/backend/convex/_generated/api";
 import { Button } from "@zalem/ui/components/optics/button";
 import { cn } from "@zalem/ui/lib/utils";
@@ -10,7 +10,9 @@ import { useAdvisor } from "@/hooks/use-advisor";
 import { AdvisorComposer } from "./advisor/advisor-composer";
 import { AdvisorMessageList } from "./advisor/advisor-message-list";
 
-type AdvisorMessage = UIMessagesQueryResult<typeof api.ai.queries.listThreadMessages>;
+type AdvisorMessage = typeof api.ai.queries.listThreadMessages extends UIMessagesQuery<unknown, infer M>
+  ? M
+  : never;
 
 const MIN_WIDTH_PX = 340;
 const DEFAULT_WIDTH_PX = 400;
