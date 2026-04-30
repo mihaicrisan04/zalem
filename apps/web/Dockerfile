@@ -37,7 +37,8 @@ ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CONVEX_URL=$NEXT_PUBLIC_CONVEX_URL
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
-RUN ./node_modules/.bin/turbo run build --filter=web
+WORKDIR /repo/apps/web
+RUN ../../node_modules/.bin/next build
 
 
 FROM node:22-slim AS runner
