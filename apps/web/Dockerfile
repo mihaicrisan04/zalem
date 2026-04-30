@@ -19,7 +19,9 @@ COPY packages/config/package.json packages/config/package.json
 RUN bun install --frozen-lockfile --linker=hoisted
 
 
-FROM oven/bun:1.3.10 AS builder
+# builder runs on node, not bun — bun chokes on next.config.ts loading
+# (TypeError: Expected CommonJS module to have a function wrapper)
+FROM node:22-slim AS builder
 WORKDIR /repo
 
 ENV NODE_ENV=production
@@ -35,7 +37,7 @@ ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CONVEX_URL=$NEXT_PUBLIC_CONVEX_URL
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
-RUN bunx turbo run build --filter=web
+RUN ./node_modules/.bin/turbo run build --filter=web
 
 
 FROM node:22-slim AS runner
