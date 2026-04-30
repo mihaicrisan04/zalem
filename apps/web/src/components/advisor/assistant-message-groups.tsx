@@ -10,7 +10,7 @@ type MessagePart = {
   state?: string;
   toolName?: string;
   toolCallId?: string;
-  input?: Record<string, unknown>;
+  input?: unknown;
   output?: unknown;
   errorText?: string;
 };

@@ -10,10 +10,6 @@ const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
   typedRoutes: true,
   reactCompiler: true,
-  // pre-existing type errors in advisor-message-list (RefObject) and tool-labels.test
-  // (bun:test) block the build; they don't affect runtime. typecheck via
-  // `bun run check-types` still catches them separately.
-  typescript: { ignoreBuildErrors: true },
   images: {
     remotePatterns: [
       { hostname: "cdn.dummyjson.com" },

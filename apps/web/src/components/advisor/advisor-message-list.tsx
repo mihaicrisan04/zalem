@@ -21,7 +21,7 @@ type MessagePart = {
   state?: string;
   toolName?: string;
   toolCallId?: string;
-  input?: Record<string, unknown>;
+  input?: unknown;
   output?: unknown;
 };
 
@@ -94,7 +94,7 @@ export function AdvisorMessageList({
         className="absolute inset-0 overflow-y-auto"
       >
         <div
-          ref={contentRef as React.RefObject<HTMLDivElement>}
+          ref={contentRef as unknown as React.RefObject<HTMLDivElement>}
           className="mx-auto flex w-full max-w-full flex-col p-4"
         >
           {isEmpty ? (

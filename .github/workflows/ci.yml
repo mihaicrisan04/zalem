@@ -1,0 +1,42 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - run: bun install --frozen-lockfile
+
+      - name: lint + format
+        run: bun run check
+
+      - name: typecheck
+        run: bun run check-types
+
+      - name: tests
+        run: bun test
+
+      - name: next build
+        working-directory: apps/web
+        env:
+          # placeholders so the build doesn't fail on env validation
+          NEXT_PUBLIC_CONVEX_URL: https://example.convex.cloud
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_placeholder
+        # invoke via shebang (uses node, not bun) — same as the production
+        # Dockerfile, since bun chokes on next.config loading
+        run: ../../node_modules/.bin/next build

@@ -17,6 +17,7 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "types": ["node", "bun"],
     "plugins": [
       {
         "name": "next"

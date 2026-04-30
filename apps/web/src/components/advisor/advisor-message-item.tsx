@@ -13,7 +13,7 @@ type MessagePart = {
   state?: string;
   toolName?: string;
   toolCallId?: string;
-  input?: Record<string, unknown>;
+  input?: unknown;
   output?: unknown;
   errorText?: string;
 };
@@ -107,7 +107,7 @@ function partToToolPart(part: MessagePart): ToolPart | null {
   return {
     toolName,
     state: part.state ?? "call",
-    input: part.input,
+    input: part.input as Record<string, unknown> | undefined,
     output: part.output,
     toolCallId: part.toolCallId,
     errorText: part.errorText,

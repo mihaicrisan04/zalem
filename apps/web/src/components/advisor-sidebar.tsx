@@ -10,9 +10,8 @@ import { useAdvisor } from "@/hooks/use-advisor";
 import { AdvisorComposer } from "./advisor/advisor-composer";
 import { AdvisorMessageList } from "./advisor/advisor-message-list";
 
-type AdvisorMessage = typeof api.ai.queries.listThreadMessages extends UIMessagesQuery<unknown, infer M>
-  ? M
-  : never;
+type AdvisorMessage =
+  typeof api.ai.queries.listThreadMessages extends UIMessagesQuery<unknown, infer M> ? M : never;
 
 const MIN_WIDTH_PX = 340;
 const DEFAULT_WIDTH_PX = 400;
