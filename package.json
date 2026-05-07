@@ -32,7 +32,10 @@
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
     "check": "oxlint && oxfmt --check",
-    "ci": "bun run check && bun run check-types"
+    "ci": "bun run check && bun run check-types",
+    "thesis:build": "cd thesis && latexmk",
+    "thesis:watch": "cd thesis && latexmk -pvc",
+    "thesis:clean": "cd thesis && latexmk -c"
   },
   "dependencies": {
     "@zalem/env": "workspace:*",

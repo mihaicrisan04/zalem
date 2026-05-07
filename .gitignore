@@ -51,3 +51,11 @@ coverage
 tmp
 temp
 TODO.md
+
+# Thesis (LaTeX) build artifacts
+thesis/build/
+thesis/**/*.synctex.gz
+
+# Allow thesis-specific Zed config (overrides .zed rule above)
+!thesis/.zed/
+!thesis/.zed/settings.json

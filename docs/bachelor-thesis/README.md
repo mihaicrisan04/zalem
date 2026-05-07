@@ -2,6 +2,8 @@
 
 dedicated thesis-planning workspace for `zalem`.
 
+> the actual thesis manuscript (LaTeX source) lives at `/thesis/` at the repo root. this folder is planning and design docs only.
+
 this folder keeps the thesis-specific material separate from the product/system plans in the root `docs/` folder.
 
 ---
