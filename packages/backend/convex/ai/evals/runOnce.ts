@@ -185,13 +185,18 @@ export const runOnce = action({
 
     const messages = [...contextMessages, ...fewShots];
 
-    // 7. generateText (non-streaming) — full result returned synchronously
+    // 7. generateText (non-streaming) — full result returned synchronously.
+    // cap maxOutputTokens at 2048 to keep per-call cost predictable on
+    // OpenRouter (default is the model's max which is 65k for gpt-oss and
+    // routinely trips the per-call credit ceiling on a small balance). real
+    // advisor responses are typically 100-400 tokens — 2048 is generous.
     const result = await evalAgent.generateText(
       ctx,
       { threadId },
       {
         prompt: args.question,
         messages,
+        maxOutputTokens: 2048,
       },
     );
 

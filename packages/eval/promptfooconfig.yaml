@@ -43,61 +43,60 @@ providers:
       promptVariant: no-fewshot
       providerOrder: ["cerebras", "groq"]
 
-  # uncomment in phase 8.4 — the rest of the planned 9-config sweep
-  #
-  # - id: file://src/providers/advisorProvider.ts
-  #   label: gpt-oss-120b-low
-  #   config:
-  #     modelId: openai/gpt-oss-120b
-  #     reasoningEffort: low
-  #     maxSteps: 12
-  #     promptVariant: current
-  #     providerOrder: ["cerebras", "groq"]
-  #
-  # - id: file://src/providers/advisorProvider.ts
-  #   label: gpt-oss-120b-high
-  #   config:
-  #     modelId: openai/gpt-oss-120b
-  #     reasoningEffort: high
-  #     maxSteps: 12
-  #     promptVariant: current
-  #     providerOrder: ["cerebras", "groq"]
-  #
-  # - id: file://src/providers/advisorProvider.ts
-  #   label: gpt-oss-20b-medium
-  #   config:
-  #     modelId: openai/gpt-oss-20b
-  #     reasoningEffort: medium
-  #     maxSteps: 12
-  #     promptVariant: current
-  #     providerOrder: ["cerebras", "groq"]
-  #
-  # - id: file://src/providers/advisorProvider.ts
-  #   label: baseline-flash-lite
-  #   config:
-  #     modelId: google/gemini-3.1-flash-lite-preview
-  #     reasoningEffort: none
-  #     maxSteps: 12
-  #     promptVariant: current
-  #
-  # - id: file://src/providers/advisorProvider.ts
-  #   label: oss-120b-tight
-  #   config:
-  #     modelId: openai/gpt-oss-120b
-  #     reasoningEffort: medium
-  #     maxSteps: 8
-  #     promptVariant: be-efficient
-  #     providerOrder: ["cerebras", "groq"]
-  #
-  # - id: file://src/providers/advisorProvider.ts
-  #   label: oss-120b-loose
-  #   config:
-  #     modelId: openai/gpt-oss-120b
-  #     reasoningEffort: medium
-  #     maxSteps: 15
-  #     promptVariant: current
-  #     providerOrder: ["cerebras", "groq"]
-  #
+  # ── full canonical sweep (phase 8.4) ──
+  - id: file://src/providers/advisorProvider.ts
+    label: gpt-oss-120b-low
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: low
+      maxSteps: 12
+      promptVariant: current
+      providerOrder: ["cerebras", "groq"]
+
+  - id: file://src/providers/advisorProvider.ts
+    label: gpt-oss-120b-high
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: high
+      maxSteps: 12
+      promptVariant: current
+      providerOrder: ["cerebras", "groq"]
+
+  - id: file://src/providers/advisorProvider.ts
+    label: gpt-oss-20b-medium
+    config:
+      modelId: openai/gpt-oss-20b
+      reasoningEffort: medium
+      maxSteps: 12
+      promptVariant: current
+      providerOrder: ["cerebras", "groq"]
+
+  - id: file://src/providers/advisorProvider.ts
+    label: baseline-flash-lite
+    config:
+      modelId: google/gemini-3.1-flash-lite-preview
+      reasoningEffort: none
+      maxSteps: 12
+      promptVariant: current
+
+  - id: file://src/providers/advisorProvider.ts
+    label: oss-120b-tight
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: medium
+      maxSteps: 8
+      promptVariant: be-efficient
+      providerOrder: ["cerebras", "groq"]
+
+  - id: file://src/providers/advisorProvider.ts
+    label: oss-120b-loose
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: medium
+      maxSteps: 15
+      promptVariant: current
+      providerOrder: ["cerebras", "groq"]
+
   # to add another model, copy a block above and tweak modelId / config.
   # OpenRouter model IDs: https://openrouter.ai/models
   # examples worth trying:
