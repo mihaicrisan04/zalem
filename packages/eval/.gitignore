@@ -1,0 +1,8 @@
+results/*
+!results/.gitkeep
+.promptfoo-cache/
+.promptfoo/
+dist/
+*.tsbuildinfo
+.env
+.env.local

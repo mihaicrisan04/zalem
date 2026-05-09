@@ -1,0 +1,155 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+#
+# zalem shopping advisor — eval sweep config
+#
+# this file is intentionally the only Promptfoo config in the repo. every
+# scorer, dataset, and provider is referenced from here. run with:
+#   bun --filter @zalem/eval eval         # one-off
+#   bun --filter @zalem/eval eval:sweep   # full 9-config matrix, no cache
+#   bun --filter @zalem/eval eval:view    # local web UI
+
+description: zalem shopping advisor — model and prompt sweep
+
+# -------------------------------------------------------------------
+# providers
+# -------------------------------------------------------------------
+# each provider is the same custom JS shim (advisorProvider.ts) but
+# instantiated with a different per-run config. Promptfoo runs the
+# cartesian product (tests × providers) automatically.
+#
+# uncomment the additional 8 providers once phase 8.4 lands. for the
+# initial smoke run we keep just one to keep latency / cost low.
+# -------------------------------------------------------------------
+providers:
+  - id: file://src/providers/advisorProvider.ts
+    label: gpt-oss-120b-medium
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: medium
+      maxSteps: 12
+      promptVariant: current
+      providerOrder: ["cerebras", "groq"]
+
+  # - id: file://src/providers/advisorProvider.ts
+  #   label: gpt-oss-120b-low
+  #   config:
+  #     modelId: openai/gpt-oss-120b
+  #     reasoningEffort: low
+  #     maxSteps: 12
+  #     promptVariant: current
+  #
+  # - id: file://src/providers/advisorProvider.ts
+  #   label: gpt-oss-120b-high
+  #   config:
+  #     modelId: openai/gpt-oss-120b
+  #     reasoningEffort: high
+  #     maxSteps: 12
+  #     promptVariant: current
+  #
+  # - id: file://src/providers/advisorProvider.ts
+  #   label: gpt-oss-20b-medium
+  #   config:
+  #     modelId: openai/gpt-oss-20b
+  #     reasoningEffort: medium
+  #     maxSteps: 12
+  #     promptVariant: current
+  #
+  # - id: file://src/providers/advisorProvider.ts
+  #   label: baseline-flash-lite
+  #   config:
+  #     modelId: google/gemini-3.1-flash-lite-preview
+  #     reasoningEffort: none
+  #     maxSteps: 12
+  #     promptVariant: current
+  #
+  # - id: file://src/providers/advisorProvider.ts
+  #   label: oss-120b-tight
+  #   config:
+  #     modelId: openai/gpt-oss-120b
+  #     reasoningEffort: medium
+  #     maxSteps: 8
+  #     promptVariant: be-efficient
+  #
+  # - id: file://src/providers/advisorProvider.ts
+  #   label: oss-120b-loose
+  #   config:
+  #     modelId: openai/gpt-oss-120b
+  #     reasoningEffort: medium
+  #     maxSteps: 15
+  #     promptVariant: current
+  #
+  # - id: file://src/providers/advisorProvider.ts
+  #   label: oss-120b-no-fewshot
+  #   config:
+  #     modelId: openai/gpt-oss-120b
+  #     reasoningEffort: medium
+  #     maxSteps: 12
+  #     promptVariant: no-fewshot
+
+# -------------------------------------------------------------------
+# prompts
+# -------------------------------------------------------------------
+# the user-facing question is interpolated from each row's vars. our
+# system prompt and few-shot examples are NOT defined here — they live
+# inside the Convex agent (so the eval tests the real production path).
+# -------------------------------------------------------------------
+prompts:
+  - "{{question}}"
+
+# -------------------------------------------------------------------
+# defaultTest — assertions applied to every row
+# -------------------------------------------------------------------
+# row-specific assertions go in the dataset YAML under each row's
+# `assert:` block; those compose with these.
+# -------------------------------------------------------------------
+defaultTest:
+  assert:
+    # programmatic, free, deterministic
+    - type: javascript
+      value: file://src/scorers/hasFinalAnswer.ts
+    - type: javascript
+      value: file://src/scorers/groundedness.ts
+    - type: javascript
+      value: file://src/scorers/factuality.ts
+    - type: javascript
+      value: file://src/scorers/toolCallEfficiency.ts
+
+    # built-in: F1 of called vs expected tools (per-row vars.expectedTools)
+    # uncomment once advisorProvider.ts emits the toolCalls in the format
+    # Promptfoo's tool-call-f1 expects (OpenAI tool_calls shape)
+    # - type: tool-call-f1
+    #   value: "{{expectedTools}}"
+
+    # LLM-as-judge — Claude Haiku 4.5 (cross-family from gpt-oss + gemini)
+    # uncomment in phase 8.4 once judge wiring + ANTHROPIC_API_KEY are set
+    # - type: model-graded-closedqa
+    #   value: "Does the answer address the user's question completely?"
+    #   provider: anthropic:claude-haiku-4-5
+    # - type: llm-rubric
+    #   value: |
+    #     Rate 0-5 whether the response would be actionable to a real shopper
+    #     trying to make a purchase decision. Penalize generic or hedging
+    #     answers.
+    #   provider: anthropic:claude-haiku-4-5
+
+# -------------------------------------------------------------------
+# tests — the dataset
+# -------------------------------------------------------------------
+tests: file://src/datasets/shopping-v1.yaml
+
+# -------------------------------------------------------------------
+# evaluateOptions
+# -------------------------------------------------------------------
+# OpenRouter (especially the Cerebras tier for gpt-oss) rate-limits
+# aggressively. cap parallelism so a sweep doesn't get throttled
+# halfway through and skew the latency numbers.
+# -------------------------------------------------------------------
+evaluateOptions:
+  maxConcurrency: 4
+  delay: 0
+  showProgressBar: true
+
+# -------------------------------------------------------------------
+# output
+# -------------------------------------------------------------------
+outputPath: results/latest.json

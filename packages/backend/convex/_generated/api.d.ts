@@ -10,6 +10,9 @@
 
 import type * as ai_advisor from "../ai/advisor.js";
 import type * as ai_agent from "../ai/agent.js";
+import type * as ai_evals_evalModel from "../ai/evals/evalModel.js";
+import type * as ai_evals_promptVariants from "../ai/evals/promptVariants.js";
+import type * as ai_evals_runOnce from "../ai/evals/runOnce.js";
 import type * as ai_generateReviews from "../ai/generateReviews.js";
 import type * as ai_generateReviewsHelpers from "../ai/generateReviewsHelpers.js";
 import type * as ai_generateReviewsOrchestrator from "../ai/generateReviewsOrchestrator.js";
@@ -41,6 +44,9 @@ import type {
 declare const fullApi: ApiFromModules<{
   "ai/advisor": typeof ai_advisor;
   "ai/agent": typeof ai_agent;
+  "ai/evals/evalModel": typeof ai_evals_evalModel;
+  "ai/evals/promptVariants": typeof ai_evals_promptVariants;
+  "ai/evals/runOnce": typeof ai_evals_runOnce;
   "ai/generateReviews": typeof ai_generateReviews;
   "ai/generateReviewsHelpers": typeof ai_generateReviewsHelpers;
   "ai/generateReviewsOrchestrator": typeof ai_generateReviewsOrchestrator;

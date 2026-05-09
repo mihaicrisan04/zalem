@@ -1,145 +1,374 @@
 # custom eval system plan
 
-a purpose-built evaluation harness for measuring and comparing LLM configurations in the `zalem` advisor. the goal is to turn model selection, prompt design, and parameter tuning into a data-driven process instead of vibes — and to produce thesis-quality evidence at the same time.
+a purpose-built evaluation harness for measuring and comparing LLM configurations in the `zalem` shopping advisor. the goal is to turn model selection, prompt design, and parameter tuning into a data-driven process instead of vibes — and to produce thesis-quality evidence at the same time.
 
 ---
 
-## motivation
+## direction change (2026-05-09)
 
-the advisor has many moving parts that all affect quality, latency, and cost:
+**previous plan:** build a custom in-house eval system end to end — own Convex tables (`evalRuns`, `evalRunResults`, `evalDatasets`), own runner action, own admin webapp at `/admin/evals` with run lists, comparison views, pareto charts, and CSV export.
 
-- **model choice** — gpt-oss-120b vs gpt-oss-20b vs gemini-3-flash vs gemini-3.1-flash-lite
-- **reasoning effort** — none / low / medium / high
-- **step budget** — `maxSteps` 5 / 10 / 12 / 15
-- **system prompt variants** — current / terse / no few-shots / "avoid redundant tool calls"
-- **provider routing** — cerebras vs groq vs auto
-- **tool set** — which tools are exposed
+**new plan:** use **Promptfoo** (MIT, open-source) as the runner / dataset manager / report generator, and write only the bits that don't exist off-the-shelf — a custom provider that calls our Convex agent, plus a small library of **shopping-domain scorers** that grade groundedness, factuality, tool-call efficiency, and review-theme fidelity against the live Convex catalogue.
 
-right now these are chosen by intuition and by patching bugs as they appear — e.g. we bumped `maxSteps` from 5 → 12 after seeing the agent get cut off mid-turn. that worked, but it was a reactive fix, not a measured decision. for a thesis, every such choice needs to be defended with numbers.
+**why:**
 
-this document describes a small, self-contained eval harness that runs inside the zalem Convex backend, stores results in the same database, and exposes a dashboard for ranking runs.
+- the most expensive piece of the original plan (the admin webapp + own runner + own tables + own dashboard) is **generic infrastructure** that Promptfoo already provides better. re-implementing it has poor thesis ROI — an examiner will read it and ask "why didn't you use Promptfoo / Langfuse / Braintrust?"
+- the **actually novel part** is the domain-specific scoring: validating cited `productId`s exist in Convex, checking that prices/ratings in the answer match a DB snapshot, verifying review themes against the embedding-backed review corpus. these scorers don't exist in any off-the-shelf tool and are exactly the angle that lets the thesis claim a Rufus-beating quality bar (see `ai-integration-plan.md` § 4)
+- this framing is **stronger academically**. "we extended an open-source eval framework with shopping-domain scorers grounded in live catalogue data" shows literature awareness and isolates the actual contribution. NIH ("not invented here") gets penalised in bachelor theses
+- the time saved (~3–5 weeks of webapp engineering reduced to ~3–5 days of glue code) goes into more dataset coverage, the user study, and writing
 
----
+what stays the same:
 
-## goals
+- the dataset design (~25 hand-curated questions across 7 categories with expected behavior tags)
+- the scoring rubric (programmatic + LLM-as-judge, weighted into a composite)
+- the 9-config first-batch sweep (gpt-oss vs gemini × reasoning effort × maxSteps × prompt variant)
+- the validity-threats discussion
+- the relationship to the user study
 
-the eval system must answer four questions about any given configuration:
+what changes:
 
-1. **is it correct?** — does the assistant produce a grounded, complete final answer?
-2. **is it efficient?** — how many tokens, tool calls, and steps did it take?
-3. **is it fast?** — what is the end-to-end and time-to-first-content latency?
-4. **is it cheap?** — what does a run cost in real dollars across input / output / reasoning tokens?
-
-secondary goals:
-
-- enable side-by-side comparison of any two configurations
-- produce a pareto front of (quality, cost) and (quality, latency)
-- generate tables that drop straight into the thesis results chapter
-- surface regressions when the system prompt or model is changed
-
-explicit non-goals:
-
-- not a general-purpose eval framework — we only care about the advisor shopping use case
-- not a replacement for the small user study — human evaluation still matters for trust/intrusiveness
-- not a CI gate — runs are triggered manually, not on every commit
+- the runner is `promptfoo eval` instead of a Convex action
+- the dataset is YAML in `packages/eval/src/datasets/` instead of a Convex table
+- results are JSON files in `packages/eval/results/` instead of `evalRunResults` rows
+- the dashboard is `promptfoo view` (a local web UI) instead of an admin route
+- the thesis tables come from a small `reports/thesisExport.ts` script that reads the Promptfoo JSON output and emits LaTeX
 
 ---
 
-## architecture overview
+## what is Promptfoo (quick primer)
+
+**Promptfoo** is an MIT-licensed, Node/TypeScript CLI for evaluating LLM applications. install with `bun add -D promptfoo` (or `npx promptfoo`). configure with a single `promptfooconfig.yaml`. run with `promptfoo eval`. view results with `promptfoo view` (local web UI on `localhost:15500`).
+
+it is not a SaaS, not a hosted dashboard, not a tracing platform. it is a **test runner** — pytest for LLMs.
+
+### what it gives us out of the box
+
+| feature                                                  | how it helps zalem                                                                                                               |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| YAML dataset format                                      | versioned in git, citable in the thesis                                                                                          |
+| `providers` matrix                                       | run all 9 sweep configs against the dataset with one command — no glue code                                                      |
+| custom **JS providers** (`file://path.ts`)               | wrap our Convex `requestAdvice` action so Promptfoo tests the real production code path                                          |
+| custom **JS assertions** (`file://path.ts:functionName`) | drop in our domain scorers (groundedness, factuality, theme fidelity)                                                            |
+| built-in `tool-call-f1` assertion                        | replaces the planned `expectedToolCoverage` / `forbiddenToolCheck` scorers — already does F1 across called vs expected tool sets |
+| built-in `model-graded` assertions                       | replaces the planned LLM-as-judge scorers — supports rubrics, scores, custom judge models                                        |
+| JSON + HTML output                                       | trivially parsed into LaTeX tables and pareto plots for the thesis                                                               |
+| local web view                                           | replaces the planned admin webapp for exploration / comparison                                                                   |
+| variable interpolation                                   | one YAML test row → tested against every provider config with full row-vs-config matrix                                          |
+| `defaultTest` block                                      | shared assertions applied across all rows (e.g. "must produce a non-empty final answer")                                         |
+
+### what it does NOT give us (and why it doesn't matter)
+
+- **no persistent run history beyond the JSON files** — but git already versions those, and 25 questions × 9 configs is small
+- **no tracing of internal tool calls** — but our provider captures the full trace from the Convex action and stores it in the result blob
+- **no user-friendly dashboard** — `promptfoo view` is enough for development; the thesis tables come from a custom export script anyway
+- **single-machine** — fine for our scale. if/when we want a hosted dashboard with team-level visibility, we layer self-hosted **Langfuse** on top later (see § future extensions)
+
+### minimal Promptfoo config (illustrative, not the real one)
+
+```yaml
+description: zalem shopping advisor sweep
+
+providers:
+  - id: file://src/providers/advisorProvider.ts
+    label: gpt-oss-120b-medium
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: medium
+      maxSteps: 12
+
+prompts:
+  - "{{question}}"
+
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://src/scorers/hasFinalAnswer.ts
+    - type: javascript
+      value: file://src/scorers/groundedness.ts
+    - type: tool-call-f1
+      value:
+        expectedTools: "{{expectedTools}}"
+
+tests: file://src/datasets/shopping-v1.yaml
+```
+
+---
+
+## architecture
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│                      eval dataset                             │
-│  ~20-30 curated shopping questions with expected behavior     │
-│  tags (tools that should fire, product IDs that should be     │
-│  cited, categories that should be mentioned).                 │
-└────────────────────────────┬──────────────────────────────────┘
-                             │
-                             ▼
-┌───────────────────────────────────────────────────────────────┐
-│                      eval runner                              │
-│  a Convex action that takes a config { modelId, reasoning,    │
-│  maxSteps, promptVariant, provider } and streams every        │
-│  dataset question through a fresh throwaway thread.           │
-│                                                               │
-│  for each question it captures:                               │
-│   - all message parts (text + tool calls + reasoning)         │
-│   - token usage breakdown (input / output / reasoning)        │
-│   - timing (start → first delta → last delta → finish)       │
-│   - finishReason + whether a text part was produced           │
-└────────────────────────────┬──────────────────────────────────┘
-                             │
-                             ▼
-┌───────────────────────────────────────────────────────────────┐
-│                      scoring pipeline                         │
-│                                                               │
-│  programmatic scorers (no LLM cost):                          │
-│   - hasFinalAnswer: is there a non-empty text part?           │
-│   - groundedness: do cited productIds exist in Convex?        │
-│   - factuality: do cited prices/ratings match DB snapshots?   │
-│   - toolCallEfficiency: dup calls, unused results             │
-│   - stepBudgetUsage: how close to maxSteps                    │
-│                                                               │
-│  LLM-as-judge scorers (small, cheap model):                   │
-│   - completeness: does the answer address the question?      │
-│   - helpfulness: would a shopper find this actionable?       │
-│   - tradeoff surfacing: are downsides mentioned when relevant?│
-│   - tool appropriateness: were the right tools called?       │
-└────────────────────────────┬──────────────────────────────────┘
-                             │
-                             ▼
-┌───────────────────────────────────────────────────────────────┐
-│                      result storage                           │
-│  evalRuns (config + aggregate scores + totals)                │
-│  evalRunResults (per-question details)                        │
-│  evalDatasets (versioned question sets)                       │
-└────────────────────────────┬──────────────────────────────────┘
-                             │
-                             ▼
-┌───────────────────────────────────────────────────────────────┐
-│                      eval dashboard                           │
-│  admin-only Next.js page at /admin/evals                      │
-│   - run list, sortable by composite / cost / latency / quality│
-│   - per-run detail with side-by-side question table          │
-│   - pareto charts (cost vs quality, latency vs quality)      │
-│   - diff view between any two runs                           │
-│   - CSV / JSON export for the thesis                         │
-└───────────────────────────────────────────────────────────────┘
+                            DEVELOPER MACHINE
+   ┌─────────────────────────────────────────────────────────────────┐
+   │                                                                 │
+   │   bun run eval:sweep                                            │
+   │           │                                                     │
+   │           ▼                                                     │
+   │   ┌────────────────┐                                            │
+   │   │ promptfoo eval │   reads promptfooconfig.yaml               │
+   │   │                │   + datasets/shopping-v1.yaml              │
+   │   │  - matrix      │                                            │
+   │   │  - parallelism │   runs (rows × providers) cells            │
+   │   │  - retries     │                                            │
+   │   └────────┬───────┘                                            │
+   │            │ for every (row, provider) cell:                    │
+   │            ▼                                                    │
+   │   ┌────────────────────────┐                                    │
+   │   │ advisorProvider.ts     │                                    │
+   │   │ (custom JS provider)   │                                    │
+   │   │                        │                                    │
+   │   │  .callApi(prompt, ctx) │                                    │
+   │   └────────┬───────────────┘                                    │
+   │            │ HTTPS (Convex client)                              │
+   │            ▼                                                    │
+   └────────────┼────────────────────────────────────────────────────┘
+                │
+                │
+   ┌────────────┼────────────────────────────────────────────────────┐
+   │            ▼                  CONVEX (eval deployment)          │
+   │   ┌────────────────────────┐                                    │
+   │   │ ai/evals/runOnce       │   one-shot, non-streaming variant  │
+   │   │ (action — eval-only)   │   of requestAdvice. accepts the    │
+   │   │                        │   per-run config (modelId,         │
+   │   │  1. snapshot products  │   reasoningEffort, maxSteps,       │
+   │   │  2. run agent loop     │   promptVariant, providerOrder).   │
+   │   │  3. await stream       │                                    │
+   │   │  4. return:            │   marks the thread isEval=true so  │
+   │   │     - parts            │   it's filtered out of normal      │
+   │   │     - usage            │   queries.                         │
+   │   │     - timings          │                                    │
+   │   │     - dbSnapshot       │                                    │
+   │   │     - threadId         │                                    │
+   │   └────────────┬───────────┘                                    │
+   │                │                                                │
+   │                ▼                                                │
+   │   ┌────────────────────────┐                                    │
+   │   │ shoppingAdvisor agent  │   the real advisor — same code     │
+   │   │  (gpt-oss / gemini)    │   as production, parameterised by  │
+   │   │                        │   the per-run config above.        │
+   │   └────────────────────────┘                                    │
+   │                                                                 │
+   └─────────────────────────────────────────────────────────────────┘
+
+   ┌─────────────────────────────────────────────────────────────────┐
+   │                       BACK ON DEV MACHINE                       │
+   │                                                                 │
+   │   provider returns to Promptfoo:                                │
+   │     { output, tokenUsage, metadata: {parts, timings, snapshot}} │
+   │            │                                                    │
+   │            ▼                                                    │
+   │   ┌──────────────────────────────────────────────┐              │
+   │   │ Promptfoo runs assertions for this row:      │              │
+   │   │                                              │              │
+   │   │  - hasFinalAnswer.ts        (programmatic)   │              │
+   │   │  - groundedness.ts          (Convex query)   │              │
+   │   │  - factuality.ts            (snapshot diff)  │              │
+   │   │  - reviewThemeFidelity.ts   (embedding sim)  │              │
+   │   │  - toolCallEfficiency.ts    (programmatic)   │              │
+   │   │  - tool-call-f1             (built-in)       │              │
+   │   │  - model-graded helpfulness (built-in judge) │              │
+   │   │  - model-graded completeness                 │              │
+   │   │  - model-graded tradeoffSurfacing            │              │
+   │   └──────────────┬───────────────────────────────┘              │
+   │                  │                                              │
+   │                  ▼                                              │
+   │   results/<timestamp>.json                                      │
+   │                  │                                              │
+   │                  ▼                                              │
+   │   ┌──────────────────────┐    ┌─────────────────────────┐       │
+   │   │ promptfoo view       │    │ reports/thesisExport.ts │       │
+   │   │ (local web UI)       │    │ → LaTeX tables          │       │
+   │   │ for development      │    │ → pareto plots (PDF)    │       │
+   │   └──────────────────────┘    └─────────────────────────┘       │
+   │                                                                 │
+   └─────────────────────────────────────────────────────────────────┘
+```
+
+### why a dedicated `runOnce` Convex action (not just calling `requestAdvice`)
+
+`requestAdvice` is auth-gated, streams to subscribers, and assumes a thread already exists. for evals we want:
+
+- no Clerk auth (admin secret in env instead)
+- synchronous return of the full result blob (parts, usage, timings) — no streaming consumer needed on the eval side
+- per-call config injection (modelId, reasoningEffort, maxSteps, promptVariant) so one action can run any sweep cell
+- fresh throwaway thread per row, marked `isEval: true` so eval data doesn't pollute production queries
+- a DB snapshot timestamp captured at run start so `factuality.ts` can later check claimed prices/ratings against what the catalogue actually said at that moment
+
+implementing this as a **separate** action keeps the production `requestAdvice` clean and avoids leaking eval concerns into the user-facing path.
+
+---
+
+## workspace layout
+
+```
+packages/eval/
+├── package.json                  # bun workspace, scripts, devDeps
+├── tsconfig.json                 # extends @zalem/config
+├── promptfooconfig.yaml          # the only Promptfoo config — defines
+│                                 # the 9 sweep providers, default
+│                                 # assertions, and dataset reference
+├── README.md                     # quick reference for running evals
+├── .gitignore                    # ignore results/ and .promptfoo cache
+│
+├── src/
+│   ├── providers/
+│   │   └── advisorProvider.ts    # custom Promptfoo provider — calls
+│   │                             # the Convex eval action, returns
+│   │                             # { output, tokenUsage, metadata }
+│   │
+│   ├── scorers/
+│   │   ├── hasFinalAnswer.ts     # there is at least one non-empty text
+│   │   │                         #   part (catches the maxSteps cutoff)
+│   │   ├── groundedness.ts       # every cited productId exists in
+│   │   │                         #   Convex `products` (live query)
+│   │   ├── factuality.ts         # claimed prices/ratings match the
+│   │   │                         #   DB snapshot taken at run start
+│   │   ├── reviewThemeFidelity.ts # claimed review themes match the
+│   │   │                         #   embedding-backed review corpus
+│   │   │                         #   (generalises validateThemesWith-
+│   │   │                         #   Embeddings from reviewSummaries.ts)
+│   │   └── toolCallEfficiency.ts # duplicate-call penalty + step-budget
+│   │                             #   usage, from the trace metadata
+│   │
+│   ├── datasets/
+│   │   ├── shopping-v1.yaml      # 25 hand-curated questions with
+│   │   │                         #   expected tool calls and product IDs
+│   │   └── README.md             # how the dataset is curated, how to
+│   │                             #   add a row, versioning policy
+│   │
+│   ├── lib/
+│   │   ├── convexClient.ts       # shared Convex HTTP client used by
+│   │   │                         #   the provider AND the scorers
+│   │   └── snapshot.ts           # captures and reads DB snapshots
+│   │                             #   (price/rating per productId at
+│   │                             #   the moment a row was run)
+│   │
+│   └── reports/
+│       └── thesisExport.ts       # reads results/<latest>.json and
+│                                 #   emits:
+│                                 #    - chapter7-table.tex (ranked
+│                                 #      configs with composite, cost,
+│                                 #      latency, quality)
+│                                 #    - pareto-cost-quality.pdf
+│                                 #    - pareto-latency-quality.pdf
+│
+├── scripts/
+│   ├── run.sh                    # bun run eval — single config
+│   ├── sweep.sh                  # bun run eval:sweep — full 9-config
+│   ├── view.sh                   # bun run eval:view — open dashboard
+│   └── export.sh                 # bun run eval:export — thesis tables
+│
+└── results/                      # gitignored. one JSON per run.
+    └── .gitkeep
+```
+
+### bun scripts (defined in `packages/eval/package.json`)
+
+```jsonc
+{
+  "scripts": {
+    "eval": "promptfoo eval",
+    "eval:sweep": "promptfoo eval --no-cache", // forces fresh runs
+    "eval:view": "promptfoo view", // localhost:15500
+    "eval:export": "bun run src/reports/thesisExport.ts",
+    "eval:reset": "rm -rf results/* .promptfoo-cache",
+  },
+}
+```
+
+invoked from monorepo root via:
+
+```bash
+bun --filter @zalem/eval eval          # one off
+bun --filter @zalem/eval eval:sweep    # full sweep
+bun --filter @zalem/eval eval:view     # browse results
+bun --filter @zalem/eval eval:export   # thesis tables
+```
+
+### why TypeScript, not Python
+
+Promptfoo runs Node natively. our provider must talk to the Convex client (`convex` npm package) and our scorers must talk to the Convex catalogue. doing this in Python would mean two language stacks, two dep managers, and a fragile bridge. since the rest of the monorepo is bun + TypeScript, eval stays bun + TypeScript. **no `uv` / Python toolchain needed.** mise already pins `bun` and `node` for the repo.
+
+---
+
+## the data flow for one eval row
+
+```
+   row in shopping-v1.yaml
+   ─────────────────────────────────────────────────────────
+   id: compare-keyboards-01
+   vars:
+     question: "How does the K380 compare to the MX Keys Mini?"
+     productId: "k57abc..."
+     expectedTools: ["getProductDetails", "compareProducts"]
+     expectedProductIds: ["k57abc...", "mxkmini..."]
+   ─────────────────────────────────────────────────────────
+                  │
+                  ▼
+   Promptfoo for each provider in the sweep:
+                  │
+                  ▼
+   advisorProvider.callApi:
+     await convex.action(api.ai.evals.runOnce, {
+       question: vars.question,
+       productId: vars.productId,
+       config: provider.config,    // modelId, reasoning, maxSteps...
+     })
+                  │
+                  ▼
+   Convex returns:
+     {
+       output: "<final assistant text>",
+       tokenUsage: { input, output, reasoning, total },
+       metadata: {
+         parts: [...],              // full part array, incl. tool-call parts
+         timings: { startedAt, firstDeltaAt, finishedAt, ttftMs, totalMs },
+         dbSnapshot: { "k57abc...": { price, rating }, ... },
+         threadId: "...",
+         finishReason: "stop",
+         stepsUsed: 7,
+       }
+     }
+                  │
+                  ▼
+   Promptfoo runs every assertion in defaultTest + the row's own assert[]:
+     - programmatic scorers read output + metadata
+     - tool-call-f1 reads parts + vars.expectedTools
+     - model-graded scorers send (question, output) to the judge model
+                  │
+                  ▼
+   results/<timestamp>.json gets one entry per (row × provider) cell
 ```
 
 ---
 
 ## dataset design
 
-the dataset lives in `packages/backend/convex/ai/evals/dataset.ts` as a versioned, hand-curated array of question specs. each spec has:
+unchanged from the previous plan, restated here as the source of truth.
 
-```ts
-type EvalQuestion = {
-  id: string; // stable slug, e.g. "compare-keyboards-01"
-  category:
-    | "simple_qa" // "What's the price of this keyboard?"
-    | "product_validation" // "Is this product worth it?"
-    | "comparison" // "How do these two phones compare?"
-    | "recommendation" // "What laptop should I buy for coding?"
-    | "review_summary" // "What do buyers think about this?"
-    | "multi_turn" // 2-3 turn conversation
-    | "edge_case"; // ambiguous / off-topic / empty catalog
-  turns: Array<{
-    role: "user";
-    text: string;
-    productId?: string; // simulates product-page context
-  }>;
-  expectations: {
-    shouldCallTools?: string[]; // tool names that MUST appear
-    shouldMentionProductIds?: string[]; // expected cited products
-    shouldAvoidTools?: string[]; // tools that should NOT fire
-    mustHaveFinalAnswer: true; // no config is allowed to skip the text
-    maxAcceptableToolCalls?: number; // efficiency bar
-  };
-};
+dataset lives at `packages/eval/src/datasets/shopping-v1.yaml`. each row is:
+
+```yaml
+- description: compare two keyboards in the same category
+  vars:
+    question: "How does the K380 compare to the MX Keys Mini for typing?"
+    productId: "k57abc..." # simulates "viewing this product"
+    recentlyViewedIds: ["mxkmini..."]
+    expectedTools:
+      - getProductDetails
+      - getRecommendations
+    expectedProductIds: # IDs the answer SHOULD reference
+      - "k57abc..."
+      - "mxkmini..."
+    forbiddenTools: [] # tools that MUST NOT fire
+    category: comparison
+    maxAcceptableToolCalls: 6
+  assert:
+    # row-specific assertions in addition to defaultTest's
+    - type: contains
+      value: "MX Keys Mini"
 ```
 
-target size for phase 1: **25 questions**, with this distribution:
+target size for v1: **25 rows**, distribution:
 
 | category           | count |
 | ------------------ | ----- |
@@ -153,301 +382,194 @@ target size for phase 1: **25 questions**, with this distribution:
 
 curation rules:
 
-- each question references seeded products that actually exist in the dev database
-- questions should be realistic — taken from the hardcoded suggestion chips and the few-shot examples as a starting point
-- edge cases include ambiguous phrasing, off-topic requests, and empty-result queries
-- the dataset is versioned — changing it bumps a `datasetVersion` field so old runs aren't compared against new questions
-
----
-
-## the runner
-
-the runner is a Convex action at `packages/backend/convex/ai/evals/runner.ts`:
-
-```ts
-export const runEval = action({
-  args: {
-    datasetVersion: v.string(),
-    config: v.object({
-      modelId: v.string(),
-      reasoningEffort: v.union(v.literal("none"), v.literal("low"), v.literal("medium"), v.literal("high")),
-      maxSteps: v.number(),
-      providerOrder: v.optional(v.array(v.string())),
-      promptVariant: v.string(),   // "current" | "terse" | "no-few-shot" | ...
-    }),
-    label: v.optional(v.string()), // human-readable tag for the dashboard
-  },
-  handler: async (ctx, args) => { ... },
-});
-```
-
-for each question in the dataset the runner:
-
-1. creates a throwaway thread (`shoppingAdvisor.createThread`) — isolated from real users
-2. if the question has `productId`, injects it into the system context exactly like the advisor does in `requestAdvice`
-3. calls `thread.streamText` with the configured model/reasoning/maxSteps
-4. captures the full event stream: `onStepFinish`, `onChunk`, timing, token usage from `result.usage`
-5. after consumeStream, reads back the stored message parts from the thread
-6. runs the scoring pipeline
-7. writes one row to `evalRunResults`
-8. (optional) deletes the throwaway thread or marks it `isEval: true` so queries can filter it out
-
-key points:
-
-- the runner reuses the existing `selectModel()` factory but with an overridden `openrouter()` call that takes the per-run config (so we don't have to rebuild the whole agent on every run)
-- runs happen sequentially to avoid rate limits and to make cost attribution clean
-- the entire dataset run for one config takes roughly `25 × avg_turn_duration` — at gpt-oss-120b speeds that's maybe 2-5 minutes per full run
-- the runner publishes progress to the dashboard via Convex reactivity (no polling needed)
+- every `productId` in the dataset must exist in the seeded dev DB
+- bumping the dataset means bumping the filename (`shopping-v2.yaml`) so old runs are never compared against new questions
+- multi-turn rows use Promptfoo's conversation feature (sequential vars + provider state)
+- edge cases include ambiguous phrasing, off-topic requests, empty-result queries
 
 ---
 
 ## scoring pipeline
 
-scorers live in `packages/backend/convex/ai/evals/scorers/` and each is a pure function with the signature:
+same scorers as the previous plan, restructured around Promptfoo's primitives.
 
-```ts
-type Scorer = (args: {
-  question: EvalQuestion;
-  messageParts: Array<MessagePart>;
-  usage: TokenUsage;
-  timing: Timing;
-}) => Promise<{ score: number; notes?: string }>;
-```
+### programmatic scorers — custom JS files in `src/scorers/`
 
-### programmatic scorers (free, fast, deterministic)
+| file                     | what it checks                                                                                                                 | mapped from old plan                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| `hasFinalAnswer.ts`      | at least one non-empty `{ type: "text" }` part                                                                                 | `hasFinalAnswer`                         |
+| `groundedness.ts`        | every productId cited in the answer exists in Convex `products`                                                                | `groundedness`                           |
+| `factuality.ts`          | claimed prices / ratings match the DB snapshot taken at run start                                                              | `factuality`                             |
+| `reviewThemeFidelity.ts` | claimed review themes match the embedding-backed review corpus (generalises the validator already in `reviewSummaries.ts:127`) | new — leverages existing infra           |
+| `toolCallEfficiency.ts`  | unique-vs-total tool calls + step-budget usage                                                                                 | `toolCallEfficiency` + `stepBudgetUsage` |
 
-| scorer                 | what it checks                                                               | failing means                   |
-| ---------------------- | ---------------------------------------------------------------------------- | ------------------------------- |
-| `hasFinalAnswer`       | there is at least one non-empty `{ type: "text" }` part                      | catches the maxSteps-cutoff bug |
-| `groundedness`         | every product ID cited in the answer exists in the Convex `products` table   | catches hallucinated IDs        |
-| `factuality`           | prices / ratings in the answer match the DB snapshot taken at runtime        | catches fabricated numbers      |
-| `expectedToolCoverage` | `expectations.shouldCallTools ⊆ actual tools called`                         | catches missed lookups          |
-| `forbiddenToolCheck`   | `expectations.shouldAvoidTools ∩ actual tools called === ∅`                  | catches needless calls          |
-| `toolCallEfficiency`   | ratio of unique tool calls to total; penalizes duplicates                    | catches the over-eager bug      |
-| `stepBudgetUsage`      | `steps / maxSteps` — warns when close to the limit                           | catches near-misses             |
-| `reasoningRatio`       | `reasoning_tokens / (output_tokens + reasoning_tokens)` — purely informative | n/a, just tracked               |
+### built-in Promptfoo assertions used as-is
 
-### LLM-as-judge scorers (uses a cheap model, e.g. `gemini-3.1-flash-lite` with `effort: "none"`)
+| assertion type                                | purpose                                                       | mapped from old plan                          |
+| --------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------- |
+| `tool-call-f1`                                | F1 of called vs expected tools (per-row `vars.expectedTools`) | `expectedToolCoverage` + `forbiddenToolCheck` |
+| `model-graded` (rubric: completeness)         | "does the answer address the user's question? 0-5"            | `completeness`                                |
+| `model-graded` (rubric: helpfulness)          | "would a shopper find this actionable? 0-5"                   | `helpfulness`                                 |
+| `model-graded` (rubric: tradeoff surfacing)   | "does the answer mention downsides where relevant? 0-5"       | `tradeoffSurfacing`                           |
+| `model-graded` (rubric: tone)                 | "does the tone match an honest, non-pushy advisor? 0-5"       | `toneAlignment`                               |
+| `model-graded` (rubric: tool-appropriateness) | "given the question, were the right tools called? 0-5"        | `toolAppropriateness`                         |
 
-| scorer                | judge prompt asks                                                       |
-| --------------------- | ----------------------------------------------------------------------- |
-| `completeness`        | "does the answer address the user's question? score 0-5"                |
-| `helpfulness`         | "would a shopper find this actionable enough to make a decision? 0-5"   |
-| `tradeoffSurfacing`   | "does the answer mention downsides or alternatives where relevant? 0-5" |
-| `toolAppropriateness` | "given the question, were the right tools called, and no more? 0-5"     |
-| `toneAlignment`       | "does the tone match an honest, non-pushy shopping advisor? 0-5"        |
+### judge model selection (bias mitigation)
 
-each judge call runs with the cheapest lite model available, isolated from the main advisor (different thread, different system prompt). the judge only sees the user question and the assistant's final text — not the reasoning chain, to avoid reward hacking.
+LLM-as-judge has known position, length, and self-preference biases ([self-preference bias](https://arxiv.org/abs/2410.21819), [position bias study](https://aclanthology.org/2025.ijcnlp-long.18.pdf)). mitigations baked into the config:
+
+- judge with **Claude Haiku 4.5** — different model family from both `gpt-oss` and Gemini, so no candidate model is judging itself
+- judge sees only the user question and the assistant's final text — not the reasoning chain (avoids reward-hacking by long thinking)
+- when comparing two configurations, randomise option order (Promptfoo's `model-graded` handles this when `provider` is set)
+- programmatic scores and judge scores are **reported separately** in the thesis table — never silently averaged
 
 ### composite score
 
-the dashboard aggregates into a single number per run so runs can be ranked:
+emitted by `thesisExport.ts`, not by Promptfoo. Promptfoo's per-assertion scores are already in the JSON; the export script computes:
 
 ```
 composite =
-    0.30 × qualityScore        // avg of LLM judges
-  + 0.25 × correctnessScore    // avg of programmatic scorers
-  + 0.20 × (1 - costPenalty)   // cost vs best run in same dataset
-  + 0.15 × (1 - latencyPenalty) // latency vs best run
+    0.30 × qualityScore        // avg of LLM-judge scores
+  + 0.25 × correctnessScore    // avg of programmatic scorers (binary→0/1)
+  + 0.20 × (1 - costPenalty)   // cost vs cheapest run in same dataset
+  + 0.15 × (1 - latencyPenalty) // latency vs fastest run
   + 0.10 × efficiencyScore     // tool + step efficiency
 ```
 
-the weights are configurable from the dashboard — the numbers above are a starting point, not gospel. the thesis will report the pareto front too, not just the composite, because aggregating away tradeoffs is exactly what this project is trying to avoid.
+weights are configurable in `thesisExport.ts` and reported as such in the thesis (so the reader knows the ranking is one defensible choice among many). the pareto front of (cost, quality) and (latency, quality) is reported alongside the composite — never instead of it.
+
+---
+
+## the 9-config first-batch sweep
+
+written directly as the `providers:` section of `promptfooconfig.yaml`. Promptfoo runs the cartesian product of `tests × providers` automatically.
+
+| label               | model                                | reasoning | maxSteps | prompt variant        |
+| ------------------- | ------------------------------------ | --------- | -------- | --------------------- |
+| baseline-flash-lite | google/gemini-3.1-flash-lite-preview | n/a       | 12       | current               |
+| gpt-oss-120b-low    | openai/gpt-oss-120b                  | low       | 12       | current               |
+| gpt-oss-120b-medium | openai/gpt-oss-120b                  | medium    | 12       | current               |
+| gpt-oss-120b-high   | openai/gpt-oss-120b                  | high      | 12       | current               |
+| gpt-oss-20b-low     | openai/gpt-oss-20b                   | low       | 12       | current               |
+| gpt-oss-20b-medium  | openai/gpt-oss-20b                   | medium    | 12       | current               |
+| oss-120b-tight      | openai/gpt-oss-120b                  | medium    | 8        | "be efficient" prompt |
+| oss-120b-loose      | openai/gpt-oss-120b                  | medium    | 15       | current               |
+| oss-120b-no-fewshot | openai/gpt-oss-120b                  | medium    | 12       | no few-shot           |
+
+9 configs × 25 rows = **225 advisor calls per sweep + 225 × 5 ≈ 1,125 judge calls**. at OpenRouter's gpt-oss prices (Cerebras tier) and Haiku 4.5's judge cost, a full sweep is well under $5.
 
 ---
 
 ## storage
 
-three new Convex tables, all kept in `packages/backend/convex/ai/evals/schema.ts` and imported into the main schema:
+not Convex tables. just files.
 
-### `evalDatasets`
+- **datasets:** YAML in `packages/eval/src/datasets/`, versioned in git
+- **results:** JSON in `packages/eval/results/<timestamp>-<sweep-label>.json`, gitignored. one file per `promptfoo eval` invocation. each file contains the full `parts`, `usage`, `timings`, `dbSnapshot`, and per-assertion scores for every (row × provider) cell
+- **DB snapshots:** captured by the `runOnce` Convex action at the moment each row begins, returned in the result blob. lets `factuality.ts` work later, even if catalogue prices change between runs
+- **eval threads:** persisted in Convex with `isEval: true` flag, queryable for ad-hoc transcript review without polluting normal queries
 
-```
-{
-  version: string,          // "2026-04-09-a"
-  questions: EvalQuestion[],
-  createdAt: number,
-  note?: string,
-}
-```
-
-### `evalRuns`
-
-```
-{
-  datasetVersion: string,
-  config: { modelId, reasoningEffort, maxSteps, providerOrder, promptVariant },
-  label?: string,
-  startedAt: number,
-  finishedAt?: number,
-  status: "pending" | "running" | "done" | "failed",
-  totals: {
-    questions: number,
-    passed: number,
-    failed: number,
-    avgLatencyMs: number,
-    p95LatencyMs: number,
-    avgCostUsd: number,
-    totalCostUsd: number,
-    avgCompositeScore: number,
-  },
-  createdBy: string,        // Clerk userId
-}
-```
-
-### `evalRunResults`
-
-one row per (run, question):
-
-```
-{
-  runId: Id<"evalRuns">,
-  questionId: string,
-  messageParts: any,                  // full captured parts array
-  usage: { input, output, reasoning, total },
-  timing: { startedAt, firstDeltaAt, finishedAt, ttftMs, totalMs },
-  scores: {
-    hasFinalAnswer: 0 | 1,
-    groundedness: number,
-    factuality: number,
-    expectedToolCoverage: number,
-    forbiddenToolCheck: number,
-    toolCallEfficiency: number,
-    stepBudgetUsage: number,
-    reasoningRatio: number,
-    completeness: number,
-    helpfulness: number,
-    tradeoffSurfacing: number,
-    toolAppropriateness: number,
-    toneAlignment: number,
-    composite: number,
-  },
-  costUsd: number,
-  stepsUsed: number,
-  toolCallsMade: number,
-  finalTextLength: number,
-  finishReason: string,
-}
-```
-
-indexes:
-
-- `evalRunResults` by `runId` + `questionId`
-- `evalRuns` by `datasetVersion` + `finishedAt`
+reasoning: results are append-only, write-once, read-rarely (mostly by `thesisExport.ts` and `promptfoo view`). Convex tables would add roundtrips and admin UI for no value.
 
 ---
 
-## dashboard (admin-only)
+## thesis dashboard (replaces the planned admin webapp)
 
-a new admin surface under `/admin/evals` in the web app. not linked from the main nav — accessed directly or via a thesis utility menu. guarded by a hardcoded list of admin Clerk IDs for simplicity.
+three layers, none of which is "an admin route in the Next.js app":
 
-### screens
+1. **`promptfoo view`** — built-in local web UI on `localhost:15500`. table view of every (row × provider) cell, sortable, filterable, with click-to-expand for the full transcript. used during development and prompt iteration. zero engineering cost.
 
-1. **run list** — table of `evalRuns` sorted by composite, filterable by model / prompt variant / dataset version. columns: label, model, config summary, composite, avg cost, p95 latency, finished at.
-2. **run detail** — config summary + totals + expandable per-question table showing the full message parts, scores, timing, and cost for each question.
-3. **compare two runs** — side-by-side view of any two runs, question by question. highlights score deltas.
-4. **pareto chart** — scatter of cost vs composite, latency vs composite, with runs as points and a tooltip showing config. uses `recharts` (already installed in `@zalem/ui`).
-5. **export** — CSV and JSON download of any selected set of runs, for copy-pasting into the thesis.
+2. **`bun --filter @zalem/eval eval:export`** — runs `thesisExport.ts`, which reads the latest results JSON and writes to `thesis/figures/`:
+   - `eval-ranked-configs.tex` — LaTeX `tabular` of the 9 configs ranked by composite, with cost, latency p95, quality, correctness columns
+   - `eval-pareto-cost-quality.pdf` — scatter plot rendered with `recharts` → headless chrome → PDF
+   - `eval-pareto-latency-quality.pdf` — same pattern
+   - `eval-per-category.tex` — breakdown of correctness by question category
 
-### "trigger a run" form
+3. **`promptfoo eval --output html`** — generates a self-contained HTML report that can be linked to from the thesis appendix or shared with a supervisor for review
 
-a small form at the top of the dashboard that takes the config and kicks off a `runEval` action. shows live progress via Convex reactivity (question N of 25, current composite so far, estimated time remaining).
-
----
-
-## configurations worth comparing (first batch)
-
-the first eval sweep should produce a table like this in the thesis results chapter. planned first-batch configurations:
-
-| label               | model                         | reasoning | maxSteps | prompt variant        |
-| ------------------- | ----------------------------- | --------- | -------- | --------------------- |
-| baseline-flash      | google/gemini-3-flash-preview | n/a       | 12       | current               |
-| gpt-oss-120b-med    | openai/gpt-oss-120b           | medium    | 12       | current               |
-| gpt-oss-120b-low    | openai/gpt-oss-120b           | low       | 12       | current               |
-| gpt-oss-120b-high   | openai/gpt-oss-120b           | high      | 12       | current               |
-| gpt-oss-20b-med     | openai/gpt-oss-20b            | medium    | 12       | current               |
-| gpt-oss-20b-low     | openai/gpt-oss-20b            | low       | 12       | current               |
-| oss-120b-tight      | openai/gpt-oss-120b           | medium    | 8        | "be efficient" prompt |
-| oss-120b-loose      | openai/gpt-oss-120b           | medium    | 15       | current               |
-| oss-120b-no-fewshot | openai/gpt-oss-120b           | medium    | 12       | no few-shot           |
-
-that's 9 runs × 25 questions = ~225 API calls per sweep. at gpt-oss-120b prices that's well under a dollar per sweep.
-
-the thesis can then report:
-
-- which model gives the best composite
-- how much quality you lose by dropping from medium to low reasoning
-- whether the "be efficient" prompt variant reduces tool call count without hurting quality
-- where each config sits on the cost / quality pareto front
+if at any point the user study or the supervisor needs a richer dashboard with team access, **self-hosted Langfuse** (Docker, MIT) is the drop-in upgrade — Promptfoo can publish traces to Langfuse and Langfuse handles persistence, comparison views, and shareable links. this is deferred to "future extensions" and is not on the v1 critical path.
 
 ---
 
 ## implementation plan (phased)
 
-### phase 1 — minimum viable harness
+### phase 8.1 — workspace scaffolding
 
-- `evalQuestion` type + 25 hand-written questions
-- `evalRuns` / `evalRunResults` / `evalDatasets` schema
-- `runEval` action that loops questions and captures parts/usage/timing
-- 5 programmatic scorers (hasFinalAnswer, groundedness, factuality, expectedToolCoverage, stepBudgetUsage)
-- composite score computation
-- a bare-bones admin page that lists runs and shows per-run details in a `<pre>` block
+- `packages/eval/` workspace with `package.json`, `tsconfig.json`, scripts
+- `promptfooconfig.yaml` skeleton with one provider (gpt-oss-120b-medium) for smoke testing
+- `src/providers/advisorProvider.ts` skeleton
+- `src/lib/convexClient.ts` shared client
+- `README.md` with run instructions
 
-this alone already catches the bug class we hit (maxSteps cutoff) automatically, on any future config change.
+**deliverable:** `bun --filter @zalem/eval eval` runs against a single hardcoded test row and prints output. no scoring yet.
 
-### phase 2 — LLM judges + dashboard polish
+### phase 8.2 — eval-only Convex action
 
-- add the 5 LLM-as-judge scorers with a cheap model
-- proper dashboard tables with sorting and filtering
-- run-to-run comparison view
-- cost + latency pareto charts via `recharts`
+- `packages/backend/convex/ai/evals/runOnce.ts` — non-streaming, auth-bypass-via-env-secret variant of `requestAdvice` that accepts the per-run config and returns the full result blob
+- `isEval: true` flag added to thread metadata
+- DB snapshot helper that returns `{ [productId]: { price, rating } }` for any product set
+- `advisorProvider.ts` wired to call this action
 
-### phase 3 — thesis-ready presentation
+**deliverable:** the provider returns real Convex agent output to Promptfoo, captured into the JSON result.
 
-- CSV / JSON export
-- result tables formatted for the thesis results chapter
-- a "canonical sweep" script that runs the first-batch configurations in one go and saves the results with a known label
-- validity notes: small dataset size, judge model biases, seeded-data limitations
+### phase 8.3 — programmatic scorers + dataset v1
+
+- 25-row `shopping-v1.yaml`
+- 5 custom scorers (`hasFinalAnswer`, `groundedness`, `factuality`, `reviewThemeFidelity`, `toolCallEfficiency`)
+- built-in `tool-call-f1` wired to `vars.expectedTools`
+- `defaultTest` block applying all scorers to every row
+
+**deliverable:** `eval:sweep` (still single-config) returns full programmatic scores. catches the maxSteps-cutoff bug class automatically.
+
+### phase 8.4 — LLM judges + 9-config sweep
+
+- 5 model-graded rubrics in YAML, judge = Claude Haiku 4.5
+- `providers:` matrix expanded to all 9 configs from the sweep table
+- a smoke run completes within 5 minutes and stays under $5
+
+**deliverable:** ranked table, exported to JSON, ready for analysis.
+
+### phase 8.5 — thesis export
+
+- `reports/thesisExport.ts` — reads latest JSON, emits LaTeX tables + pareto PDFs into `thesis/figures/`
+- `thesis/chapters/chapter7_results.tex` includes the generated tables/figures
+- a `make eval-thesis` (or bun script) regenerates everything end-to-end
+
+**deliverable:** running one command produces every eval-derived artifact in the thesis.
+
+### phase 8.6 — optional: Langfuse layer
+
+deferred. only if a richer dashboard or trace storage becomes necessary.
 
 ---
 
 ## how this fits the thesis
 
-the eval harness is both an engineering contribution and the backbone of the thesis evaluation chapter.
+unchanged in spirit from the previous plan. the pitch is now slightly different:
 
-- **chapter 4 (system design)** — reference the eval harness as a design-validation tool. explain why we need it: to defend model/prompt/parameter choices with numbers.
-- **chapter 5 (implementation)** — dedicate a subsection to the harness. describe the dataset, the runner, the scoring pipeline, the dashboard.
-- **chapter 6 (evaluation methodology)** — the harness provides the entire "system evaluation" layer. the results it produces feed directly into section 6.2 and populate the latency/cost/quality tables.
-- **chapter 7 (results)** — include the pareto plots and the ranked config table. discuss which configuration we ended up shipping and why.
-- **chapter 8 (discussion)** — discuss the limits of programmatic and LLM-judged evaluation, and where user study results complemented or contradicted the harness.
+- **chapter 4 (system design):** reference the eval harness as a design-validation tool. justify the choice of Promptfoo + custom scorers vs rolling our own (literature awareness, focus on novel contribution).
+- **chapter 5 (implementation):** dedicate a subsection to the harness. emphasise the **custom shopping-domain scorers** (groundedness against live Convex, factuality vs DB snapshot, embedding-based theme fidelity). these are the original engineering contribution.
+- **chapter 6 (evaluation methodology):** describe the dataset curation rules, the multi-grader approach (programmatic + LLM-judge), and the bias-mitigation choices (cross-family judge, separated reporting). cite the position-bias and self-preference-bias literature.
+- **chapter 7 (results):** include the pareto plots and the ranked config table generated by `thesisExport.ts`. discuss which configuration we ended up shipping and why.
+- **chapter 8 (discussion):** discuss the limits of the harness — small dataset, judge biases, seeded-data limitations — and where the user study results complemented or contradicted it.
 
-this is what separates the thesis from "an e-commerce app with AI": the app is the artifact, the eval harness is the measurement instrument, and the thesis argument is grounded in numbers the harness produced.
+framing the eval contribution as "domain-specific scorers on top of an OSS framework" is **stronger**, not weaker, than "we built our own framework." it shows the student knows the tooling landscape and can identify where original work belongs.
 
 ---
 
 ## relationship to the user study
 
-the custom eval system does NOT replace the small user study described in `docs/bachelor-thesis/evaluation-plan.md`. the two serve different purposes:
-
-| aspect         | custom eval harness                                   | user study                                        |
-| -------------- | ----------------------------------------------------- | ------------------------------------------------- |
-| scope          | model and prompt quality                              | human perception of trust, intrusiveness, control |
-| method         | programmatic + LLM-as-judge scoring                   | Likert questionnaire + tasks                      |
-| participants   | none (automated)                                      | 8–15 real users                                   |
-| thesis chapter | 6.2 system evaluation                                 | 6.3 user evaluation                               |
-| cost           | dollars per sweep                                     | researcher time                                   |
-| what it proves | the system is efficient and produces grounded answers | the system is useful and not intrusive to humans  |
-
-both are needed. the eval harness lets you pick the best configuration objectively before spending user-study participant time on it.
+unchanged. the harness measures system properties (correctness, cost, latency, judge-perceived quality). the user study measures human properties (trust, intrusiveness, control). both are needed; the harness lets us pick the best configuration objectively before spending user-study time on it.
 
 ---
 
 ## validity threats specific to the harness
 
-- **dataset size is small** — 25 questions can't cover every failure mode. mitigate by reporting per-category breakdowns and by growing the dataset over time.
-- **LLM-as-judge has known biases** — judges prefer longer / more confident answers, and often favor outputs from the same model family. mitigate by using a judge that's different from every candidate model, and by reporting programmatic scores separately.
-- **seeded dataset** — catalog is small and synthetic. mitigate by noting this in the discussion chapter and by including a few "hard lookup" questions that exercise edge cases.
-- **judge cost is not zero** — every sweep pays for judge tokens too. budget it in the cost reporting so the cost column of the harness output reflects real operating cost.
+- **dataset size is small** — 25 questions can't cover every failure mode. mitigate by reporting per-category breakdowns and growing the dataset over time
+- **LLM-judges have known biases** — mitigated by cross-family judge selection, randomised option order (built into Promptfoo's `model-graded`), and separated reporting of programmatic vs judge scores
+- **seeded catalogue is small** — mitigate by noting this in chapter 8 and including hard-lookup edge cases in the dataset
+- **judge cost is not zero** — included in the cost column of every result row so reported "cost per run" reflects real operating cost
+- **the runner replicates production code paths but does not replicate user behavior** — the user study fills that gap; the harness explicitly does not claim to predict UX outcomes
 
 ---
 
@@ -455,4 +577,4 @@ both are needed. the eval harness lets you pick the best configuration objective
 
 **not started.** this document describes the target. see `docs/PLAN.md` phase 8 for progress tracking.
 
-the nearest related existing code is `packages/backend/convex/ai/advisor.ts` (streaming action to reuse for per-question runs) and `packages/backend/convex/ai/models.ts` (model factory to parameterize per run).
+scaffolding lives at `packages/eval/`. the first thing to wire up is `phase 8.1` — getting one row through `advisorProvider.ts` against the existing dev Convex deployment. everything else builds on that foundation.

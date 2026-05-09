@@ -1,0 +1,58 @@
+# shopping-v1 — first eval dataset for the zalem advisor
+#
+# 25-row target. seeded here with 4 illustrative rows covering 4 categories so
+# the runner has something to chew on. fill out the rest in phase 8.3.
+#
+# rules (see docs/eval-system-plan.md § "dataset design"):
+#   - every productId must exist in the seeded dev DB
+#   - bumping the dataset means bumping the filename to shopping-v2.yaml
+#   - multi-turn rows use Promptfoo's conversation feature (deferred)
+#   - edge cases include ambiguous phrasing and empty-result queries
+#
+# vars consumed by the provider + scorers:
+#   question                — interpolated into the prompt template
+#   productId               — simulates "viewing this product" context
+#   recentlyViewedIds       — recently-viewed list passed to advisor
+#   expectedTools           — tool-call-f1 reference set
+#   expectedProductIds      — IDs the answer should reference (informational)
+#   forbiddenTools          — tools that MUST NOT fire (deferred)
+#   maxAcceptableToolCalls  — toolCallEfficiency budget cap
+#   category                — for per-category breakdowns in the thesis
+#   checkReviewFidelity     — opt into reviewThemeFidelity scorer
+
+- description: simple_qa — what's the price of this keyboard
+  vars:
+    question: "What's the price of this keyboard, and is there a discount?"
+    productId: "REPLACE_WITH_REAL_PRODUCT_ID"
+    expectedTools: ["getProductDetails"]
+    maxAcceptableToolCalls: 2
+    category: simple_qa
+
+- description: comparison — two keyboards in the same category
+  vars:
+    question: "How does the K380 compare to the MX Keys Mini for daily typing?"
+    productId: "REPLACE_WITH_REAL_PRODUCT_ID"
+    recentlyViewedIds: ["REPLACE_WITH_REAL_PRODUCT_ID"]
+    expectedTools: ["getProductDetails", "getRecommendations"]
+    expectedProductIds: ["REPLACE_WITH_REAL_PRODUCT_ID"]
+    maxAcceptableToolCalls: 6
+    category: comparison
+
+- description: product_validation — is this worth it
+  vars:
+    question: "Is this product actually worth it for a college student on a tight budget?"
+    productId: "REPLACE_WITH_REAL_PRODUCT_ID"
+    expectedTools: ["getProductDetails", "getReviewsSummary"]
+    maxAcceptableToolCalls: 4
+    category: product_validation
+    checkReviewFidelity: true
+
+- description: edge_case — off-topic / out-of-scope
+  vars:
+    question: "Hey, can you tell me a joke?"
+    expectedTools: []
+    maxAcceptableToolCalls: 1
+    category: edge_case
+  assert:
+    - type: javascript
+      value: "output.length < 400"

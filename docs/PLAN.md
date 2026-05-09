@@ -360,17 +360,18 @@ polish, performance, and experimental features.
 
 a purpose-built eval harness for monitoring and ranking LLM configurations (model, reasoning effort, step budget, system prompt variants) on cost, latency, and quality. turns model selection into a data-driven process and produces thesis-quality evidence for chapter 6.2 (system evaluation).
 
+**direction change (2026-05-09):** the original plan was to build the entire harness in-house (own Convex tables, own runner, own admin webapp). the new plan uses **Promptfoo** (MIT, open-source) as the runner / dataset manager / dashboard, and ships only the parts that don't exist off-the-shelf — a custom provider that wraps the Convex `shoppingAdvisor` agent, plus 5 shopping-domain scorers (groundedness against live Convex, factuality vs DB snapshot, embedding-based theme fidelity, etc.). reasoning: re-implementing generic eval infrastructure has poor thesis ROI; the novel contribution is the domain-specific scoring layer. see `docs/eval-system-plan.md` § "direction change (2026-05-09)" for the full rationale.
+
 **sub-phase progress:**
 
-| sub-phase | what                                                                                   | status      |
-| --------- | -------------------------------------------------------------------------------------- | ----------- |
-| 8.1       | curated eval dataset (~25 shopping questions with expected behavior tags)              | not started |
-| 8.2       | eval runner action + `evalRuns` / `evalRunResults` / `evalDatasets` Convex tables      | not started |
-| 8.3       | programmatic scorers (hasFinalAnswer, groundedness, factuality, tool efficiency, etc.) | not started |
-| 8.4       | LLM-as-judge scorers (completeness, helpfulness, tradeoff surfacing, tone alignment)   | not started |
-| 8.5       | admin dashboard at `/admin/evals` (run list, per-run detail, comparison view)          | not started |
-| 8.6       | pareto charts (cost vs quality, latency vs quality) + CSV/JSON export                  | not started |
-| 8.7       | first canonical sweep across 9 configurations + thesis-ready result tables             | not started |
+| sub-phase | what                                                                                                             | status      |
+| --------- | ---------------------------------------------------------------------------------------------------------------- | ----------- |
+| 8.1       | `packages/eval/` workspace scaffold (Promptfoo + custom provider + 5 scorer skeletons + dataset skeleton)        | scaffolded  |
+| 8.2       | `ai/evals/runOnce` Convex action (eval-only, auth-bypass via env secret, returns parts/usage/timings/dbSnapshot) | not started |
+| 8.3       | wire the 5 programmatic scorers + fill `shopping-v1.yaml` to 25 rows                                             | not started |
+| 8.4       | LLM-as-judge rubrics (judge = Claude Haiku 4.5, cross-family) + 9-config sweep matrix                            | not started |
+| 8.5       | `thesisExport.ts` — JSON results → LaTeX tables + pareto plots into `thesis/figures/`                            | not started |
+| 8.6       | (optional) self-hosted Langfuse layer for trace storage + shareable dashboard                                    | deferred    |
 
 **key motivation:** the `maxSteps: 5 → 12` fix we shipped was a reactive patch, not a measured decision. for the thesis, every model/prompt/parameter choice needs to be defended with numbers. see `docs/eval-system-plan.md` for the full architecture, dataset design, scoring pipeline, and dashboard plan.
 

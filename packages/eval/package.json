@@ -1,0 +1,27 @@
+{
+  "name": "@zalem/eval",
+  "version": "0.0.0",
+  "private": true,
+  "description": "LLM evaluation harness for the zalem shopping advisor — Promptfoo runner + custom Convex-aware scorers",
+  "type": "module",
+  "scripts": {
+    "eval": "promptfoo eval",
+    "eval:sweep": "promptfoo eval --no-cache",
+    "eval:view": "promptfoo view",
+    "eval:export": "bun run src/reports/thesisExport.ts",
+    "eval:reset": "rm -rf results/* .promptfoo-cache",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "convex": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.13",
+    "@types/node": "^25",
+    "@zalem/config": "workspace:*",
+    "promptfoo": "^0.119.0",
+    "typescript": "^6"
+  }
+}
