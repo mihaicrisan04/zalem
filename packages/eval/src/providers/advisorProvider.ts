@@ -87,13 +87,24 @@ export default class AdvisorProvider {
     // prompt comes pre-interpolated from the YAML template `"{{question}}"`
     const question = prompt || vars.question || "";
 
+    // Promptfoo injects extra fields (e.g. `basePath`) into the provider config
+    // object. Convex's strict validator rejects unknown fields, so we whitelist
+    // exactly what runOnce expects before passing it through.
+    const cleanConfig: ProviderConfig = {
+      modelId: this.config.modelId,
+      reasoningEffort: this.config.reasoningEffort,
+      maxSteps: this.config.maxSteps,
+      promptVariant: this.config.promptVariant,
+      ...(this.config.providerOrder ? { providerOrder: this.config.providerOrder } : {}),
+    };
+
     try {
       const result = await convex.action(runOnceRef, {
         authSecret: evalAuthSecret,
         question,
         productId: vars.productId,
         recentlyViewedIds: vars.recentlyViewedIds,
-        config: this.config,
+        config: cleanConfig,
         sweepLabel: this.sweepLabel,
       });
 

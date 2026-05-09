@@ -1,53 +1,287 @@
 # shopping-v1 — first eval dataset for the zalem advisor
 #
-# 25-row target. seeded here with 4 illustrative rows covering 4 categories so
-# the runner has something to chew on. fill out the rest in phase 8.3.
+# 25 rows covering 6 categories. multi_turn (3 rows) is deferred to v2 —
+# Promptfoo's conversation feature requires extra wiring; reallocated those
+# slots to simple_qa (+2) and product_validation (+1) so the v1 distribution
+# is: 6 simple_qa + 5 product_validation + 5 comparison + 5 recommendation +
+# 3 review_summary + 1 edge_case = 25.
 #
 # rules (see docs/eval-system-plan.md § "dataset design"):
-#   - every productId must exist in the seeded dev DB
+#   - every productId references a real seeded product (verified 2026-05-09)
 #   - bumping the dataset means bumping the filename to shopping-v2.yaml
-#   - multi-turn rows use Promptfoo's conversation feature (deferred)
-#   - edge cases include ambiguous phrasing and empty-result queries
+#   - edge cases include ambiguous phrasing and off-topic queries
 #
 # vars consumed by the provider + scorers:
 #   question                — interpolated into the prompt template
 #   productId               — simulates "viewing this product" context
 #   recentlyViewedIds       — recently-viewed list passed to advisor
 #   expectedTools           — tool-call-f1 reference set
-#   expectedProductIds      — IDs the answer should reference (informational)
-#   forbiddenTools          — tools that MUST NOT fire (deferred)
+#   expectedProductIds      — IDs the answer should reference
+#   forbiddenTools          — tools that MUST NOT fire
 #   maxAcceptableToolCalls  — toolCallEfficiency budget cap
 #   category                — for per-category breakdowns in the thesis
 #   checkReviewFidelity     — opt into reviewThemeFidelity scorer
 
-- description: simple_qa — what's the price of this keyboard
+# ============================================================
+# simple_qa (6)
+# ============================================================
+
+- description: simple_qa — price + discount on a Vivo V9
   vars:
-    question: "What's the price of this keyboard, and is there a discount?"
-    productId: "REPLACE_WITH_REAL_PRODUCT_ID"
+    question: "What's the price of this phone, and is there a discount?"
+    productId: "k173zdb98bz7zpncnnd4w3r9w183gq87"
     expectedTools: ["getProductDetails"]
+    expectedProductIds: ["k173zdb98bz7zpncnnd4w3r9w183gq87"]
     maxAcceptableToolCalls: 2
     category: simple_qa
 
-- description: comparison — two keyboards in the same category
+- description: simple_qa — stock status on an iPhone 6
   vars:
-    question: "How does the K380 compare to the MX Keys Mini for daily typing?"
-    productId: "REPLACE_WITH_REAL_PRODUCT_ID"
-    recentlyViewedIds: ["REPLACE_WITH_REAL_PRODUCT_ID"]
-    expectedTools: ["getProductDetails", "getRecommendations"]
-    expectedProductIds: ["REPLACE_WITH_REAL_PRODUCT_ID"]
-    maxAcceptableToolCalls: 6
-    category: comparison
+    question: "Is this in stock right now?"
+    productId: "k1704herc3603wzds8jeex4c5983h6d7"
+    expectedTools: ["getProductDetails"]
+    expectedProductIds: ["k1704herc3603wzds8jeex4c5983h6d7"]
+    maxAcceptableToolCalls: 2
+    category: simple_qa
 
-- description: product_validation — is this worth it
+- description: simple_qa — brand on a Lenovo Yoga 920
   vars:
-    question: "Is this product actually worth it for a college student on a tight budget?"
-    productId: "REPLACE_WITH_REAL_PRODUCT_ID"
+    question: "What brand makes this laptop?"
+    productId: "k179xnvg6v8b9fvajta5ke260s83hfad"
+    expectedTools: ["getProductDetails"]
+    expectedProductIds: ["k179xnvg6v8b9fvajta5ke260s83hfad"]
+    maxAcceptableToolCalls: 2
+    category: simple_qa
+
+- description: simple_qa — warranty on a MacBook Pro 14
+  vars:
+    question: "How long is the warranty on this MacBook?"
+    productId: "k1774h65z3ymtnqf5mf0n593qx83gf26"
+    expectedTools: ["getProductDetails"]
+    expectedProductIds: ["k1774h65z3ymtnqf5mf0n593qx83gf26"]
+    maxAcceptableToolCalls: 2
+    category: simple_qa
+
+- description: simple_qa — screen size on a Samsung Galaxy Tab White
+  vars:
+    question: "What's the screen size on this tablet?"
+    productId: "k1729q392281rgyv5q7vm8n7rd83hwx9"
+    expectedTools: ["getProductDetails"]
+    expectedProductIds: ["k1729q392281rgyv5q7vm8n7rd83hwx9"]
+    maxAcceptableToolCalls: 2
+    category: simple_qa
+
+- description: simple_qa — quick attribute lookup on Red Nail Polish
+  vars:
+    question: "Quick — is this safe for nail health?"
+    productId: "k1795s6e9ynzkqq88msnmv96fd83gjyq"
+    expectedTools: ["getProductDetails"]
+    expectedProductIds: ["k1795s6e9ynzkqq88msnmv96fd83gjyq"]
+    maxAcceptableToolCalls: 2
+    category: simple_qa
+
+# ============================================================
+# product_validation (5)
+# ============================================================
+
+- description: product_validation — Lenovo Yoga 920 for student budget
+  vars:
+    question: "Is this laptop worth it for a college student on a tight budget?"
+    productId: "k179xnvg6v8b9fvajta5ke260s83hfad"
     expectedTools: ["getProductDetails", "getReviewsSummary"]
+    expectedProductIds: ["k179xnvg6v8b9fvajta5ke260s83hfad"]
     maxAcceptableToolCalls: 4
     category: product_validation
     checkReviewFidelity: true
 
-- description: edge_case — off-topic / out-of-scope
+- description: product_validation — Realme X with mixed reviews
+  vars:
+    question: "The reviews seem mixed — is this phone still worth buying?"
+    productId: "k17d3ke99eawmwe03nd07c92th83hmak"
+    expectedTools: ["getProductDetails", "getReviewsSummary"]
+    expectedProductIds: ["k17d3ke99eawmwe03nd07c92th83hmak"]
+    maxAcceptableToolCalls: 4
+    category: product_validation
+    checkReviewFidelity: true
+
+- description: product_validation — MacBook Pro 14 for video editing
+  vars:
+    question: "Should I get this MacBook if I mostly do video editing?"
+    productId: "k1774h65z3ymtnqf5mf0n593qx83gf26"
+    expectedTools: ["getProductDetails"]
+    expectedProductIds: ["k1774h65z3ymtnqf5mf0n593qx83gf26"]
+    maxAcceptableToolCalls: 4
+    category: product_validation
+
+- description: product_validation — Vivo V9 as iPhone-switcher's first Android
+  vars:
+    question: "Is this a good first Android phone for someone switching from iPhone?"
+    productId: "k173zdb98bz7zpncnnd4w3r9w183gq87"
+    expectedTools: ["getProductDetails", "getReviewsSummary"]
+    expectedProductIds: ["k173zdb98bz7zpncnnd4w3r9w183gq87"]
+    maxAcceptableToolCalls: 4
+    category: product_validation
+    checkReviewFidelity: true
+
+- description: product_validation — sensitive-skin question on Attitude Hand Soap
+  vars:
+    question: "Is this hand soap safe for sensitive skin?"
+    productId: "k170w4zg422fetj8awr4fwq1vs83gjvp"
+    expectedTools: ["getProductDetails", "getReviewsSummary"]
+    expectedProductIds: ["k170w4zg422fetj8awr4fwq1vs83gjvp"]
+    maxAcceptableToolCalls: 4
+    category: product_validation
+
+# ============================================================
+# comparison (5)
+# ============================================================
+
+- description: comparison — Vivo V9 vs Samsung Galaxy S8
+  vars:
+    question: "How does this phone compare to the Samsung Galaxy S8 for daily use?"
+    productId: "k173zdb98bz7zpncnnd4w3r9w183gq87"
+    recentlyViewedIds: ["k17c4tgjxcqa8w1j8n6ntnp48d83gnt5"]
+    expectedTools: ["getProductDetails"]
+    expectedProductIds:
+      - "k173zdb98bz7zpncnnd4w3r9w183gq87"
+      - "k17c4tgjxcqa8w1j8n6ntnp48d83gnt5"
+    maxAcceptableToolCalls: 6
+    category: comparison
+
+- description: comparison — Realme XT vs Oppo K1 (value)
+  vars:
+    question: "Which of these two phones is better value — the Realme XT or the Oppo K1?"
+    productId: "k1792hw4f6rn6kg3phbjspgwyx83hf7g"
+    recentlyViewedIds: ["k178j0e0yat6edysxhfq5qm2bs83gm70"]
+    expectedTools: ["getProductDetails"]
+    expectedProductIds:
+      - "k1792hw4f6rn6kg3phbjspgwyx83hf7g"
+      - "k178j0e0yat6edysxhfq5qm2bs83gm70"
+    maxAcceptableToolCalls: 6
+    category: comparison
+
+- description: comparison — Dell XPS 13 vs Lenovo Yoga 920 (portability)
+  vars:
+    question: "Compare these two laptops — which is better for portable work?"
+    productId: "k176x88c6x574gxbdwcasbvs8n83g2nx"
+    recentlyViewedIds: ["k179xnvg6v8b9fvajta5ke260s83hfad"]
+    expectedTools: ["getProductDetails"]
+    expectedProductIds:
+      - "k176x88c6x574gxbdwcasbvs8n83g2nx"
+      - "k179xnvg6v8b9fvajta5ke260s83hfad"
+    maxAcceptableToolCalls: 6
+    category: comparison
+
+- description: comparison — iPad Mini vs Samsung Galaxy Tab S8 Plus
+  vars:
+    question: "iPad Mini vs Samsung Galaxy Tab S8 Plus — which one for reading and casual browsing?"
+    productId: "k177c76chn8xb3gtavr4t4gf1983hs9p"
+    recentlyViewedIds: ["k17dkq5fq25b3es85yj5zg89vx83h0wh"]
+    expectedTools: ["getProductDetails"]
+    expectedProductIds:
+      - "k177c76chn8xb3gtavr4t4gf1983hs9p"
+      - "k17dkq5fq25b3es85yj5zg89vx83h0wh"
+    maxAcceptableToolCalls: 6
+    category: comparison
+
+- description: comparison — MacBook Pro 14 vs Huawei Matebook X Pro
+  vars:
+    question: "How do these two ultrabooks compare for software development?"
+    productId: "k1774h65z3ymtnqf5mf0n593qx83gf26"
+    recentlyViewedIds: ["k173edeee10dnqh9zea2zaebhn83hy6e"]
+    expectedTools: ["getProductDetails"]
+    expectedProductIds:
+      - "k1774h65z3ymtnqf5mf0n593qx83gf26"
+      - "k173edeee10dnqh9zea2zaebhn83hy6e"
+    maxAcceptableToolCalls: 6
+    category: comparison
+
+# ============================================================
+# recommendation (5)
+# ============================================================
+
+- description: recommendation — similar phones to Vivo V9
+  vars:
+    question: "Suggest a similar phone in the same price range."
+    productId: "k173zdb98bz7zpncnnd4w3r9w183gq87"
+    expectedTools: ["getRecommendations"]
+    expectedProductIds: ["k173zdb98bz7zpncnnd4w3r9w183gq87"]
+    maxAcceptableToolCalls: 4
+    category: recommendation
+
+- description: recommendation — cheaper laptop with comparable performance
+  vars:
+    question: "Any cheaper laptop with comparable performance to this one?"
+    productId: "k175cns4b7y9b2n1tys7g197zd83gz7w"
+    expectedTools: ["getRecommendations"]
+    expectedProductIds: ["k175cns4b7y9b2n1tys7g197zd83gz7w"]
+    maxAcceptableToolCalls: 4
+    category: recommendation
+
+- description: recommendation — accessories that pair with iPad Mini
+  vars:
+    question: "What accessories pair well with this iPad?"
+    productId: "k177c76chn8xb3gtavr4t4gf1983hs9p"
+    expectedTools: ["getRecommendations"]
+    expectedProductIds: ["k177c76chn8xb3gtavr4t4gf1983hs9p"]
+    maxAcceptableToolCalls: 4
+    category: recommendation
+
+- description: recommendation — open-ended budget Android, no current product
+  vars:
+    question: "Recommend a good budget Android phone under $300."
+    expectedTools: ["searchProducts"]
+    maxAcceptableToolCalls: 4
+    category: recommendation
+
+- description: recommendation — post-purchase pairings for Samsung Galaxy S8
+  vars:
+    question: "I just got this phone — what should I get to go with it?"
+    productId: "k17c4tgjxcqa8w1j8n6ntnp48d83gnt5"
+    expectedTools: ["getRecommendations"]
+    expectedProductIds: ["k17c4tgjxcqa8w1j8n6ntnp48d83gnt5"]
+    maxAcceptableToolCalls: 4
+    category: recommendation
+
+# ============================================================
+# review_summary (3)
+# ============================================================
+
+- description: review_summary — what buyers think about Vivo V9
+  vars:
+    question: "What do buyers think about this phone?"
+    productId: "k173zdb98bz7zpncnnd4w3r9w183gq87"
+    expectedTools: ["getReviewsSummary"]
+    expectedProductIds: ["k173zdb98bz7zpncnnd4w3r9w183gq87"]
+    maxAcceptableToolCalls: 3
+    category: review_summary
+    checkReviewFidelity: true
+
+- description: review_summary — sentiment check on Realme X
+  vars:
+    question: "Are the reviews mostly positive for this one?"
+    productId: "k17d3ke99eawmwe03nd07c92th83hmak"
+    expectedTools: ["getReviewsSummary"]
+    expectedProductIds: ["k17d3ke99eawmwe03nd07c92th83hmak"]
+    maxAcceptableToolCalls: 3
+    category: review_summary
+    checkReviewFidelity: true
+
+- description: review_summary — common complaints on Oppo A57
+  vars:
+    question: "What are the most common complaints in the reviews?"
+    productId: "k17f1jjbq6vn7qt8ddjt94t5k983ggs2"
+    expectedTools: ["getReviewsSummary"]
+    expectedProductIds: ["k17f1jjbq6vn7qt8ddjt94t5k983ggs2"]
+    maxAcceptableToolCalls: 3
+    category: review_summary
+    checkReviewFidelity: true
+
+# ============================================================
+# edge_case (1)
+# ============================================================
+
+- description: edge_case — off-topic / out of scope
   vars:
     question: "Hey, can you tell me a joke?"
     expectedTools: []

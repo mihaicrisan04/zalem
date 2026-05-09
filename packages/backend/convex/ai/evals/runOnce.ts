@@ -133,8 +133,26 @@ export const runOnce = action({
               `${desc}`,
           );
         }
+
+        // mirror advisor.ts: also pull cached review summary if available
+        const summary = await ctx.runQuery(api.ai.reviewSummariesHelpers.getSummary, {
+          productId: args.productId as Id<"products">,
+        });
+        if (summary) {
+          const pos = summary.positives.map((t) => `${t.theme} (${t.count})`).join(", ");
+          const neg = summary.negatives.map((t) => `${t.theme} (${t.count})`).join(", ");
+          const conflicts = summary.conflicts
+            .map((c) => `${c.topic}: ${c.positiveCount} agree vs ${c.negativeCount} disagree`)
+            .join("; ");
+          let reviewLine = `REVIEW THEMES (${summary.reviewCount} reviews analyzed):`;
+          if (pos) reviewLine += `\nPositives: ${pos}`;
+          if (neg) reviewLine += `\nNegatives: ${neg}`;
+          if (conflicts) reviewLine += `\nDivided opinions: ${conflicts}`;
+          if (summary.bestFor.length > 0) reviewLine += `\nBest for: ${summary.bestFor.join(", ")}`;
+          contextParts.push(reviewLine);
+        }
       } catch {
-        // product fetch failed, continue without context
+        // product/summary fetch failed, continue without context
       }
     }
     if (args.recentlyViewedIds && args.recentlyViewedIds.length > 0) {

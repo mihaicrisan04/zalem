@@ -113,12 +113,10 @@ defaultTest:
       value: file://src/scorers/factuality.ts
     - type: javascript
       value: file://src/scorers/toolCallEfficiency.ts
-
-    # built-in: F1 of called vs expected tools (per-row vars.expectedTools)
-    # uncomment once advisorProvider.ts emits the toolCalls in the format
-    # Promptfoo's tool-call-f1 expects (OpenAI tool_calls shape)
-    # - type: tool-call-f1
-    #   value: "{{expectedTools}}"
+    - type: javascript
+      value: file://src/scorers/expectedToolCoverage.ts
+    - type: javascript
+      value: file://src/scorers/reviewThemeFidelity.ts
 
     # LLM-as-judge — Claude Haiku 4.5 (cross-family from gpt-oss + gemini)
     # uncomment in phase 8.4 once judge wiring + ANTHROPIC_API_KEY are set

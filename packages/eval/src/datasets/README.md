@@ -35,25 +35,35 @@ optional but recommended:
 - `vars.checkReviewFidelity: true` — opts into the embedding-based theme check
 - per-row `assert:` block — additional row-specific assertions
 
-## category targets for v1
+## v1 distribution (actual)
 
-| category           | count  |
-| ------------------ | ------ |
-| simple_qa          | 4      |
-| product_validation | 4      |
-| comparison         | 5      |
-| recommendation     | 5      |
-| review_summary     | 3      |
-| multi_turn         | 3      |
-| edge_case          | 1      |
-| **total**          | **25** |
+| category           | count  | notes                                                |
+| ------------------ | ------ | ---------------------------------------------------- |
+| simple_qa          | 6      |                                                      |
+| product_validation | 5      |                                                      |
+| comparison         | 5      |                                                      |
+| recommendation     | 5      |                                                      |
+| review_summary     | 3      |                                                      |
+| multi_turn         | 0      | deferred to v2 — needs Promptfoo conversation wiring |
+| edge_case          | 1      |                                                      |
+| **total**          | **25** |                                                      |
+
+the spec doc targets 4 simple_qa + 4 product_validation + 3 multi_turn = 11.
+v1 drops multi_turn (3 rows) and reallocates them to simple_qa (+2) and
+product_validation (+1) so the row count stays 25 without depending on
+infrastructure we haven't built yet. when v2 lands, restore the spec
+distribution.
 
 ## product IDs
 
-every `productId` must exist in the seeded dev DB. dump real IDs with:
+every `productId` must exist in the seeded dev DB. dump fresh IDs with:
 
 ```bash
-bun --filter @zalem/backend convex run products:listAll | jq -r '.[].id' | head
+cd packages/backend && bunx convex run products:listByCategory \
+  '{"category":"Smartphones","sort":"popular","paginationOpts":{"cursor":null,"numItems":10}}' \
+  | jq -c '.page[] | {id: ._id, title, brand, price, rating}'
 ```
 
-then paste them into the `REPLACE_WITH_REAL_PRODUCT_ID` placeholders.
+repeat for "Laptops", "Tablets", "Beauty", etc. shopping-v1 was seeded from a
+snapshot taken on 2026-05-09 — if the dev DB is reseeded the IDs will change
+and the dataset will need a refresh (bump to shopping-v2.yaml).
