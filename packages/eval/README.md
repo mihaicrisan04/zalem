@@ -45,13 +45,21 @@ create `packages/eval/.env`:
 ```
 CONVEX_EVAL_URL=https://<your-eval-deployment>.convex.cloud
 CONVEX_EVAL_SECRET=<random shared secret — must match the env on Convex>
-OPENROUTER_API_KEY=<inherited by the Convex deployment>
-ANTHROPIC_API_KEY=<for the Claude Haiku 4.5 judge — phase 8.4>
+OPENROUTER_API_KEY=<your openrouter key — used by the local LLM judges>
 ```
 
-never point `CONVEX_EVAL_URL` at production. eval threads are flagged
-`isEval: true` and filtered out of normal queries, but the eval also
-runs real LLM calls and burns real OpenRouter credits.
+- `CONVEX_EVAL_URL` / `CONVEX_EVAL_SECRET` — used by the provider to call
+  `ai.evals.runOnce` against the eval Convex deployment. the agent itself
+  burns OpenRouter credits via the deployment's server-side
+  `OPENROUTER_API_KEY` (set with `bunx convex env set OPENROUTER_API_KEY`).
+- `OPENROUTER_API_KEY` (local) — used by Promptfoo to call the
+  Claude Haiku 4.5 judge for the `llm-rubric` assertions. unrelated to
+  the deployment-side key — Promptfoo runs locally and needs its own.
+
+never point `CONVEX_EVAL_URL` at production. eval threads are prefixed
+`eval:<sweepLabel>:<ts>` in their userId so they're isolated from
+production queries, but the eval also runs real LLM calls and burns
+real OpenRouter credits.
 
 ## directory map
 

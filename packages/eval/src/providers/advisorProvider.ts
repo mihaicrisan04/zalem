@@ -26,9 +26,9 @@ type ProviderConfig = {
 type RowVars = {
   question?: string;
   productId?: string;
-  recentlyViewedIds?: string[];
-  expectedTools?: string[];
-  expectedProductIds?: string[];
+  recentlyViewedIds?: string[] | string;
+  expectedTools?: string[] | string;
+  expectedProductIds?: string[] | string;
   checkReviewFidelity?: boolean;
   maxAcceptableToolCalls?: number;
   category?: string;
@@ -87,6 +87,14 @@ export default class AdvisorProvider {
     // prompt comes pre-interpolated from the YAML template `"{{question}}"`
     const question = prompt || vars.question || "";
 
+    // Promptfoo flattens single-element arrays in YAML vars to bare scalars.
+    // Convex's strict validators reject this, so normalise back to an array.
+    const recentlyViewedIds = Array.isArray(vars.recentlyViewedIds)
+      ? vars.recentlyViewedIds
+      : typeof vars.recentlyViewedIds === "string"
+        ? [vars.recentlyViewedIds]
+        : undefined;
+
     // Promptfoo injects extra fields (e.g. `basePath`) into the provider config
     // object. Convex's strict validator rejects unknown fields, so we whitelist
     // exactly what runOnce expects before passing it through.
@@ -103,7 +111,7 @@ export default class AdvisorProvider {
         authSecret: evalAuthSecret,
         question,
         productId: vars.productId,
-        recentlyViewedIds: vars.recentlyViewedIds,
+        recentlyViewedIds,
         config: cleanConfig,
         sweepLabel: this.sweepLabel,
       });

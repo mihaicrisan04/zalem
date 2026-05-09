@@ -21,6 +21,7 @@ description: zalem shopping advisor — model and prompt sweep
 # initial smoke run we keep just one to keep latency / cost low.
 # -------------------------------------------------------------------
 providers:
+  # baseline production config — gpt-oss-120b @ medium reasoning + few-shots
   - id: file://src/providers/advisorProvider.ts
     label: gpt-oss-120b-medium
     config:
@@ -30,6 +31,20 @@ providers:
       promptVariant: current
       providerOrder: ["cerebras", "groq"]
 
+  # phase 8.3 finding (see docs/eval-findings.md): the few-shot examples
+  # contaminate responses on simple/ambiguous queries. this config ablates
+  # the few-shots so we can quantify the impact.
+  - id: file://src/providers/advisorProvider.ts
+    label: gpt-oss-120b-medium-no-fewshot
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: medium
+      maxSteps: 12
+      promptVariant: no-fewshot
+      providerOrder: ["cerebras", "groq"]
+
+  # uncomment in phase 8.4 — the rest of the planned 9-config sweep
+  #
   # - id: file://src/providers/advisorProvider.ts
   #   label: gpt-oss-120b-low
   #   config:
@@ -37,6 +52,7 @@ providers:
   #     reasoningEffort: low
   #     maxSteps: 12
   #     promptVariant: current
+  #     providerOrder: ["cerebras", "groq"]
   #
   # - id: file://src/providers/advisorProvider.ts
   #   label: gpt-oss-120b-high
@@ -45,6 +61,7 @@ providers:
   #     reasoningEffort: high
   #     maxSteps: 12
   #     promptVariant: current
+  #     providerOrder: ["cerebras", "groq"]
   #
   # - id: file://src/providers/advisorProvider.ts
   #   label: gpt-oss-20b-medium
@@ -53,6 +70,7 @@ providers:
   #     reasoningEffort: medium
   #     maxSteps: 12
   #     promptVariant: current
+  #     providerOrder: ["cerebras", "groq"]
   #
   # - id: file://src/providers/advisorProvider.ts
   #   label: baseline-flash-lite
@@ -69,6 +87,7 @@ providers:
   #     reasoningEffort: medium
   #     maxSteps: 8
   #     promptVariant: be-efficient
+  #     providerOrder: ["cerebras", "groq"]
   #
   # - id: file://src/providers/advisorProvider.ts
   #   label: oss-120b-loose
@@ -77,14 +96,17 @@ providers:
   #     reasoningEffort: medium
   #     maxSteps: 15
   #     promptVariant: current
+  #     providerOrder: ["cerebras", "groq"]
   #
-  # - id: file://src/providers/advisorProvider.ts
-  #   label: oss-120b-no-fewshot
-  #   config:
-  #     modelId: openai/gpt-oss-120b
-  #     reasoningEffort: medium
-  #     maxSteps: 12
-  #     promptVariant: no-fewshot
+  # to add another model, copy a block above and tweak modelId / config.
+  # OpenRouter model IDs: https://openrouter.ai/models
+  # examples worth trying:
+  #   - anthropic/claude-haiku-4-5
+  #   - google/gemini-3-flash
+  #   - openai/gpt-5-mini
+  #   - x-ai/grok-4-mini
+  # only gpt-oss models accept `reasoningEffort` + `providerOrder`; for
+  # others, drop those fields and they'll be ignored by buildEvalModel.
 
 # -------------------------------------------------------------------
 # prompts
@@ -103,32 +125,80 @@ prompts:
 # `assert:` block; those compose with these.
 # -------------------------------------------------------------------
 defaultTest:
+  # all four LLM judges share the same provider + a sensible default
+  # threshold. cross-family judge (Claude Haiku 4.5) avoids self-preference
+  # bias against the gpt-oss + gemini candidates we're evaluating.
+  # see docs/eval-system-plan.md § "judge model selection (bias mitigation)".
+  options:
+    provider: openrouter:anthropic/claude-haiku-4-5
+
   assert:
-    # programmatic, free, deterministic
+    # ── programmatic scorers (free, deterministic, fast) ──
     - type: javascript
       value: file://src/scorers/hasFinalAnswer.ts
+      metric: programmatic
     - type: javascript
       value: file://src/scorers/groundedness.ts
+      metric: programmatic
     - type: javascript
       value: file://src/scorers/factuality.ts
+      metric: programmatic
     - type: javascript
       value: file://src/scorers/toolCallEfficiency.ts
+      metric: programmatic
     - type: javascript
       value: file://src/scorers/expectedToolCoverage.ts
+      metric: programmatic
     - type: javascript
       value: file://src/scorers/reviewThemeFidelity.ts
+      metric: programmatic
 
-    # LLM-as-judge — Claude Haiku 4.5 (cross-family from gpt-oss + gemini)
-    # uncomment in phase 8.4 once judge wiring + ANTHROPIC_API_KEY are set
-    # - type: model-graded-closedqa
-    #   value: "Does the answer address the user's question completely?"
-    #   provider: anthropic:claude-haiku-4-5
-    # - type: llm-rubric
-    #   value: |
-    #     Rate 0-5 whether the response would be actionable to a real shopper
-    #     trying to make a purchase decision. Penalize generic or hedging
-    #     answers.
-    #   provider: anthropic:claude-haiku-4-5
+    # ── LLM-as-judge rubrics (Claude Haiku 4.5 via OpenRouter) ──
+    # judges see only {question, final output} — never the reasoning trace
+    # or tool calls — to avoid reward-hacking via long reasoning chains.
+    # tool-appropriateness is intentionally NOT judged here; it's covered
+    # by the programmatic `expectedToolCoverage` scorer using the actual
+    # captured trace, which is more reliable than asking a model to guess.
+
+    - type: llm-rubric
+      metric: judge_completeness
+      threshold: 0.6
+      value: |
+        Rate the response on completeness. Does it directly and fully
+        address what the user asked? Penalise: evasive answers, asking
+        clarifying questions when the original question was clear,
+        missing the actual question. Reward: directly answering the
+        specific question with the relevant facts.
+
+    - type: llm-rubric
+      metric: judge_helpfulness
+      threshold: 0.6
+      value: |
+        Rate how useful the response is for a real shopper trying to
+        make a purchase decision. Penalise: vague hedging, generic
+        sales-speak, lack of concrete information. Reward: specific
+        prices, ratings, comparisons, actionable recommendations.
+
+    - type: llm-rubric
+      metric: judge_tradeoff_surfacing
+      threshold: 0.5
+      value: |
+        Rate whether the response surfaces relevant tradeoffs and
+        downsides. The advisor's role is to be honest, not pushy. For
+        product validation, comparison, and recommendation queries the
+        response should mention at least one downside or tradeoff if
+        one is relevant. For simple factual queries (e.g. "what's the
+        price?") this rubric does not apply — score 1.0 in that case.
+
+    - type: llm-rubric
+      metric: judge_tone
+      threshold: 0.7
+      value: |
+        Rate the response's tone. The advisor should sound like a
+        knowledgeable friend, not a salesperson. Penalise: pushy
+        upselling, "great choice!" boilerplate, overly formal
+        corporate-speak, condescension. Reward: calm, specific,
+        honest, concise.
 
 # -------------------------------------------------------------------
 # tests — the dataset
