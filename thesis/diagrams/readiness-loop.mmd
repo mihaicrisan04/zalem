@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant U as User
+    participant H as Tracking hooks
+    participant B as useBehaviorTracker<br/>(in-memory buffer)
+    participant R as useReadinessSignals<br/>(threshold evaluator)
+    participant UI as Advisor surface
+
+    U->>H: hover, scroll, view reviews
+    H->>B: push event
+    B->>B: aggregate per product
+    B->>R: read current state
+    R->>R: evaluate thresholds<br/>(dwell, scroll, comparison)
+    alt thresholds met
+        R->>UI: enable breathing button<br/>or contextual chip
+    else thresholds not met
+        R->>UI: idle
+    end
+    U->>UI: click (user-initiated)
+    UI->>U: open advisor

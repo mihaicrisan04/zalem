@@ -35,7 +35,8 @@
     "ci": "bun run check && bun run check-types",
     "thesis:build": "cd thesis && latexmk",
     "thesis:watch": "cd thesis && latexmk -pvc",
-    "thesis:clean": "cd thesis && latexmk -c"
+    "thesis:clean": "cd thesis && latexmk -c",
+    "thesis:diagrams": "mkdir -p thesis/figures && for f in thesis/diagrams/*.mmd; do [ -f \"$f\" ] || continue; out=thesis/figures/$(basename \"$f\" .mmd).pdf; echo \"rendering $f -> $out\"; bunx mmdc -i \"$f\" -o \"$out\" -b transparent --pdfFit -c thesis/diagrams/mermaid-config.json; done"
   },
   "dependencies": {
     "@zalem/env": "workspace:*",
@@ -43,6 +44,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@mermaid-js/mermaid-cli": "^11.14.0",
     "@types/bun": "^1.3.13",
     "@zalem/config": "workspace:*",
     "oxfmt": "^0.42.0",

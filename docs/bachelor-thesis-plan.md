@@ -1,3 +1,7 @@
+> **[SUPERSEDED — 2026-05-13]** the user-study layer described in this document was dropped from the thesis. the manuscript now evaluates the system at two engineering layers (offline recommendation quality + system performance/cost). human-subject evaluation is acknowledged as future work in chapter 8 (Conclusions). see `docs/PLAN.md` § direction change (2026-05-13) for context. the original content below is kept for historical reference and may be partially revisited if the university structure check requires reintroducing a human-evaluation layer.
+
+---
+
 # bachelor thesis plan
 
 how to position `zalem` as a strong computer science bachelor thesis, what to emphasize, what to avoid, and what alternative thesis directions would be stronger if you want to pivot while still in planning.

@@ -1,0 +1,48 @@
+flowchart LR
+    subgraph IN["inputs"]
+        DS["dataset<br/>shopping-v1.yaml<br/>(25 rows)"]:::data
+        CFG["promptfooconfig.yaml<br/>(9 providers,<br/>defaultTest)"]:::data
+    end
+
+    subgraph RUNNER["runner"]
+        PF["Promptfoo CLI<br/>(promptfoo eval)"]:::run
+        AP["custom provider<br/>advisorProvider.ts<br/>→ Convex action"]:::run
+        PF --> AP
+    end
+
+    subgraph CONVEX["live Convex deployment"]
+        ACT["ai/evals/runOnce<br/>(eval-only action)"]:::sys
+        AGENT["advisor agent<br/>(production code path)"]:::sys
+        CAT[("products,<br/>reviews,<br/>reviewSummaries")]:::sys
+        ACT --> AGENT --> CAT
+    end
+
+    subgraph SCORERS["scorers"]
+        PROG["programmatic:<br/>hasFinalAnswer,<br/>groundedness,<br/>factuality,<br/>reviewThemeFidelity,<br/>toolCallEfficiency"]:::score
+        F1["built-in:<br/>tool-call-f1"]:::score
+        JUDGE["LLM-as-judge<br/>(Claude Haiku 4.5):<br/>completeness,<br/>helpfulness,<br/>tradeoff,<br/>tool-appropriateness,<br/>tone"]:::score
+    end
+
+    subgraph OUT["outputs"]
+        JSON[("results/&lt;ts&gt;.json")]:::out
+        VIEW["promptfoo view<br/>(local web UI)"]:::out
+        EXP["thesisExport.ts<br/>→ LaTeX tables<br/>+ pareto PDFs"]:::out
+    end
+
+    DS --> PF
+    CFG --> PF
+    AP --> ACT
+    AGENT -.-> PROG
+    AGENT -.-> F1
+    AGENT -.-> JUDGE
+    PROG --> JSON
+    F1 --> JSON
+    JUDGE --> JSON
+    JSON --> VIEW
+    JSON --> EXP
+
+    classDef data fill:#fff5e6,stroke:#cc8844;
+    classDef run fill:#eef5ff,stroke:#5588cc;
+    classDef sys fill:#e8f5e8,stroke:#558855;
+    classDef score fill:#f0e8f5,stroke:#774488;
+    classDef out fill:#fbf2e6,stroke:#888844;

@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant PF as Promptfoo runner
+    participant AP as advisorProvider
+    participant CV as Convex action<br/>ai/evals/runOnce
+    participant AG as advisor agent
+    participant CAT as Convex catalog
+    participant SC as scorers
+    participant JG as judge model<br/>(Haiku 4.5)
+
+    PF->>AP: callApi(row vars, provider config)
+    AP->>CV: action({ question, productId, config })
+    CV->>CAT: snapshot(price, rating per productId)
+    CV->>AG: invoke with config + context
+    AG->>CAT: tool calls (getProductDetails, ...)
+    CAT-->>AG: results
+    AG-->>CV: parts, tokenUsage, timings, finishReason
+    CV-->>AP: { output, tokenUsage, metadata }
+    AP-->>PF: result blob
+
+    PF->>SC: programmatic + tool-call-f1
+    SC-->>PF: per-assertion scores
+    PF->>JG: model-graded rubrics<br/>(question, output)
+    JG-->>PF: rubric scores
+    PF->>PF: write row × provider cell to JSON

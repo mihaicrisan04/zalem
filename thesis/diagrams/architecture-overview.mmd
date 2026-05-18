@@ -1,0 +1,30 @@
+flowchart LR
+  subgraph Client["Client (Next.js / React 19)"]
+    UI["Store UI<br/>pages, ProductCard,<br/>filters, cart"]
+    Tracker["Behavior Hooks<br/>dwell, scroll, viewport"]
+    Advisor["Advisor Sidebar<br/>chips, chat"]
+  end
+
+  subgraph Convex["Convex Backend"]
+    Q["Queries<br/>products, recs, reviews"]
+    M["Mutations<br/>cart, favorites, orders"]
+    A["Actions<br/>advisor, summaries, eval"]
+    Cron["Crons<br/>co-occurrence, trending"]
+    DB[("Convex DB")]
+  end
+
+  subgraph External["External Services"]
+    Clerk["Clerk Auth"]
+    LLM["OpenRouter<br/>gpt-oss-120b · Flash-Lite"]
+  end
+
+  UI --> Q
+  UI --> M
+  Tracker --> M
+  Advisor --> A
+  Q --> DB
+  M --> DB
+  A --> DB
+  A --> LLM
+  Cron --> DB
+  Client -. auth .-> Clerk

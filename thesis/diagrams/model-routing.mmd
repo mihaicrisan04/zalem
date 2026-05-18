@@ -1,0 +1,24 @@
+flowchart TB
+    Q["incoming query"]:::q
+
+    Q --> T{"query type"}:::dec
+
+    T -->|"review_summary<br/>(batch)"| FL1["Flash-Lite<br/>no reasoning"]:::fl
+    T -->|"quick_qa"| FL2["Flash-Lite<br/>minimal"]:::fl
+    T -->|"homepage_hero"| FL3["Flash-Lite<br/>minimal"]:::fl
+    T -->|"comparison"| OSS1["gpt-oss-120b<br/>medium reasoning"]:::oss
+    T -->|"personalized_advice"| OSS2["gpt-oss-120b<br/>medium reasoning"]:::oss
+    T -->|"conversational<br/>(multi-turn)"| OSS3["gpt-oss-120b<br/>medium reasoning"]:::oss
+
+    FL1 --> ORF["OpenRouter<br/>(provider auto)"]:::or
+    FL2 --> ORF
+    FL3 --> ORF
+    OSS1 --> ORC["OpenRouter<br/>provider order:<br/>cerebras → groq"]:::or
+    OSS2 --> ORC
+    OSS3 --> ORC
+
+    classDef q fill:#fff5e6,stroke:#cc8844;
+    classDef dec fill:#fff5e6,stroke:#cc8844;
+    classDef fl fill:#eef5ff,stroke:#5588cc;
+    classDef oss fill:#e8f5e8,stroke:#558855;
+    classDef or fill:#f0e8f5,stroke:#774488;

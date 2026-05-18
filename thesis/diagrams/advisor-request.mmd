@@ -1,0 +1,31 @@
+sequenceDiagram
+    actor U as User
+    participant UI as Advisor surface<br/>(web client)
+    participant H as readiness +<br/>behavior hooks
+    participant AC as Convex action<br/>requestAdvice
+    participant AG as advisor agent<br/>(@convex-dev/agent)
+    participant T as agent tools<br/>(catalog, reviews,<br/>recommendations)
+    participant LLM as LLM<br/>(via OpenRouter)
+    participant V as validation layer
+    participant CAT as Convex catalog
+
+    U->>UI: click breathing button or chip
+    UI->>H: read aggregated context<br/>(recent products, cart,<br/>favorites, behavior)
+    H-->>UI: context payload
+    UI->>AC: requestAdvice({ question, context })
+    AC->>AG: invoke (model routed<br/>per query type)
+    loop tool-calling steps
+        AG->>LLM: prompt + tool schemas
+        LLM-->>AG: tool calls or final
+        AG->>T: execute tool
+        T->>CAT: read catalog
+        CAT-->>T: rows
+        T-->>AG: tool result
+    end
+    AG-->>AC: { parts, productIds, rationale }
+    AC->>V: validate productIds,<br/>strip prices/specs,<br/>check themes
+    V-->>AC: cleaned payload
+    AC-->>UI: { productIds, rationale }
+    UI->>CAT: hydrate productIds<br/>(reactive query)
+    CAT-->>UI: live product cards
+    UI-->>U: render cards + rationale

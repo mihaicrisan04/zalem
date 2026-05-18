@@ -1,0 +1,20 @@
+flowchart LR
+    LLM["LLM raw response<br/>(structured JSON +<br/>free-text rationale)"]:::src
+
+    LLM --> V1["1. productId existence check<br/>against live Convex catalog"]:::val
+    V1 --> V2["2. price / spec stripping<br/>from free-text rationale"]:::val
+    V2 --> V3["3. theme verification<br/>(review summaries only)<br/>against review embeddings"]:::val
+
+    V3 --> H["client hydration<br/>(price, stock, rating,<br/>image from catalog)"]:::hyd
+
+    H --> UI["rendered UI"]:::ui
+
+    V1 -.->|"unknown id"| DROP["drop reference"]:::drop
+    V2 -.->|"price/spec found"| STRIP["strip from text"]:::drop
+    V3 -.->|"unverifiable theme"| DROP2["drop theme"]:::drop
+
+    classDef src fill:#fff5e6,stroke:#cc8844;
+    classDef val fill:#eef5ff,stroke:#5588cc;
+    classDef hyd fill:#e8f5e8,stroke:#558855;
+    classDef ui fill:#f0e8f5,stroke:#774488;
+    classDef drop fill:#fbeaea,stroke:#aa4444;

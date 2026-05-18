@@ -4,7 +4,7 @@
 This chapter describes how the prototype is built. It opens with
 the requirements and the overall architecture, walks through each
 subsystem in the order data flows, and closes with the evaluation
-harness and the measured results across a nine-configuration
+harness and the measured results across an eight-configuration
 sweep. Code excerpts are short and chosen to show a specific
 implementation choice; the full source is in the repository.
 Cross-references back to Chapter~\ref{chap:foundations} appear
@@ -260,14 +260,26 @@ exponential-decay formula with $\lambda \approx 0.0495$
 \texttt{trendingScore} field, so the slot is one indexed read at
 query time. Personalized recommendations follow a switching
 hybrid keyed on user purchase count, as formalized in
-Section~\ref{sec:found-classical}: cold users fall through to
-trending, lukewarm users get content similarity to favorites
-plus category trending, warm users get a blend of co-occurrence
-and content similarity. Signals are combined using Reciprocal
-Rank Fusion with $k = 60$, followed by Maximal Marginal
-Relevance at $\lambda = 0.7$ to force diversity. The full
-hybrid is about 80 lines of straight-line code; no library is
-involved.
+Section~\ref{sec:found-classical}. Signals are combined using
+Reciprocal Rank Fusion with $k = 60$, followed by Maximal
+Marginal Relevance at $\lambda = 0.7$ to force diversity. The
+full hybrid is about 80 lines of straight-line code; no library
+is involved.
+
+\begin{calloutbox}{Switching-Hybrid Algorithm Selection}
+The algorithm chosen for the personalized slot depends on the
+depth of the user's purchase history:
+\begin{itemize}
+  \item \textbf{Cold user} (no purchases): falls through to
+    trending. The cold-start problem has no signal-based answer.
+  \item \textbf{Lukewarm user} (1--3 purchases): content
+    similarity to favorited items, blended with category-scoped
+    trending.
+  \item \textbf{Warm user} ($\ge 4$ purchases):
+    Jaccard co-occurrence against the user's purchase history,
+    blended with content similarity over favorites.
+\end{itemize}
+\end{calloutbox}
 
 Figure~\ref{fig:two-stage-pipeline} shows the two-stage pipeline,
 connecting the candidate generator described above to the LLM
@@ -276,40 +288,55 @@ rerank step in Section~\ref{sec:sys-llm}.
 \begin{figure}[ht]
   \centering
   \begin{tikzpicture}[
-      box/.style={draw, rounded corners=2pt, align=center, minimum
-      width=2.4cm, minimum height=0.95cm, font=\small},
+      box/.style={draw, rounded corners=2pt, align=center,
+        minimum width=1.9cm, minimum height=0.9cm, font=\small},
       stage/.style={draw, thick, rounded corners=4pt, align=center,
-        minimum width=4.2cm, minimum height=2.4cm,
-      font=\small\bfseries, fill=gray!8},
+        minimum width=2.5cm, minimum height=1.8cm,
+        font=\small\bfseries, fill=gray!8},
+      catalog/.style={draw, rounded corners=3pt, align=center,
+        minimum height=0.9cm, minimum width=11cm,
+        font=\small\bfseries, fill=blue!6},
       arr/.style={-{Stealth[length=2mm]}, thick},
-      note/.style={font=\footnotesize\itshape, align=center}
+      darr/.style={-{Stealth[length=2mm]}, thick, dashed, gray!70!black},
+      note/.style={font=\footnotesize\itshape, align=center, text=gray!60!black},
+      lbl/.style={font=\footnotesize\itshape, fill=white, inner sep=1.5pt}
     ]
+    % linear data flow (bottom row)
     \node[box] (query) {Slot request \\ or user query};
-    \node[stage, right=1.0cm of query] (s1) {Stage~1 \\[3pt]
-      \normalfont\small Classical \\ \normalfont\small candidate
-    \\ \normalfont\small generation};
-    \node[stage, right=1.0cm of s1] (s2) {Stage~2 \\[3pt]
-    \normalfont\small LLM rerank \\ \normalfont\small and explain};
-    \node[box, right=1.0cm of s2] (out) {productIds \\ + rationale};
-    \node[box, below=0.9cm of out] (hyd) {Client \\ hydration};
-    \node[box, left=1.0cm of hyd] (db) {Convex \\ catalog};
+    \node[stage, right=0.4cm of query] (s1) {Stage~1 \\[2pt]
+      \normalfont\small Classical \\ \normalfont\small candidates};
+    \node[stage, right=0.4cm of s1] (s2) {Stage~2 \\[2pt]
+      \normalfont\small LLM rerank \\ \normalfont\small + explain};
+    \node[box, right=0.4cm of s2] (out) {productIds \\ + rationale};
+    \node[box, right=0.4cm of out] (hyd) {Client \\ hydration};
 
+    % catalog above, spanning
+    \node[catalog, above=1.4cm of s2] (db) {Convex catalog};
+
+    % flow arrows
     \draw[arr] (query) -- (s1);
     \draw[arr] (s1) -- node[above, font=\footnotesize] {top-$N$} (s2);
     \draw[arr] (s2) -- (out);
     \draw[arr] (out) -- (hyd);
-    \draw[arr] (db) -- (hyd);
-    \draw[arr, dashed] (db.north) |- ([yshift=-0.15cm]s1.south);
 
-    \node[note, below=0.55cm of s1] {Convex query \\ p95 $<$ 50\,ms};
-    \node[note, below=0.55cm of s2] {LLM call, \\ candidate-bounded};
+    % catalog lookups: one into Stage 1, one into Client hydration
+    \draw[darr] (db.south -| s1.north) -- (s1.north)
+      node[lbl, midway] {read};
+    \draw[darr] (db.south -| hyd.north) -- (hyd.north)
+      node[lbl, midway] {hydrate};
+
+    % per-stage notes
+    \node[note, below=0.4cm of s1] {Convex query \\ p95 $<$ 50\,ms};
+    \node[note, below=0.4cm of s2] {LLM call, \\ candidate-bounded};
   \end{tikzpicture}
-  \caption{Two-stage recommendation pipeline. Stage~1 reads the
-    catalog and returns a small candidate set. Stage~2 invokes
-    the LLM only over that set and emits identifiers plus a
-    rationale. Live product fields are hydrated on the client.
-    The dashed arrow indicates that Stage~1 reads from the Convex
-  catalog; the LLM never reads the catalog directly.}
+  \caption{Two-stage recommendation pipeline. The classical
+    Stage~1 reads candidate identifiers from the Convex catalog
+    under a tight latency budget. Stage~2 invokes the LLM over
+    that bounded candidate set only and emits identifiers plus
+    a free-text rationale --- it never reads the catalog
+    directly. The client then hydrates the cited identifiers
+    against the live catalog before rendering, so every field
+    the user sees comes from the catalog and not from the LLM.}
   \label{fig:two-stage-pipeline}
 \end{figure}
 
@@ -426,6 +453,13 @@ map resolves a query type to a model identifier, and for gpt-oss
 models, provider routing prefers Cerebras then Groq for
 throughput.
 
+\begin{calloutbox}{Model Routing by Query Type}
+\textbf{Reasoning tier} (\texttt{gpt-oss-120b}, Cerebras with
+Groq fallback): conversational, comparison, personalized advice.
+\textbf{Batch tier} (\texttt{gemini-3.1-flash-lite-preview},
+reasoning disabled): review summary, quick Q\&A, homepage hero.
+\end{calloutbox}
+
 \begin{listing}[ht]
 \begin{minted}{typescript}
 const FLASH = "openai/gpt-oss-120b";
@@ -502,7 +536,7 @@ advisor request.
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=0.92\linewidth]{advisor-request.pdf}
+  \includegraphics[width=\linewidth]{advisor-request.pdf}
   \caption{End-to-end advisor request. The user click is the
     only entry point. The client assembles context from the
     readiness and behavior hooks. The Convex action invokes the
@@ -520,14 +554,19 @@ advisor request.
 Per-product review summaries serve two surfaces: the product
 detail page and the advisor. The summary is generated offline,
 batch-style, against the actual review corpus. No summary is
-ever generated on a user-facing critical path. The structure is
-fixed: \emph{what buyers like}, \emph{common complaints},
-\emph{best for}, and \emph{conflicting opinions} (explicit
-disagreement pairs, each annotated with per-side counts). The
-conflict-surfacing structure is the anti-Rufus design choice
-from Chapter~\ref{chap:background}: ``45 reviews praise battery
-life, 12 reviews call it disappointing'' is more useful than
-``most users are happy with the battery''.
+ever generated on a user-facing critical path. The conflict-
+surfacing structure is the anti-Rufus design choice from
+Chapter~\ref{chap:background}: ``45 reviews praise battery life,
+12 reviews call it disappointing'' is more useful than ``most
+users are happy with the battery''.
+
+\begin{calloutbox}{Review-Summary Schema}
+Four fields per summary: \textbf{what buyers like} (themes with
+counts and quotes), \textbf{common complaints} (same structure,
+opposite sentiment), \textbf{best for} (buyer cohorts), and
+\textbf{conflicting opinions} (disagreement pairs with per-side
+counts).
+\end{calloutbox}
 
 The generation flow is a daily Convex cron that finds products
 whose summary is stale (missing, or whose review count differs
@@ -582,6 +621,23 @@ action that wraps the agent invocation. The three validators run
 sequentially as formalized in
 Section~\ref{sec:found-grounding}. Figure~\ref{fig:validation-pipeline}
 shows the pipeline.
+
+\begin{calloutbox}{Three Sequential Validation Checks}
+\begin{enumerate}
+  \item \textbf{Identifier-existence.} Every cited productId is
+    intersected with the live catalog. Identifiers that do not
+    exist are stripped silently before the action returns.
+  \item \textbf{Claim stripping.} A regex pass removes
+    currency-prefixed numbers and unit-suffixed numbers
+    (\texttt{GB}, \texttt{Hz}, \texttt{mAh}) from the free-text
+    rationale. The system prompt already forbids these claims;
+    this is the second-line defense.
+  \item \textbf{Theme fidelity.} For review-summary outputs,
+    each claimed theme is embedded and matched against the
+    source review corpus by cosine similarity. Themes below the
+    threshold $\tau$ are dropped before persistence.
+\end{enumerate}
+\end{calloutbox}
 
 \begin{figure}[ht]
   \centering
@@ -739,35 +795,36 @@ against new questions.
   \label{tab:eval-dataset-categories}
 \end{table}
 
-\paragraph{Configuration sweep.} Nine configurations are
+\paragraph{Configuration sweep.} Eight configurations are
 evaluated in the canonical sweep
 (Table~\ref{tab:eval-sweep-configs}). The sweep varies four axes:
 model identifier, reasoning effort, step budget, and prompt
 variant. Promptfoo runs the cartesian product
-($9 \times 25 = 225$ advisor invocations).
+($8 \times 25 = 200$ advisor invocations).
 
 \begin{table}[ht]
   \centering
   \footnotesize
-  \begin{tabular}{|l|l|c|c|l|}
-    \hline
-    \textbf{Label} & \textbf{Model} & \textbf{Reasoning} &
-    \textbf{Steps} & \textbf{Prompt variant} \\
-    \hline
-    baseline-flash-lite      & gemini-3.1-flash-lite-preview & n/a    & 12 & current \\
-    gpt-oss-120b-low         & gpt-oss-120b                  & low    & 12 & current \\
-    gpt-oss-120b-medium      & gpt-oss-120b                  & medium & 12 & current \\
-    gpt-oss-120b-high        & gpt-oss-120b                  & high   & 12 & current \\
-    gpt-oss-20b-low          & gpt-oss-20b                   & low    & 12 & current \\
-    gpt-oss-20b-medium       & gpt-oss-20b                   & medium & 12 & current \\
-    oss-120b-tight           & gpt-oss-120b                  & medium & 8  & ``be efficient'' \\
-    oss-120b-loose           & gpt-oss-120b                  & medium & 15 & current \\
-    oss-120b-no-fewshot      & gpt-oss-120b                  & medium & 12 & no few-shot \\
-    \hline
-  \end{tabular}
+  \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|l|l|c|c|l|}
+      \hline
+      \textbf{Label} & \textbf{Model} & \textbf{Reasoning} &
+      \textbf{Steps} & \textbf{Prompt variant} \\
+      \hline
+      baseline-flash-lite      & gemini-3.1-flash-lite-preview & n/a    & 12 & current \\
+      gpt-oss-120b-low         & gpt-oss-120b                  & low    & 12 & current \\
+      gpt-oss-120b-medium      & gpt-oss-120b                  & medium & 12 & current \\
+      gpt-oss-120b-high        & gpt-oss-120b                  & high   & 12 & current \\
+      gpt-oss-20b-medium       & gpt-oss-20b                   & medium & 12 & current \\
+      oss-120b-tight           & gpt-oss-120b                  & medium & 8  & ``be efficient'' \\
+      oss-120b-loose           & gpt-oss-120b                  & medium & 15 & current \\
+      oss-120b-no-fewshot      & gpt-oss-120b                  & medium & 12 & no few-shot \\
+      \hline
+    \end{tabular}%
+  }
   \caption{Configuration sweep for the canonical evaluation.
     Each configuration is run against all 25 dataset rows,
-    producing 225 advisor invocations and approximately 1\,125
+    producing 200 advisor invocations and approximately 1\,000
   LLM-judge calls.}
   \label{tab:eval-sweep-configs}
 \end{table}
@@ -823,8 +880,11 @@ Section~\ref{sec:found-eval}.
 \section{Results}
 \label{sec:sys-results}
 
-This section reports the measured findings from the canonical
-sweep. The composite score combines judge quality (weight 0.30),
+The headline finding is short: cheaper and more conservative
+configurations win on composite; aggressive-reasoning ones lose.
+The rest of the section reports the numbers.
+
+The composite score combines judge quality (weight 0.30),
 programmatic correctness (0.25), per-query dollar cost (0.20),
 p95 latency (0.15), and tool-step efficiency (0.10); cost and
 latency enter with negative weight and a per-dimension normalizer
@@ -840,7 +900,9 @@ Table~\ref{tab:results-ranked-configs} reports the ranking.
 \begin{table}[ht]
   \centering
   \footnotesize
-  \input{figures/eval-ranked-configs}
+  \resizebox{\textwidth}{!}{%
+    \input{figures/eval-ranked-configs}%
+  }
   \caption{Configurations ranked by composite score. Each row is
     a single configuration evaluated against the 25 rows of
   \texttt{shopping-v1.yaml}.}
@@ -918,7 +980,9 @@ enough rows to support a breakdown.
 \begin{table}[ht]
   \centering
   \footnotesize
-  \input{figures/eval-per-category}
+  \resizebox{\textwidth}{!}{%
+    \input{figures/eval-per-category}%
+  }
   \caption{Mean programmatic correctness per category, per
     configuration. Values are bounded in $[0,1]$, higher is
   better.}
@@ -992,31 +1056,36 @@ ordinal is what argues the finding is not an artifact of either.
 \subsection{Summary and Validity}
 \label{subsec:results-summary}
 
-The evidence supports the central claim on two of three axes:
-every configuration completes well under the
-consumer-tolerance latency bound and at well under one cent per
-query, with grounded output across the sweep
-(\texttt{groundedness} mean $\ge 0.89$). The harness adds a
-finding the claim did not anticipate: a non-trivial design
-space exists \emph{within} those bounds where the right choice
-is cheaper and less computationally aggressive rather than the
-one with the highest raw quality. Higher reasoning effort and
-looser step budgets are uniformly worse on composite, which
-disproves the implicit ``more reasoning is always better''
-assumption. Three validity classes qualify these numbers.
-\emph{Internal}: seeded reviews are AI-generated, and residual
-judge bias remains despite the cross-family judge choice.
-\emph{Construct}: groundedness verifies existence not relevance,
-factuality verifies values not semantic correctness, theme
-fidelity verifies embedding match not salience. The composite
-is reported alongside the pareto fronts, so disagreement with
-the weights is recoverable. \emph{External}: 200 products on a
-development-tier deployment do not predict 10\,000-product
-production load, and the 25-row dataset cannot cover every
-failure mode. The methodological finding (programmatic and
-cross-family judges agree on ordinal) argues the harness
-produces a robust ranking even when individual scorers are
-imperfect.
+The evidence supports the central claim on two of three axes.
+Every configuration completes well under the consumer-tolerance
+latency bound and at well under one cent per query, with
+grounded output across the sweep (\texttt{groundedness} mean
+$\ge 0.89$). The harness adds a finding the claim did not
+anticipate: a non-trivial design space exists \emph{within}
+those bounds where the right choice is cheaper and less
+computationally aggressive rather than the one with the highest
+raw quality. Higher reasoning effort and looser step budgets
+are uniformly worse on composite, which disproves the implicit
+``more reasoning is always better'' assumption.
+
+Three validity classes qualify these numbers.
+
+\textbf{Internal validity.} Seeded reviews are AI-generated, and
+residual judge bias remains despite the cross-family judge
+choice.
+
+\textbf{Construct validity.} Groundedness verifies existence,
+not relevance. Factuality verifies values, not semantic
+correctness. Theme fidelity verifies embedding match, not
+salience. The composite is reported alongside the pareto fronts,
+so disagreement with the weights is recoverable.
+
+\textbf{External validity.} 200 products on a development-tier
+deployment do not predict 10\,000-product production load, and
+the 25-row dataset cannot cover every failure mode. The
+methodological finding --- programmatic and cross-family judges
+agree on ordinal --- argues that the harness produces a robust
+ranking even when individual scorers are imperfect.
 
 \section{Engineering Challenges}
 \label{sec:sys-engineering}
@@ -1031,23 +1100,23 @@ length in \texttt{docs/lessons-learned.md}.
     violations are caught by strict mode and the React Compiler.
   \item \textbf{Hydration mismatches with Base UI.} Components
     are gated by a \texttt{useMounted} hook implemented with
-    \texttt{useSyncExternalStore} (\texttt{getServerSnapshot:
-      () => false}), collapsing the typical two-render pattern
-    into one.
+    \texttt{useSyncExternalStore}, returning \texttt{false} from
+    the server snapshot to collapse the typical two-render
+    pattern into one.
   \item \textbf{Convex action abort.}
     \texttt{useAction} does not support abort signals; the
     advisor stop button clears the UI loading state but the
     server-side action runs to completion (cost acknowledged in
     the per-turn token figures).
-  \item \textbf{\texttt{useUIMessages} typing.}
-    \texttt{UIMessagesQueryResult<typeof
-      api.ai.queries.listMessages>} derives the message type
-    from the source of truth instead of duplicating it.
+  \item \textbf{\texttt{useUIMessages} typing.} The message type
+    is derived from \texttt{api.ai.queries.listMessages} via
+    \texttt{UIMessagesQueryResult<typeof ...>}, avoiding a hand-
+    duplicated type.
   \item \textbf{\texttt{content-visibility} grid
-    virtualization.} CSS-native
-    \texttt{content-visibility: auto} with
-    \texttt{contain-intrinsic-size} for 50--150-card grids,
-    avoiding any JavaScript virtualizer.
+    virtualization.} The CSS-native
+    \texttt{content-visibility: auto} property paired with
+    \texttt{contain-intrinsic-size} virtualizes 50--150-card
+    grids without a JavaScript library.
   \item \textbf{100~ms tracking-hook intervals.} Per-element
     intervals are cheap on desktop hardware; potentially
     measurable on low-end mobile.

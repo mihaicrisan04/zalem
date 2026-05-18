@@ -372,6 +372,33 @@ three distinct conclusions:
 
 ---
 
+## 2026-05-10 · note: most rows in the Promptfoo UI show "insufficient credits" errors
+
+opening the Promptfoo UI on the latest sweep (`results/latest.json`) shows
+that the majority of row-runs failed with OpenRouter `insufficient credits`
+API errors rather than completing. this is the same root cause flagged in
+finding #3 § caveats (1) — OpenRouter rejected calls whose `max_tokens`
+ceiling exceeded the available credit balance — but visible at much higher
+row coverage than originally estimated. the aggregate numbers in finding #3
+should therefore be treated as **directional, not final** until a clean
+re-run is done.
+
+deferred: re-run the full sweep once OpenRouter credits are topped up,
+with the `maxOutputTokens: 2048` cap already in place
+(`packages/backend/convex/ai/evals/runOnce.ts:199`) and ideally with the
+expanded model matrix (gemini-3-flash, claude-haiku-4-5, gpt-5-mini)
+called for in finding #3 § next. no scorer or harness changes needed —
+just re-execute `bun --filter @zalem/eval eval && bun --filter @zalem/eval eval:export`
+and the chapter 7 figures will refresh.
+
+cost note (carried over from chat): the Haiku judge accounted for ~50% of
+the total eval cost (~$1.50 of ~$3.00) despite judging only short final
+outputs, because rubric calls multiply per-config × per-rubric. on small
+datasets the judge dominates spend even when it's the cheapest model in
+the matrix — worth flagging in chapter 6 § "judge selection".
+
+---
+
 ## template for future findings (copy-paste)
 
 ```markdown

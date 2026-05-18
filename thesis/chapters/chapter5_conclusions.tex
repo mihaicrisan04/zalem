@@ -23,23 +23,22 @@ an AI-assisted comparison flow with no winner verdict, and an
 output-validation layer that strips fabricable claims from free
 text and checks every cited identifier against the live catalog.
 A custom evaluation harness sits alongside the prototype, scoring
-configurations on grounded quality, latency, and cost across a
-nine-configuration canonical sweep.
+configurations on grounded quality, latency, and cost across an
+eight-configuration canonical sweep.
 
 The measured evidence supports the central claim on two of three
-axes. Every reported configuration completes well under the
-consumer-tolerance latency bound (p95 below 8.1~s for the slowest
-configuration; below 5~s for the seven non-worst configurations)
-and at well under one cent per query, with grounded output
-across the sweep (\texttt{groundedness} mean $\ge 0.89$ for every
-configuration). The harness adds a finding the claim did not
-anticipate: there is a real design space within those bounds
-where the right choice is the cheaper, less computationally
-aggressive configuration rather than the one with the highest
-raw quality. Higher reasoning effort and looser step budgets are
-uniformly worse on composite, which disproves the implicit
-``more reasoning is always better'' assumption that production
-code tends to bake in.
+axes. Seven of eight configurations stay within a p95 latency of
+7.5~s; only \texttt{gpt-oss-120b} at high reasoning effort
+inflates to 12.1~s. Every configuration costs well under one cent
+per query and produces grounded output across the sweep
+(\texttt{groundedness} mean $\ge 0.89$ for every configuration).
+The harness adds a finding the claim did not anticipate: there is
+a real design space within those bounds where the right choice is
+the cheaper, less computationally aggressive configuration rather
+than the one with the highest raw quality. Higher reasoning
+effort and looser step budgets are uniformly worse on composite,
+which disproves the implicit ``more reasoning is always better''
+assumption that production code tends to bake in.
 
 \section{Practical Implications}
 \label{sec:concl-implications}
@@ -78,13 +77,10 @@ results.
 The biggest scope limits are the absence of a human-subject
 evaluation, the absence of an offline-IR comparison for the
 classical recommendation algorithms, the seeded-catalog scale
-(about 200 products, 4\,836 AI-generated reviews), the
-single-deployment replication horizon, and the OpenRouter
-\texttt{insufficient\_credits} caveat that biases the row
-coverage of long-output configurations in the canonical sweep.
-The thesis does not claim to address any of these; it claims
-that the engineering work it does report holds up under
-measurement within those limits.
+(about 200 products, 4\,836 AI-generated reviews), and the
+single-deployment replication horizon. The thesis does not claim
+to address any of these; it claims that the engineering work it
+does report holds up under measurement within those limits.
 
 \section{Future Work}
 \label{sec:concl-future}

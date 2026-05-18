@@ -15,6 +15,38 @@
 
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, fit, backgrounds}
+\usepackage{booktabs}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\pgfplotsset{table/search path={figures/}}
+\usepackage[newfloat]{minted}
+\setminted{
+  fontsize=\footnotesize,
+  frame=single,
+  framesep=4pt,
+  breaklines=true,
+  tabsize=2,
+  bgcolor=gray!3
+}
+\usepackage[most]{tcolorbox}
+\newtcolorbox{calloutbox}[1]{
+  colback=blue!3, colframe=blue!50!black, fonttitle=\bfseries,
+  title=#1, boxrule=0.6pt, arc=2pt, left=6pt, right=6pt,
+  top=4pt, bottom=4pt
+}
+
+% give TeX extra stretch on overfull lines so inline code spans
+% near the right margin do not poke past the text block.
+\setlength{\emergencystretch}{3em}
+
+% words TeX keeps breaking at awkward positions in body text — keep them whole
+\hyphenation{deliberately discloses}
+\graphicspath{{figures/}}
 
 \lstset{
   basicstyle=\ttfamily\small,
@@ -30,55 +62,70 @@
 \begin{document}
 
 \specialization{Computer Science}
-\title{Design and Evaluation of a Trustworthy AI Shopping Assistant
-for E-Commerce}
-\author{Mihai}
-\supervisor{[Title and name of supervisor]}
+\title{A Hybrid LLM-Augmented Shopping Recommender
+with Grounded Output}
+\author{Mihai Crisan}
+\supervisor{Lect. Adriana Guran}
 
 \maketitle
 
-\newpage
-\thispagestyle{empty}
-\mbox{}
+% Romanian-language title page (mirrors the English one above, hand-built
+% because the style package only emits one title page per build).
+\begin{titlepage}
+  \begin{center}
+    {\Large\textbf{
+      UNIVERSITATEA BABE\c S-BOLYAI CLUJ-NAPOCA \\
+      FACULTATEA DE MATEMATIC\u A \c SI INFORMATIC\u A \\
+      SPECIALIZAREA INFORMATIC\u A ENGLEZ\u A \\
+    }}
+  \end{center}
+
+  \vspace{10em}
+
+  \begin{center}
+    {\Huge\textbf{LUCRARE DE LICEN\c T\u A}}
+  \end{center}
+
+  \vspace{3em}
+
+  \begin{center}
+    {\huge\textbf{Un Sistem Hibrid de Recomandare pentru
+    Cump\u ar\u aturi cu Asistent LLM \c si R\u aspunsuri
+    Ancorate \^in Catalog}}
+  \end{center}
+
+  \vspace{10em}
+
+  \begin{flushleft}
+    {\Large\textbf{Conduc\u ator \c stiin\c tific \\ Lect. Adriana Guran}}
+  \end{flushleft}
+
+  \vspace{3em}
+
+  \begin{flushright}
+    {\Large\textit{Absolvent \\ Mihai Crisan}}
+  \end{flushright}
+
+  \vfill
+
+  \begin{center}
+    {\Large{\the\year}}
+  \end{center}
+\end{titlepage}
+
 \newpage
 \pagenumbering{roman}
 
-\cleardoublepage
 \textbf{\Large ABSTRACT}
 \vspace{0.5cm}
 \hrule
 \vspace{0.5cm}
 
-Online shopping systems increasingly integrate large language models
-to support product discovery and decision-making. However, many AI
-shopping assistants are intrusive, poorly timed, or perceived as
-upselling tools rather than genuine advisors. This thesis presents
-the design, implementation, and evaluation of a reactive-first AI
-shopping advisor for e-commerce. The proposed system combines a
-classical recommendation layer based on co-occurrence, content
-similarity, and personalized ranking with a behavior-aware readiness
-model and an LLM-based explanation layer. Instead of proactively
-interrupting the user, the system uses lightweight browsing signals
-to infer when help may be useful and only generates AI advice when
-the user explicitly engages.
+This thesis designs, implements, and evaluates a hybrid LLM-augmented shopping recommender with grounded output. The work is motivated by the failure modes documented in the largest production AI shopping assistant: Amazon's Rufus is credited with roughly \$12 billion of incremental revenue in 2025, yet independent investigations report 32\% recommendation accuracy, 28\% price hallucination, 83\% self-serving recommendations, and routine fabrication of review themes. The thesis argues that these failures are not intrinsic to the AI-shopping problem but follow from specific integration choices, and that a different system can make those choices differently.
 
-The system is implemented as a full-stack prototype with a simulated
-e-commerce store, a seeded product and order dataset, a
-recommendation backend, and an interactive advisor interface.
-Evaluation is performed at three levels: recommendation quality,
-system performance, and user perception. Offline recommender metrics
-are used to assess the baseline recommendation layer, while latency
-and token-based cost measurements capture the efficiency of the
-AI-assisted pipeline. A structured user evaluation compares the
-baseline shopping experience with the reactive-first AI-assisted
-version in terms of perceived usefulness, trust, intrusiveness, and
-purchase confidence.
+The prototype combines three structural decisions: a reactive-first interaction model where behavior signals prepare context but the user always initiates an LLM call, a two-stage recommendation pipeline where classical algorithms generate candidates and the LLM only re-ranks and explains, and a hydration-over-generation principle where the LLM emits product identifiers, the client renders live catalog data, and an output-validation layer verifies every cited identifier, strips factual claims from free text, and checks review themes against the source corpus.
 
-The thesis aims to show that hybrid architectures can deliver useful
-and explainable shopping assistance while avoiding the drawbacks of
-overly proactive AI interaction. The results contribute practical
-guidance for building trustworthy, non-intrusive AI assistants in
-consumer-facing systems.
+A custom evaluation harness scores grounded quality, latency, and cost across an eight-configuration sweep, combining deterministic shopping-domain scorers with cross-family LLM-judge rubrics. The harness produces a pareto front on cost-quality and latency-quality plus a composite ranking that defends the shipped configuration on measured evidence; the best-composite cell costs \$0.0003 per query at 4.2~s p95 latency, with grounded output across the entire sweep.
 
 \tableofcontents
 
@@ -87,11 +134,9 @@ consumer-facing systems.
 
 \input{chapters/chapter1_introduction}
 \input{chapters/chapter2_background}
-\input{chapters/chapter3_problem}
-\input{chapters/chapter4_design}
-\input{chapters/chapter5_implementation}
-\input{chapters/chapter6_evaluation}
-\input{chapters/chapter7_conclusions}
+\input{chapters/chapter3_foundations}
+\input{chapters/chapter4_system}
+\input{chapters/chapter5_conclusions}
 
 \bibliography{references}
 

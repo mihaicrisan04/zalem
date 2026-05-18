@@ -1,0 +1,23 @@
+{
+  "theme": "neutral",
+  "themeVariables": {
+    "fontFamily": "Palatino, 'Palatino Linotype', 'URW Palladio L', Georgia, serif",
+    "fontSize": "14px",
+    "primaryColor": "#f4efe6",
+    "primaryTextColor": "#222",
+    "primaryBorderColor": "#444",
+    "lineColor": "#444",
+    "secondaryColor": "#e9e2d3",
+    "tertiaryColor": "#fbf9f4"
+  },
+  "flowchart": {
+    "curve": "basis",
+    "nodeSpacing": 40,
+    "rankSpacing": 50,
+    "padding": 8
+  },
+  "sequence": {
+    "actorMargin": 60,
+    "boxMargin": 8
+  }
+}

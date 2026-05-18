@@ -1,4 +1,4 @@
-\chapter{Hybrid Recommendation with Grounded LLM Assistance}
+\chapter{Concepts}
 \label{chap:foundations}
 
 This chapter sets out the building blocks the prototype uses.
@@ -42,54 +42,72 @@ and the LLM as a writer over those candidates.
 
 Four formal definitions support the classical layer.
 
-\paragraph{Jaccard similarity.} For two finite sets $A$ and $B$ the
-Jaccard coefficient is
+\paragraph{Jaccard similarity.} Jaccard measures how much two
+sets overlap, normalized by their combined size --- the share of
+elements they share. For two finite sets $A$ and $B$,
 \[
   J(A, B) \;=\; \frac{|A \cap B|}{|A \cup B|},
 \]
 with $J(\emptyset, \emptyset) := 0$ by convention. The coefficient
-is symmetric, lives in $[0, 1]$, and equals one iff $A = B$. Used
-over the buyer sets of two products $p_a, p_b$ with buyer sets
-$B(p_a), B(p_b)$, it produces a similarity score that is robust
-to popularity differences: a product with many buyers does not
-automatically score high against another just because their
-intersection is large~\cite{ComprehensiveRecSys2024}. The
+is symmetric, lives in $[0, 1]$, and equals one iff $A = B$.
+Applied to the buyer sets of two products $p_a, p_b$, it produces
+a similarity score that is robust to popularity differences: a
+product with many buyers does not automatically score high
+against another just because their intersection is
+large~\cite{ComprehensiveRecSys2024}. The
 prototype uses Jaccard over buyer sets for the ``frequently
 bought together'' slot, with a minimum-support filter requiring
 $|B(p_a) \cap B(p_b)| \ge 2$ for a pair to enter the precomputed
 co-occurrence index. The filter suppresses spurious links from
 incidental co-purchases.
 
-\paragraph{Weighted attribute similarity.} For two products
-$p_a, p_b$ described by attribute vectors over category, tag set,
-brand, price, rating, and the LLM-enriched fields
-\texttt{useCases} and \texttt{goodFor}, the prototype defines a
-weighted similarity score
-\begin{align*}
-  \mathrm{sim}(p_a, p_b) \;=\;&
-    w_1 \cdot \mathbb{1}[\textrm{same category}] +
-    w_2 \cdot J(\textrm{tags}_a, \textrm{tags}_b) \\
-    &{} + w_3 \cdot J(\textrm{useCases}_a, \textrm{useCases}_b) +
-        w_4 \cdot J(\textrm{goodFor}_a, \textrm{goodFor}_b) \\
-    &{} + w_5 \cdot \mathbb{1}[\textrm{same brand}] +
-        w_6 \cdot \mathrm{prox}(\textrm{price}_a, \textrm{price}_b) \\
-    &{} + w_7 \cdot \mathrm{prox}(\textrm{rating}_a, \textrm{rating}_b),
-\end{align*}
-where $\mathbb{1}[\cdot]$ is the indicator, $J(\cdot, \cdot)$ is
-Jaccard over the tag-set arguments, and the proximity function
-$\mathrm{prox}(x, y) = 1 - |x - y|/\max(x, y)$ is one minus the
-normalized absolute difference. The weights $w_1, \dots, w_7$ are
-fixed at $(0.25, 0.20, 0.15, 0.10, 0.10, 0.10, 0.10)$; the choice
-favors category and tag overlap and gives each remaining feature
-an equal small contribution. The \texttt{useCases} and
-\texttt{goodFor} fields carry implicit attributes (a children's
-bicycle is also ``a gift for a 7-year-old'') and are produced
-once per product during seed by a batch LLM call modeled on the
-COSMO knowledge graph~\cite{COSMO}. At query time, $\mathrm{sim}$
-is pure attribute arithmetic over the denormalized product row.
+\paragraph{Weighted attribute similarity.} Two products are
+compared by averaging seven small attribute comparisons, with the
+heaviest weight on the simplest signal (same category) and small
+equal contributions from price, rating, brand, and the
+LLM-enriched fields. Formally,
+\[
+  \mathrm{sim}(p_a, p_b) \;=\; \sum_{i=1}^{7} w_i \cdot f_i(p_a, p_b),
+\]
+where each $f_i$ is one of three primitives --- an indicator
+$\mathbb{1}[\cdot]$ (1 if equal, 0 otherwise), the Jaccard
+coefficient $J(\cdot, \cdot)$ over a tag-set argument, or a
+proximity score $\mathrm{prox}(x, y) = 1 - |x-y|/\max(x,y)$ for
+numeric attributes. Table~\ref{tab:found-sim-weights} lists the
+components and their weights.
 
-\paragraph{Cosine similarity.} For two vectors $u, v \in
-\mathbb{R}^d$ the cosine similarity is
+\begin{table}[ht]
+  \centering
+  \footnotesize
+  \begin{tabular}{lll}
+    \toprule
+    Component & Weight & Primitive \\
+    \midrule
+    same category   & 0.25 & indicator \\
+    tag overlap     & 0.20 & Jaccard \\
+    use-case overlap & 0.15 & Jaccard \\
+    good-for overlap & 0.10 & Jaccard \\
+    same brand      & 0.10 & indicator \\
+    price proximity & 0.10 & proximity \\
+    rating proximity & 0.10 & proximity \\
+    \bottomrule
+  \end{tabular}
+  \caption{Components of the weighted attribute similarity score.
+    Weights sum to 1.0; category and tag overlap dominate.}
+  \label{tab:found-sim-weights}
+\end{table}
+
+The \texttt{useCases} and \texttt{goodFor} fields carry implicit
+attributes (a children's bicycle is also ``a gift for a
+7-year-old'') and are produced once per product during seed by a
+batch LLM call modeled on the COSMO knowledge graph~\cite{COSMO}.
+At query time, $\mathrm{sim}$ is pure attribute arithmetic over
+the denormalized product row.
+
+\paragraph{Cosine similarity.} Cosine treats two vectors as
+directions and measures the angle between them --- values near
+one mean the vectors point the same way, values near zero mean
+they are orthogonal. For two vectors $u, v \in \mathbb{R}^d$,
 \[
   \cos(u, v) \;=\; \frac{\langle u, v \rangle}{\|u\| \cdot \|v\|}.
 \]
@@ -101,10 +119,12 @@ nearest review falls below a threshold $\tau$ are rejected.
 Cosine beats Euclidean distance here because embedding norms
 carry no semantic content.
 
-\paragraph{Exponential time decay.} For a product $p$ with event
-set $E_p$, per-event weight $w(\cdot)$ (a purchase weighs more
-than a view), and event age $\mathrm{age}(e)$ measured in days
-from now, the trending score is
+\paragraph{Exponential time decay.} Trending is a weighted count
+of recent events where each event's contribution shrinks
+exponentially as it ages, so a sale from yesterday counts more
+than a sale from a month ago. For a product $p$ with event set
+$E_p$, per-event weight $w(\cdot)$ (a purchase weighs more than a
+view), and event age $\mathrm{age}(e)$ measured in days from now,
 \[
   \mathrm{trending}(p) \;=\; \sum_{e \in E_p} w(e) \cdot
   \exp\!\big(-\lambda \cdot \mathrm{age}(e)\big).
@@ -371,8 +391,9 @@ same construction yields the pareto front on
 $(\mathrm{lat}, Q)$. The front is the natural object for choosing
 a deployment configuration under explicit budget.
 
-A composite score collapses the vector into a scalar for
-ranking:
+A composite score collapses the measurement vector into a single
+number by taking a weighted average across the five axes, used
+when one ranked list is needed. The prototype defines
 \[
   \mathrm{composite}(c) \;=\;
   0.30 \cdot Q(c) +

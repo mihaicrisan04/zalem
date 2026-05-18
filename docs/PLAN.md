@@ -33,6 +33,38 @@ UI-first approach: design the store experience first, then build the data layer 
 
 **auth boundary:** anonymous users can browse, search, and see readiness signals (client-side). cart, favorites, orders, reviews, and LLM advisor calls require Clerk authentication. no anonymous carts. see `docs/data-layer-plan.md` § auth & session model for the full matrix.
 
+---
+
+## direction change (2026-05-13) — no user study
+
+**decision (finalized):** the small user study (8-15 participants, within-subjects A/B comparison, Likert questionnaire on usefulness/trust/intrusiveness/confidence) is dropped. the thesis evaluation is two-layered: offline recommendation quality + system performance/cost. user perception is acknowledged as future work (chapter 8) but is no longer measured by this thesis.
+
+**why:** [rationale to fill in by the author]
+
+### structural change
+
+- chapter 8 (Discussion) deleted; conclusions renumbered from chapter 9 → chapter 8
+- chapter 7 (Results) absorbs the closing-interpretation role via `\section{Summary and Discussion}`
+- RQs collapsed from 5 → 2 (engineering-only); hypotheses from 7 → 2
+- traceability table in §3.4 remapped to the surviving RQs
+- abstract rewritten to two-layer framing
+
+### cleanup status — completed 2026-05-13
+
+thesis manuscript: **done**.
+- [x] `thesis/main.tex` — abstract + chapter input lines
+- [x] `thesis/chapters/chapter1_introduction.tex` — RQs, hypotheses, objectives, contributions, thesis-structure section
+- [x] `thesis/chapters/chapter2_background.tex` — three-layer-evaluation phrasing
+- [x] `thesis/chapters/chapter3_problem.tex` — system goal, non-goal, traceability table, evaluation criteria, scope and validity-assumption paragraphs
+- [x] `thesis/chapters/chapter6_evaluation_methodology.tex` — user-study acknowledgment paragraph + softened external-validity closing
+- [x] `thesis/chapters/chapter7_results.tex` — User Study Results section deleted, "Summary and Discussion" section added
+- [x] `thesis/chapters/chapter8_conclusions.tex` (renamed from chapter9) — internal cross-refs to former chapter 8 updated, "Larger-Scale Evaluation" subsection rewritten as "Human-Subject Evaluation"
+- [x] `thesis/chapters/chapter8_discussion.tex` — deleted
+
+planning docs: **scrubbed below**, kept with a `[SUPERSEDED]` marker where the original content is mostly about the user study and would otherwise read incoherently.
+
+---
+
 ### detailed plans per phase
 
 - `docs/store-ui-spec.md` — emag-inspired store UI spec (phase 1)
@@ -377,11 +409,11 @@ a purpose-built eval harness for monitoring and ranking LLM configurations (mode
 
 **what this is NOT:**
 
-- not a replacement for the small user study — user perception (trust, intrusiveness, control) still requires human evaluation
+- engineering-only: user perception (trust, intrusiveness, control) is acknowledged as future work, see the 2026-05-13 direction change above
 - not a general-purpose eval framework — scoped strictly to the shopping-advisor use case
 - not a CI gate — runs are triggered manually
 
-**thesis fit:** the harness is both an engineering contribution (chapter 5) and the measurement instrument for chapter 6.2 system evaluation. it produces the latency/cost/quality tables that go into chapter 7 and the pareto plots that justify the final shipped configuration. the user study in section 6.3 remains a separate, complementary layer.
+**thesis fit:** the harness is both an engineering contribution (chapter 5) and the measurement instrument for chapter 6 system evaluation. it produces the latency/cost/quality tables that go into chapter 7 and the pareto plots that justify the final shipped configuration. (user perception is out of scope per the 2026-05-13 direction change above.)
 
 ---
 
@@ -395,3 +427,166 @@ a purpose-built eval harness for monitoring and ranking LLM configurations (mode
 6. **`useHover` + `useDwellTime` over `useMousePosition`** — hover state + duration tells us what we need (which product, how long). raw cursor position is overhead we don't need for readiness signals. keep `useMousePosition` available for future analytics/heatmaps.
 7. **reactive-first AI UX** — the advisor is always available but rarely interrupts. behavior signals prepare context and show subtle indicators; the user pulls advice when ready. based on research showing 41-55% of shoppers distrust proactive AI suggestions.
 8. **`@convex-dev/agent` for AI backbone** — persistent conversation threads, delta-based streaming via Convex subscriptions, built-in tool calling, rate limiting, and usage tracking. replaces a custom suggestion pipeline.
+
+---
+
+## thesis compaction plan (2026-05-13, revised 2026-05-13)
+
+**goal:** trim the manuscript from the current **94 pages** (content-complete: chapters 1–8 all drafted, build clean, zero undefined refs) down to **~60 pages total**. roughly 36% reduction, ~34p to cut.
+
+**target choice:** 60p was picked over the original 50p draft. 60p preserves the substantive engineering content (TikZ figures, code listings, evidence tables, Rufus case study) and avoids gutting chapters 4 and 5 down to summary level; 50p would have required cutting load-bearing material. supervisor / faculty hard limit not confirmed — if a hard cap is later imposed, the more-aggressive 50p plan in git history can be revived.
+
+### current page distribution (post chapters 7 + 8)
+
+| chapter                          | pages | % of total |
+| -------------------------------- | ----- | ---------- |
+| front matter (abstract, TOC)     | 5     | 5%         |
+| ch 1 introduction                | 6     | 6%         |
+| ch 2 background                  | 10    | 11%        |
+| ch 3 problem                     | 7     | 7%         |
+| **ch 4 design**                  | **23**| **24%**    |
+| **ch 5 implementation**          | **23**| **24%**    |
+| ch 6 methodology                 | 6     | 6%         |
+| ch 7 results                     | 7     | 7%         |
+| ch 8 conclusions & future work   | 4     | 4%         |
+| references                       | 6     | 6%         |
+| **total**                        | **94**| —          |
+
+bulk still lives in chapters 4 and 5: together 46p = 49% of the manuscript. chapters 7 and 8 are already tight at 7p + 4p.
+
+### target distribution for 60 pages
+
+| chapter                          | now  | target | cut    |
+| -------------------------------- | ---- | ------ | ------ |
+| front matter                     | 5    | 4      | 1p     |
+| ch 1                             | 6    | 4      | 2p     |
+| ch 2                             | 10   | 6      | 4p     |
+| ch 3                             | 7    | 5      | 2p     |
+| **ch 4**                         | **23**| **16**| **7p** |
+| **ch 5**                         | **23**| **15**| **8p** |
+| ch 6                             | 6    | 5      | 1p     |
+| ch 7                             | 7    | 6      | 1p     |
+| ch 8                             | 4    | 3      | 1p     |
+| references                       | 6    | 4      | 2p     |
+| margin                           | —    | —      | ~5p slack |
+| **total**                        | **94**| **~63** (aim ~60) | —      |
+
+less aggressive than the 50p plan: ~7p saved each on chapters 4 and 5 instead of 12p. that means preserving most subsections rather than collapsing them. tightening at the sentence/paragraph level, not deletion of structure.
+
+### concrete cut list per chapter
+
+#### chapter 4 — design (cut ~7p)
+
+| action                                                                                                            | savings |
+| ----------------------------------------------------------------------------------------------------------------- | ------- |
+| drop §4.2 codebase structure (one paragraph or absorb a sentence into §4.1; monorepo-graph figure → kill or move) | 1.5p    |
+| compress §4.13 end-to-end advisor request (its job is partly done by §4.1; halve the trace)                      | 1p      |
+| compress §4.12 eval harness — keep the architecture figure, fold lifecycle into chapter 6                        | 0.5p    |
+| merge §4.10 auth into a paragraph in §4.11 data model                                                            | 0.5p    |
+| line-level tightening of §4.4–§4.9 (transitional sentences, redundant framings, recapping)                       | 2.5p    |
+| trim opening of every section by 1–2 sentences                                                                   | 1p      |
+| **keep:** every TikZ figure, two-stage-pipeline, ER diagram, all the mermaid PDFs                                 | —       |
+
+#### chapter 5 — implementation (cut ~8p)
+
+| action                                                                                                            | savings |
+| ----------------------------------------------------------------------------------------------------------------- | ------- |
+| compress §5.1 tech stack to a tight paragraph + one figure (drop the version-by-version walkthrough)             | 1p      |
+| §5.3 convex data layer — drop the schema code listing (duplicates §4.11), keep prose                              | 0.5p    |
+| §5.4 recommendation engine — keep the `contentSimilarity` listing only, summarize the other three algorithms      | 1p      |
+| §5.5 behavior tracking — keep `useDwellTime` listing only, drop the second listing                                | 0.5p    |
+| §5.6 LLM advisor — keep `selectModel` listing, compress the agent-construction subsection to prose                | 1p      |
+| §5.7–§5.11 (review summaries, comparison, validation, instrumentation) — each section tightened 30%               | 2p      |
+| §5.13 engineering challenges — convert from prose paragraphs into a compact bullet list                            | 1p      |
+| trim cross-references and transitions across the whole chapter                                                    | 1p      |
+| **keep:** UI walkthrough screenshots, deployment figure, `contentSimilarity`, `useDwellTime`, `selectModel`        | —       |
+
+#### chapter 2 — background (cut 4p)
+
+| action                                                                                         | savings |
+| ---------------------------------------------------------------------------------------------- | ------- |
+| collapse the four LLM-in-RecSys subsections into one (or at most two)                          | 1.5p    |
+| trim UX/timing literature section by half                                                      | 1p      |
+| compress "Positioning of This Thesis" to one short paragraph                                   | 0.5p    |
+| line-level tightening of remaining sections                                                    | 1p      |
+| **keep:** the Rufus case study at full strength — most-cited evidence in the thesis            | —       |
+
+#### chapter 3 — problem (cut 2p)
+
+| action                                                                                         | savings |
+| ---------------------------------------------------------------------------------------------- | ------- |
+| compress the F1–F10 functional-requirements list to one-line entries                           | 0.5p    |
+| tighten the NFR paragraphs (each currently 4–5 sentences → 2–3)                                | 0.75p   |
+| merge §3.3 non-goals into §3.7 constraints                                                     | 0.5p    |
+| line-level tightening                                                                          | 0.25p   |
+
+#### chapter 1 — introduction (cut 2p)
+
+| action                                                                                         | savings |
+| ---------------------------------------------------------------------------------------------- | ------- |
+| compress the contributions list (currently multi-line bullets → tight one-liners)              | 1p      |
+| compress the thesis-structure section from one paragraph per chapter to a single short paragraph | 1p     |
+
+#### chapter 6 — methodology (cut 1p)
+
+| action                                                                                         | savings |
+| ---------------------------------------------------------------------------------------------- | ------- |
+| tighten the bias-mitigations paragraph from four points to three                               | 0.5p    |
+| compress §6.3 validity threats from three full paragraphs to three short ones                  | 0.5p    |
+| **chapter is already lean at 6p; very small headroom here**                                    | —       |
+
+#### chapter 7 — results (cut 1p)
+
+| action                                                                                         | savings |
+| ---------------------------------------------------------------------------------------------- | ------- |
+| compress §7.4 prompt-variant comparison — keep the Vivo V9 quote, tighten the contamination-mechanism paragraph | 0.5p |
+| tighten the §7.5 per-RQ summary paragraphs                                                     | 0.5p    |
+
+#### chapter 8 — conclusions (cut 1p)
+
+| action                                                                                         | savings |
+| ---------------------------------------------------------------------------------------------- | ------- |
+| compress the §8.4 contributions-revisited list (one line each instead of two)                  | 0.5p    |
+| compress the future-work subsections (one tight paragraph each instead of 2–3 sentences expanded) | 0.5p |
+
+#### bibliography (cut 2p)
+
+| action                                                                                         | savings |
+| ---------------------------------------------------------------------------------------------- | ------- |
+| switch from `alpha` (the institutional default) to `abbrv` or `unsrt` if faculty rules permit  | 1–2p    |
+| audit for unused `\cite` entries — every `references.bib` entry not actually `\cite`d in the manuscript can be removed | 0.5p |
+| **verify with UBB submission rules before changing bib style**                                  | —       |
+
+### order of operations (highest cut-per-effort first)
+
+1. **chapter 4** pilot pass — recover ~7p; let it set the editorial bar for the rest
+2. **chapter 5** — same approach, recover ~8p
+3. **chapter 2** — straightforward subsection collapse, 4p
+4. **chapter 1 + 3** — sentence-level work, 4p combined
+5. **bibliography style swap + unused-citation audit** — if faculty rules allow, ~2p
+6. **chapters 6, 7, 8** — small tightening passes, ~3p combined
+
+### what NOT to cut
+
+- the rufus case study in chapter 2 (most-cited evidence in the thesis)
+- the canonical TikZ figures (architecture overview, two-stage pipeline, ER diagram)
+- the eval-architecture figure (the harness is a load-bearing contribution)
+- the two UI screenshots (they ground the thesis in a working artifact)
+- the abstract (already tight)
+- the ranked-configs table, both pareto plots, and the per-category breakdown in chapter 7 (the results)
+- the few-shot contamination paired-output quote in §7.4 (concrete evidence the harness pays for itself)
+
+### approach
+
+a single big-bang rewrite is faster but higher risk. a chapter-by-chapter checkpoint pass (start with chapter 4, ship, review, then chapter 5, etc.) preserves intermediate state and lets the author course-correct mid-trim. recommended: **chapter 4 first as a pilot pass**, then re-evaluate the per-chapter targets against the result before continuing. with the looser 60p target, the trim is at the sentence and paragraph level rather than at the structural level — the chapter outlines all stay intact.
+
+### figures and code listings affected
+
+- figures to drop or move: monorepo-graph (§4.2 — strong candidate for cut), eval-run-lifecycle (§4.12 — merge into chapter 6 architecture figure)
+- figures to keep: architecture-overview, two-stage-pipeline (TikZ), validation-pipeline, model-routing, advisor-request, deployment-topology, ER diagram (TikZ), eval-architecture, readiness-loop, behavior-flush, two UI screenshots, the two pareto plots
+- code listings to drop: schema-products (duplicates ER), one of the two behavior listings, agent-construction listing
+- code listings to keep: `contentSimilarity`, `useDwellTime`, `selectModel`, `getProductDetails` tool (the validation example), `groundedness` scorer
+
+### status
+
+- **not started.** chapters 1–8 are now content-complete (build clean at 94p, zero undefined refs). next step is the chapter-4 pilot pass.

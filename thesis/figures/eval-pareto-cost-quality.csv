@@ -1,9 +1,9 @@
 label,cost,quality,composite
-"gemini-3.1-flash-lite-preview · none · ms12 · current",0.000319,0.8275,0.8704
-"gpt-oss-120b · medium · ms12 · no-fewshot",0.000596,0.8704,0.8189
-"gpt-oss-120b · low · ms12 · current",0.000585,0.8415,0.7875
-"gpt-oss-120b · medium · ms12 · current",0.000759,0.8177,0.7523
-"gpt-oss-120b · medium · ms8 · be-efficient",0.000728,0.8341,0.7403
-"gpt-oss-120b · medium · ms15 · current",0.000720,0.7946,0.7310
-"gpt-oss-20b · medium · ms12 · current",0.000476,0.7490,0.6644
-"gpt-oss-120b · high · ms12 · current",0.001048,0.8207,0.6581
+"gemini-3.1-flash-lite-preview · none · ms12 · current",0.000319,0.7759,0.8066
+"gpt-oss-120b · low · ms12 · current",0.000566,0.7749,0.7949
+"gpt-oss-120b · medium · ms12 · no-fewshot",0.000572,0.8147,0.7738
+"gpt-oss-20b · medium · ms12 · current",0.000455,0.6724,0.7675
+"gpt-oss-120b · medium · ms8 · be-efficient",0.000667,0.7029,0.7194
+"gpt-oss-120b · medium · ms15 · current",0.000706,0.7257,0.6830
+"gpt-oss-120b · medium · ms12 · current",0.000704,0.7641,0.6796
+"gpt-oss-120b · high · ms12 · current",0.001029,0.7336,0.4918

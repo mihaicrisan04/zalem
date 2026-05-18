@@ -1,0 +1,23 @@
+flowchart LR
+    E1["dwell event"]:::ev --> BUF
+    E2["scroll event"]:::ev --> BUF
+    E3["viewport event"]:::ev --> BUF
+    E4["review-tab event"]:::ev --> BUF
+
+    BUF["client-side buffer<br/>Map&lt;productId, engagement&gt;"]:::buf
+
+    BUF --> AGG["aggregate per product<br/>(max dwell, max scroll,<br/>OR review-viewed)"]:::agg
+
+    AGG --> T1{"flush trigger?"}:::dec
+    T1 -->|"5 s interval"| F
+    T1 -->|"route change"| F
+    T1 -->|"visibilitychange<br/>(tab hide / close)"| F
+
+    F["POST aggregates only"]:::out --> SESS[("behaviorSessions<br/>(Convex table)")]:::db
+
+    classDef ev fill:#f7f7f7,stroke:#999;
+    classDef buf fill:#eef5ff,stroke:#5588cc;
+    classDef agg fill:#eef5ff,stroke:#5588cc;
+    classDef dec fill:#fff5e6,stroke:#cc8844;
+    classDef out fill:#e8f5e8,stroke:#558855;
+    classDef db fill:#f0e8f5,stroke:#774488;

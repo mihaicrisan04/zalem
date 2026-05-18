@@ -1,9 +1,9 @@
 label,latency,quality,composite
-"gemini-3.1-flash-lite-preview · none · ms12 · current",3159.2,0.8275,0.8704
-"gpt-oss-120b · medium · ms12 · no-fewshot",1961.6,0.8704,0.8189
-"gpt-oss-120b · low · ms12 · current",2907.1,0.8415,0.7875
-"gpt-oss-120b · medium · ms12 · current",2569.2,0.8177,0.7523
-"gpt-oss-120b · medium · ms8 · be-efficient",3377.7,0.8341,0.7403
-"gpt-oss-120b · medium · ms15 · current",3573.9,0.7946,0.7310
-"gpt-oss-20b · medium · ms12 · current",11985.3,0.7490,0.6644
-"gpt-oss-120b · high · ms12 · current",3366.2,0.8207,0.6581
+"gemini-3.1-flash-lite-preview · none · ms12 · current",2856.5,0.7759,0.8066
+"gpt-oss-120b · low · ms12 · current",1832.4,0.7749,0.7949
+"gpt-oss-120b · medium · ms12 · no-fewshot",2307.2,0.8147,0.7738
+"gpt-oss-20b · medium · ms12 · current",2258.5,0.6724,0.7675
+"gpt-oss-120b · medium · ms8 · be-efficient",2257.3,0.7029,0.7194
+"gpt-oss-120b · medium · ms15 · current",2742.5,0.7257,0.6830
+"gpt-oss-120b · medium · ms12 · current",2982.4,0.7641,0.6796
+"gpt-oss-120b · high · ms12 · current",4275.8,0.7336,0.4918

@@ -133,14 +133,13 @@ signals as proxies for intent, and a focused Amazon Rufus case
 study that grounds the specific failure modes this system
 addresses.
 
-Chapter~\ref{chap:foundations} is the theory chapter. It defines
-the building blocks the prototype uses: similarity measures
-(Jaccard, weighted attribute scoring, cosine, exponential time
-decay), the two-stage retrieve-and-rerank pattern, the LLM-agent
-loop with tool use and structured output, the
-hydration-over-generation principle as a formal defense against
-hallucination, and the evaluation metrics used to compare
-configurations.
+Chapter~\ref{chap:foundations} introduces the concepts the
+prototype builds on: similarity measures (Jaccard, weighted
+attribute scoring, cosine, exponential time decay), the two-stage
+retrieve-and-rerank pattern, the LLM-agent loop with tool use
+and structured output, the hydration-over-generation principle as
+a structural defense against hallucination, and the evaluation
+metrics used to compare configurations.
 
 Chapter~\ref{chap:system} documents the prototype. It opens with
 the requirements and the overall architecture, then walks
@@ -149,7 +148,7 @@ behavior tracking and readiness pipeline, the LLM advisor with
 its tools and prompt, the review summarization batch flow, the
 AI-assisted comparison surface, the output validation pipeline,
 and the frontend. The chapter closes with the evaluation harness
-and the measured results across a nine-configuration sweep,
+and the measured results across an eight-configuration sweep,
 including pareto fronts on cost-quality and latency-quality and
 a composite ranking that justifies the shipped configuration.
 

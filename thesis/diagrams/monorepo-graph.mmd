@@ -1,0 +1,26 @@
+flowchart LR
+    subgraph A["apps/"]
+        WEB["web<br/>Next.js 16, React 19"]
+    end
+
+    subgraph P["packages/"]
+        BACKEND["backend<br/>Convex schema, queries,<br/>mutations, actions, crons"]
+        UI["ui<br/>shadcn + optics<br/>design system"]
+        EVAL["eval<br/>LLM eval harness:<br/>datasets, runner, scorers"]
+        ENV["env<br/>typed env validation"]
+        CONFIG["config<br/>shared tsconfig"]
+    end
+
+    WEB --> BACKEND
+    WEB --> UI
+    WEB --> ENV
+    WEB --> CONFIG
+
+    BACKEND --> CONFIG
+
+    UI --> CONFIG
+
+    EVAL --> BACKEND
+    EVAL --> CONFIG
+
+    ENV --> CONFIG
