@@ -1,84 +1,321 @@
 \chapter{Background and Related Work}
 \label{chap:background}
 
-\section{Classical Recommendation Systems}
+\section{Classical Recommender Systems}
 \label{sec:bg-recsys}
 
-\subsection{Collaborative Filtering and Co-Occurrence Analysis}
-\label{subsec:bg-collab}
+Three families dominate e-commerce recommendation: collaborative
+filtering (with co-occurrence as its lightweight specialization),
+content-based filtering, and hybrids of the two. Time-decayed
+popularity sits alongside them as the workhorse for trending
+slots. Each family is covered in detail
+elsewhere~\cite{ComprehensiveRecSys2024, LLM4Rec2025}; the formal
+definitions used in this thesis are in
+Chapter~\ref{chap:foundations}.
 
-% Co-occurrence with Jaccard similarity, collaborative filtering fundamentals
+\subsection{Co-Occurrence and Collaborative Filtering}
+\label{subsec:bg-cooccurrence}
+
+Item-based collaborative filtering uses the simple regularity
+that users who buy product $A$ often also buy product $B$. The
+core artifact is a co-purchase matrix that counts the buyers
+shared by each pair of items. A similarity score is derived from
+it, and Jaccard is the most common lightweight choice because it
+normalizes by union and is robust to differences in product
+popularity~\cite{ComprehensiveRecSys2024}. Item-based variants
+win at e-commerce scale because product catalogs have more buyers
+per item than items per buyer, which makes the item similarity
+matrix denser and more stable. The main cost is precomputation:
+production deployments compute the matrix on a schedule, not per
+request.
+
+The strengths are interpretability, no model training, and
+tolerance to sparse user history. The weaknesses are blindness to
+product attributes (two unrelated products that share a buyer
+base still link) and the cold-start problem for new products with
+no purchase history.
 
 \subsection{Content-Based Filtering}
 \label{subsec:bg-content}
 
-% Content-based similarity: category, tags, brand, price proximity
+Content-based filtering scores similarity using product
+attributes instead of purchase signals. A typical setup defines a
+feature vector over category, brand, tags, and price proximity,
+then computes a weighted distance between the active product and
+every other product in the catalog. The main upside is the
+zero-purchase cold start: a brand-new product can be recommended
+on day one because its attributes are known immediately. The main
+downside is the filter-bubble effect: recommendations reinforce
+the active item's profile.
 
-\subsection{Hybrid Recommendation Systems}
+\subsection{Hybrid Recommenders and Trending}
 \label{subsec:bg-hybrid}
 
-% Switching hybrid approach, cold-start strategies
+Burke's taxonomy splits hybrid recommenders into seven patterns,
+of which weighted, switching, and mixed are the ones most often
+deployed~\cite{Burke2002Hybrid}. A weighted hybrid combines
+normalized scores from multiple algorithms into a single ranking.
+A switching hybrid picks which algorithm to run per request based
+on context (cold versus warm user, sparse versus rich product). A
+mixed hybrid shows results from multiple algorithms side by side
+without combining their scores. The prototype uses a switching
+hybrid for the personalized ``recommended for you'' slot. Where
+scores are combined, the prototype uses Reciprocal Rank Fusion,
+which sidesteps the problem of normalizing scores across
+different algorithms by combining ranks instead~\cite{LLM4Rec2025}.
 
-\subsection{Trends with Temporal Decay}
-\label{subsec:bg-trending}
+Naive popularity over an order log favors products with long-tail
+demand and penalizes products that are gaining fast. Exponential
+time decay corrects for this by weighting recent activity more
+heavily, with a half-life chosen per category: short for fashion
+and consumer trends, long for durable
+goods~\cite{SessionRecSys2021}. The formal definition is in
+Section~\ref{sec:found-similarity}.
 
-% Exponential time decay for trending products
+\section{Explainable Recommendations}
+\label{sec:bg-explainable}
 
-\section{Large Language Models in Recommendation Systems}
+A recommendation with a reason is a different thing from one
+without. Classical systems offer pattern-level explanations
+(``users who bought X also bought Y'') that are interpretable but
+generic. Recent work uses LLMs to generate sentence-level
+rationales conditioned on user
+context~\cite{LLMEnhancedRecSys2024}. Knowledge-graph-grounded
+explanations sit between the two: they draw facts from a curated
+graph instead of generating freely, and they reduce hallucinated
+attributes in the rationales they
+produce~\cite{ExplainableRecKG2024}. Having an explanation
+improves trust calibration: users accept correct recommendations
+more readily and reject incorrect ones more readily. The thesis
+treats explanation as a first-class output of the LLM stage.
+
+\section{Large Language Models in Recommender Systems}
 \label{sec:bg-llm-recsys}
 
-\subsection{Roles of LLMs in Recommendation}
-\label{subsec:bg-llm-roles}
+Surveys of LLM-augmented recommendation identify three roles for
+an LLM in the pipeline: knowledge enhancement (the LLM acts as a
+knowledge source for product attributes and user intent),
+interaction (the LLM is the conversational interface to a
+recommender backbone), and model enhancement (LLM-derived
+features feed into a downstream ranker as extra
+input)~\cite{LLMEnhancedRecSys2024}. The roles differ in cost and
+integration depth. Interaction is the cheapest to deploy because
+it sits at the surface and needs no retraining. Model enhancement
+is the most invasive because it changes the offline training
+pipeline. This thesis uses roles 1 and 2: the LLM contributes
+knowledge (review themes, comparison narratives, product
+explanations) and interaction (the conversational advisor). It
+does not retrain a ranker. The data volume of a bachelor-thesis
+prototype would not support it, and the architectural lessons of
+the thesis are at the integration layer, not the modeling layer.
 
-% Knowledge enhancement, interaction, model enhancement (LLMEnhancedRecSys2024)
+The standard pattern for combining classical recommenders with
+LLMs is a two-stage architecture: a classical candidate generator
+returns a small set of products under a tight latency budget, and
+an LLM reranks, explains, or summarizes that set in a second
+stage~\cite{HSTU2024, ShopifyHSTU}. The pressure is cost: LLM
+inference scales with context size, so feeding five candidates is
+fine at consumer scale, while feeding five thousand catalog items
+is not. The pattern also separates concerns cleanly. The
+classical stage owns relevance and recall over the full catalog;
+the LLM stage owns explanation, conflict surfacing, and tradeoff
+articulation. The prototype follows this split strictly: the
+classical stage runs on the full Convex catalog, and the LLM
+stage only ever sees a small candidate set, never the full
+catalog.
 
-\subsection{Explainability of Recommendations via LLMs}
-\label{subsec:bg-explainability}
+\section{Review Summarization for Purchase Validation}
+\label{sec:bg-review-summarization}
 
-% Natural language explanations, knowledge graphs (ExplainableRecKG2024)
+Reviews drive a large share of purchase decisions, yet most
+product detail pages show them raw. AI-generated review summaries
+compress the work of reading them into a short structured
+artifact: themes, frequently mentioned features, and (less often)
+explicit conflict callouts.
 
-\subsection{Two-Stage Architectures}
-\label{subsec:bg-two-stage}
+Naive summarization fails in two specific ways. First, it
+averages sentiment, hiding the minority opinions that are often
+the most useful for purchase decisions (a 38-versus-9 split
+between buyers who love a product and buyers who report failure
+after six months is more useful than a 4.2-star average). Second,
+when prompted to produce a tidy summary, it tends to fabricate
+themes that are not in the source
+corpus~\cite{RufusConfidentlyWrong2024}. The second failure has
+drawn the most criticism of comparable production review-summary
+systems. The thesis treats theme fabrication as a hard
+constraint: summaries are generated against the actual review
+corpus, themes are validated against the source text before
+persistence, and conflicting opinions are surfaced explicitly
+with counts.
 
-% Static candidate generation + LLM reranking/explanation
+\section{AI-Assisted Comparison as Decision Support}
+\label{sec:bg-comparison}
+
+Comparison is the highest-cognitive-load task in a typical
+purchase journey. Users compare across mixed attributes (price,
+battery life, build material, warranty length, shipping speed)
+where the weight of each attribute depends on personal
+preferences. LLMs are well suited to laying out these tradeoffs
+in natural language. Industry agrees: Shopify's analysis of
+agentic shopping flows names comparison and tradeoff articulation
+as two of the interactions where LLMs add the most user-perceived
+value~\cite{ShopifyAgentic}. Consumer research finds 56\% of
+shoppers explicitly want comparison help from AI assistants and
+47\% want review summarization~\cite{DigidayAIShopping}.
+
+The main design failure in current AI comparison features is the
+``best product'' verdict: the system picks a winner, hides the
+tradeoffs, and takes the choice away from the user. UX guidance
+for agentic AI explicitly warns against this pattern. It
+recommends a tradeoff-first layout where the system surfaces the
+structured differences and lets the user weight
+them~\cite{SmashingAgenticUX}. The thesis follows the
+tradeoff-first pattern: comparisons present structured
+differences, never a verdict.
 
 \section{Trust and Human-AI Interaction}
 \label{sec:bg-trust}
 
-\subsection{Proactive vs.\ Reactive Assistance}
-\label{subsec:bg-proactive-reactive}
+\subsection{Timing and Consumer Resistance}
+\label{subsec:bg-timing}
 
-% CHI 2024 research, proactive vs reactive personalization
+A CHI 2024 study measured how users react to AI suggestions
+delivered at different timings and found that suggestions offered
+after a natural pause were rated as significantly more helpful
+than suggestions injected during active
+deliberation~\cite{CHI2024Timing}. A related body of work in
+human-AI personalization makes a stronger claim: reactive
+personalization preserves the user's perceived autonomy, and that
+perceived autonomy is one of the strongest predictors of trust in
+AI systems~\cite{ProactiveReactivePersonalization}. Proactive
+interventions can be welcome, but only at high-confidence moments
+where the system has strong evidence the user is genuinely stuck
+or at decision risk.
 
-\subsection{Consumer Resistance to AI Chatbots}
-\label{subsec:bg-resistance}
-
-% Consumer distrust data, perceived intrusiveness
+The market data on consumer trust in AI shopping assistants is
+low. 55\% of consumers say they do not trust AI chatbot product
+recommendations~\cite{ConsumerDistrust2025}. 42\% see e-commerce
+AI assistants as upsell tools, not advisors~\cite{AIUpsell2025}.
+71\% of retailers have deployed conversational AI in some form,
+but only 16\% of consumers use these assistants
+regularly~\cite{ConsumerResistanceAI}. The gap between deployment
+and usage points to structural resistance. A trustworthy AI
+advisor is not a polish layer on top of a shopping system; the
+trust gap is the product question.
 
 \subsection{Behavioral Signals as Intent Indicators}
 \label{subsec:bg-behavior-signals}
 
-% Cursor hover, dwell time, scroll depth as engagement proxies (CHI2011, SIGIR2020)
+A long line of work in information retrieval establishes
+lightweight client-side signals (cursor position, dwell time,
+scroll depth, hover trajectory) as reliable proxies for user
+attention~\cite{SIGIR2020Cursor}. The signals are cheap to
+collect and need no server-side modeling at capture time. Dwell
+time deserves a note. In information retrieval, dwell predicts
+engagement well: the longer a user reads, the more engaged they
+are. In e-commerce, dwell still predicts engagement, but it
+predicts intent-to-buy less reliably; users sometimes dwell
+because they are confused, comparing across browser tabs, or
+distracted~\cite{DwellTimeEngagement2022}. The thesis treats
+dwell as an attention proxy, not a buying-intent proxy, and
+combines it with review-tab engagement and scroll depth in a
+composite readiness score.
+
+A privacy boundary applies. The prototype aggregates raw signals
+client-side and persists only summary statistics to the backend.
+Raw event streams are never stored or transmitted off the device.
 
 \section{Case Study: Amazon Rufus}
 \label{sec:bg-rufus}
 
+Amazon Rufus is the largest deployed AI shopping assistant by
+user count and the most thoroughly studied externally. Rufus is
+the reference point for this section: its architecture documents
+the practical shape of a production-scale AI shopping system, and
+its documented failures inform several specific design decisions
+in the thesis prototype.
+
 \subsection{System Architecture and Capabilities}
 \label{subsec:bg-rufus-arch}
 
-% Multi-model routing, RAG pipeline, streaming + hydration, COSMO knowledge graph
+Rufus combines three architectural patterns. A multi-model router
+picks an inference model per query: simple lookups go to a fast
+cheap model, while reasoning-heavy queries go to a slower, more
+capable one. The output is two-stream: text is streamed as it
+generates, and structured product references are hydrated
+client-side from live catalog data, so the user sees the
+explanation and the live product card as a single coherent
+response~\cite{RufusTechnology, RufusScaling}. The system plugs
+into Amazon's COSMO knowledge graph, an LLM-built commonsense
+graph that enriches products with implicit attributes (a
+children's bicycle is also ``a gift for a 7-year-old''),
+reportedly producing a 60\% improvement on internal relevance
+metrics~\cite{COSMO}. The integration footprint is broad: Rufus
+appears on the product detail page, in search, and in the cart,
+and serves over 300 million users with parallel speculative
+decoding to keep latency within product
+targets~\cite{RufusScaling}.
 
 \subsection{Documented Accuracy and Trust Issues}
 \label{subsec:bg-rufus-problems}
 
-% 32% accuracy, 28% price hallucination, 83% self-serving, review fabrication
+External evaluations of Rufus report four classes of failure,
+stable across studies. First, recommendation accuracy: independent
+measurement places Rufus at 32\% accuracy for picking the right
+product for a query, far below the relevance figures Amazon
+reports internally~\cite{RufusWrong2024}. Second, factual
+hallucination: 28\% of Rufus responses that include a product
+price quote the wrong price, an error type that is especially
+damaging because the user can check it in
+seconds~\cite{RufusWrong2024}. Third, self-serving bias: 83\% of
+Rufus's recommendations favor Amazon-owned or Amazon-branded
+products over third-party alternatives, a pattern that reinforces
+the perception of the assistant as an upsell
+tool~\cite{RufusWrong2024}. Fourth, review summary fabrication:
+Rufus has been observed to generate review themes that do not
+appear in the source review corpus, the failure that has drawn
+the most public criticism of the
+four~\cite{RufusConfidentlyWrong2024}.
 
-\subsection{Feature Evolution and Lessons Learned}
+The four failure modes are not independent. They share a single
+root cause: the LLM is allowed to generate factual product data
+(prices, attributes, themes) from its parametric memory instead
+of being constrained to read from live catalog data and source
+review text. This observation directly motivates the output
+validation and hydration strategy in
+Chapter~\ref{chap:foundations}.
+
+\subsection{Feature Evolution and Lessons}
 \label{subsec:bg-rufus-lessons}
 
-% Reactive first, proactive added 10 months later; lessons for zalem
+Rufus's product timeline is informative beyond the architecture.
+The system launched in early 2024 as a reactive assistant: the
+user opened a chat surface and the system responded. The
+proactive ``Help Me Decide'' surface, where the system offers to
+compare or recommend without being asked, was added about ten
+months later~\cite{RufusTechnology, RufusScaling}. The phasing
+matches the CHI 2024 timing finding above: reactive came first
+because it was easier to launch without breaking user
+expectations, and proactive was added piece by piece once the
+system had stabilized. Public reporting credits Rufus with
+roughly \$12 billion of incremental sales in
+2025~\cite{RufusRevenue2025}; the thesis treats this number as a
+market-sizing data point, not proof of product-market fit, since
+the trust failures above leave the user-experience case
+contested.
 
-\section{Review Summarization and Product Comparison}
-\label{sec:bg-review-comparison}
+\section{Positioning of This Thesis}
+\label{sec:bg-positioning}
 
-% Review summarization as decision support, AI-assisted product comparison
+Prior work treats classical recommendation and LLM integration
+as separate problems. The questions that decide whether a real
+AI shopping advisor is trustworthy (when to speak, how to ground
+its answers, how to surface conflicting reviews, how to catch
+hallucinations) sit scattered across HCI papers, engineering
+blogs, and post-mortems of shipped systems. This thesis pulls
+them into one design, tests them on a working prototype, and
+backs every model and prompt choice with evidence from a custom
+evaluation harness. The contribution is not a new algorithm. It
+is an integration architecture and an honest evaluation against
+documented production failures, at a scale a bachelor thesis can
+defend.
