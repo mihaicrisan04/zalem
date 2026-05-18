@@ -1,99 +1,158 @@
 \chapter{Introduction}
 \label{chap:intro}
 
-\section{Problem Context}
+\section{Context and Motivation}
 \label{sec:intro-context}
 
-\par E-commerce has become one of the most important branches of the digital economy, with accelerated growth over the past decade. E-commerce platforms provide consumers with access to millions of products, but this abundance creates a fundamental problem: decision overload. Users spend significant time browsing, comparing, and evaluating products before making a purchase decision, and this process becomes increasingly complex as the supply grows.
+Online retail has outgrown what any one shopper can browse. A
+single category page on a large marketplace lists thousands of
+substitutes, and shoppers spend a lot of time browsing, comparing,
+and validating products before they buy. Recommender systems
+narrow the search space using signals like co-purchase frequency,
+content similarity over product attributes, and ranking models
+trained on historical
+interactions~\cite{ComprehensiveRecSys2024, LLM4Rec2025}. These
+methods are well studied, fast, and widely deployed. They share
+one limitation that hits the user directly: the output is opaque.
+A shopper who sees a ``frequently bought together'' or
+``similar items'' panel is not told why those products were
+chosen.
 
-\par Recommendation systems have emerged as a natural solution to this problem, employing various algorithmic techniques --- from collaborative filtering and co-occurrence analysis to content-based similarity --- to reduce the search space and present users with relevant products \cite{LLM4Rec2025, ComprehensiveRecSys2024}. These classical systems are computationally efficient and well-studied in the literature, but they present an important limitation: their outputs are opaque. A user who receives a ``similar products'' or ``frequently bought together'' recommendation does not understand why those products are relevant to their specific situation.
+Large language models reopen the explanation problem. An LLM can
+write natural-language rationales, summarize customer reviews,
+and surface tradeoffs between similar
+products~\cite{LLMEnhancedRecSys2024, ExplainableRecKG2024}.
+Putting an LLM into a shopping flow brings new risks, though.
+Amazon Rufus is the most visible case in production. The system
+serves over 300 million users and is credited with roughly
+\$12 billion in incremental sales~\cite{RufusRevenue2025}.
+Despite that scale, independent studies report a 32\% accuracy
+rate for picking the right product, a 28\% price hallucination
+rate, and an 83\% bias toward Amazon-owned
+products~\cite{RufusWrong2024,RufusConfidentlyWrong2024}.
+Consumer surveys back this up. 55\% of users say they do not
+trust AI chatbot product
+recommendations~\cite{ConsumerDistrust2025}, and 42\% see
+e-commerce AI assistants as upsell tools, not
+advisors~\cite{AIUpsell2025}. HCI research adds a timing angle:
+AI suggestions offered after a natural pause land better than
+proactive interruptions~\cite{CHI2024Timing}.
 
-\par With the emergence of large language models (LLMs), it has become possible to generate natural language explanations for recommendations, to synthesize other buyers' reviews, and to provide structured comparisons between similar products \cite{LLMEnhancedRecSys2024, ExplainableRecKG2024}. However, integrating LLMs into commercial applications raises significant challenges related to trust, accuracy, and interaction design.
-
-\par A relevant example is Amazon Rufus, Amazon's AI shopping assistant, which serves over 300 million users and has generated estimated incremental sales of \$12 billion \cite{RufusRevenue2025}. Despite these impressive figures, independent studies have shown that Rufus has an accuracy of only 32\% in identifying the most suitable products, a price hallucination rate of 28\%, and an 83\% tendency to recommend Amazon-owned products \cite{RufusWrong2024, RufusConfidentlyWrong2024}. These documented problems underscore the fact that, even at the largest scale, challenges related to factual accuracy, user trust, and transparency remain unsolved.
-
-\par At the consumer perception level, the data is equally concerning: 55\% of consumers state that they do not trust AI chatbot recommendations \cite{ConsumerDistrust2025}, and 42\% perceive e-commerce AI assistants as upselling tools rather than genuine advisors \cite{AIUpsell2025}. Research in human-computer interaction (HCI) suggests that AI interventions timed after a natural user pause are more effective than proactive ones \cite{CHI2024Timing}, which opens the path for reactive interaction models.
-
+The open question is not whether to put LLMs into e-commerce,
+but how. The architecture and interaction choices that decide
+whether the assistant is trusted, accurate, and welcome have not
+been studied systematically at bachelor-thesis scale against a
+documented production baseline.
 
 \section{Motivation}
 \label{sec:intro-motivation}
 
-\par The combination of classical recommendation systems, which excel at fast candidate generation, and LLM models, which can generate explanations and summaries, offers an opportunity to build assistance systems that are simultaneously relevant, explainable, and efficient. However, the practical integration of these components raises essential questions: when should the system intervene? How can it justify recommendations without introducing fabricated information? What architecture provides the best tradeoff between relevance, latency, cost, and user trust?
+Two facts shape the design space. First, the failure modes of
+production AI shopping assistants are documented, not
+speculative. Hallucinated product data, fabricated review themes,
+and perceived intrusiveness all show up in Rufus and in user
+surveys, and they are not edge
+cases~\cite{RufusWrong2024,ConsumerResistanceAI}. Second, the
+timing of an AI suggestion matters. Suggestions offered after a
+natural pause read as helpful. Suggestions injected during active
+deliberation read as
+interruption~\cite{CHI2024Timing,ProactiveReactivePersonalization}.
 
-\par This thesis is motivated by the observation that existing AI shopping assistants tend to be either too intrusive --- intervening automatically without the user's explicit consent --- or insufficiently transparent in how they generate recommendations. This work proposes a \textit{reactive-first} interaction model, in which the system monitors behavioral signals from the user (time spent on a product, scroll depth, interaction with the reviews section) to detect moments of readiness for assistance, but generates AI advice only when the user explicitly requests it.
+A reactive-first interaction model follows. The system tracks
+lightweight browsing signals (dwell time on a product, scroll
+depth, engagement with the reviews tab) to infer when help might
+be welcome, but it never auto-fires AI advice. The user has to
+engage on purpose. Behavior signals prepare context. The user
+pulls.
 
-\par This approach is supported by recent research showing that AI suggestions offered after a natural pause are better received than preemptive ones \cite{CHI2024Timing}, as well as by market data indicating significant consumer resistance to proactive AI chatbots \cite{ConsumerResistanceAI}.
+Amazon's own product timeline backs this up. Rufus launched as a
+reactive assistant. The proactive ``Help Me Decide'' surface was
+added ten months later, after the reactive product had
+stabilized~\cite{RufusTechnology,RufusScaling}. Reactive came
+first at the scale that matters most.
 
+The central claim of this thesis is that a hybrid architecture
+combining classical recommender algorithms with a reactive,
+grounded LLM advisor can answer real shopping questions without
+inheriting the trust failures of production systems, and that
+every model and prompt choice in such an architecture can be
+backed by measured evidence rather than intuition.
 
 \section{Objectives}
 \label{sec:intro-objectives}
 
-\par The main objective of this thesis is the design, implementation, and evaluation of a trustworthy AI shopping assistant that combines classical recommendation methods with explanations generated by large language models in a reactive interaction model. Specifically, the thesis aims to:
+This thesis sets out to design, build, and evaluate a hybrid
+LLM-augmented shopping recommender with grounded output that
+puts the central claim above into practice.
 
 \begin{enumerate}
-  \item \textbf{Design a hybrid recommendation architecture} that uses classical algorithms (co-occurrence with Jaccard coefficient, content-based similarity, trends with exponential time decay) for fast candidate generation, and an LLM model (Gemini Flash) for re-ranking and generating natural language explanations.
+  \item Design a hybrid recommendation architecture in which a
+    classical layer (Jaccard co-occurrence for ``frequently
+      bought together'', weighted attribute similarity for
+      ``similar products'', exponential time decay for trending,
+    and a switching hybrid for personalized slots) generates
+    candidates under a tight latency budget, while the LLM runs
+    only on candidate sets, never on the raw catalog.
 
-  \item \textbf{Implement a reactive interaction model} based on lightweight behavioral signals --- dwell time, scroll depth, review interaction --- that indicate the user's readiness for assistance without automatically triggering LLM calls.
+  \item Implement a reactive-first interaction model driven by
+    lightweight client-side behavior signals (dwell, scroll,
+    viewport, review engagement). Signals prepare context and
+    surface a subtle availability indicator. They do not trigger
+    LLM calls.
 
-  \item \textbf{Develop a review summarization mechanism} grounded in real buyer data, which surfaces both majority sentiments and conflicting opinions, addressing the most criticized problem of existing systems such as Rufus.
+  \item Build a review summarization flow that surfaces
+    conflicting buyer opinions with counts, fixing the failure
+    most criticized in comparable production systems.
 
-  \item \textbf{Implement an AI-assisted comparison mode} that allows users to compare 2--3 similar products in a structured format with tradeoff analysis.
+  \item Build an AI-assisted comparison flow that produces a
+    structured tradeoff between two or three same-category
+    products instead of a single ``best product'' verdict.
 
-  \item \textbf{Evaluate the system} at three levels: recommendation quality (offline metrics), system performance (latency and cost), and user perception (usefulness, trust, intrusiveness) through a structured user study.
+  \item Enforce hydration over generation as a structural defense
+    against hallucination: the LLM emits product identifiers, the
+    client renders live data from the catalog, and a validation
+    layer checks every cited identifier, strips factual claims
+    from free text, and verifies review-summary themes against
+    the source corpus.
+
+  \item Evaluate the system with a custom LLM evaluation harness
+    that backs every configuration choice (model, reasoning
+    effort, step budget, prompt variant) with measured evidence
+    on grounded quality, latency, and cost.
 \end{enumerate}
-
-
-\section{Research Questions}
-\label{sec:intro-rq}
-
-\par To guide the design and evaluation of the system, this thesis formulates the following research questions:
-
-\begin{description}
-  \item[\textbf{RQ1:}] Does a reactive AI assistant produce a higher level of trust and a lower perception of intrusiveness compared to proactive AI suggestions?
-
-  \item[\textbf{RQ2:}] Do LLM summaries grounded in buyer reviews improve the perceived usefulness and credibility of product information?
-
-  \item[\textbf{RQ3:}] Does AI-assisted comparison improve user confidence when choosing between similar products?
-
-  \item[\textbf{RQ4:}] What are the latency and cost tradeoffs of a two-stage recommendation architecture?
-\end{description}
-
-
-\section{Contributions}
-\label{sec:intro-contributions}
-
-\par The main contributions of this thesis are:
-
-\begin{enumerate}
-  \item A working \textbf{hybrid recommendation architecture} that combines classical algorithms with an LLM explanation layer in a two-stage pipeline (candidate generation under 50ms, LLM re-ranking and explanation under 500ms).
-
-  \item A \textbf{reactive-first interaction model} based on behavioral signals, where the system prepares context and displays subtle indicators, and the LLM call is triggered only at the user's initiative.
-
-  \item A \textbf{review summarization mechanism} grounded in real data, which surfaces conflicts and divergent opinions, not just the majority sentiment.
-
-  \item An \textbf{AI-assisted comparison flow} for similar products within the same category.
-
-  \item A \textbf{complete working prototype} implemented as a full-stack web application with a simulated store, realistic seed data, a recommendation engine, behavioral tracking, and an advisor interface.
-
-  \item A \textbf{systematic evaluation} at three levels: offline recommendation metrics, performance measurements (latency, token cost), and a structured user study.
-
-  \item \textbf{Design guidelines} for building non-intrusive AI assistants in consumer-facing systems.
-\end{enumerate}
-
 
 \section{Thesis Structure}
 \label{sec:intro-structure}
 
-\par The thesis is organized into seven chapters, as follows:
+The rest of the document is four chapters.
 
-\par \textbf{Chapter~\ref{chap:background} --- Background and Related Work} presents the theoretical foundations of classical recommendation systems, the integration of LLMs into recommendation systems, research on trust and explainability in human-AI interaction, and a detailed case study of Amazon Rufus as a reference point for production-scale AI shopping assistants.
+Chapter~\ref{chap:background} surveys the literature: classical
+recommender systems, LLM-augmented recommendation, research on
+human-AI trust and proactive versus reactive assistance, behavior
+signals as proxies for intent, and a focused Amazon Rufus case
+study that grounds the specific failure modes this system
+addresses.
 
-\par \textbf{Chapter~\ref{chap:problem} --- Problem Definition and Requirements} formulates the concrete problem addressed by this thesis, defines the functional and non-functional system requirements, establishes the evaluation criteria, and clarifies the project's boundaries and assumptions.
+Chapter~\ref{chap:foundations} is the theory chapter. It defines
+the building blocks the prototype uses: similarity measures
+(Jaccard, weighted attribute scoring, cosine, exponential time
+decay), the two-stage retrieve-and-rerank pattern, the LLM-agent
+loop with tool use and structured output, the
+hydration-over-generation principle as a formal defense against
+hallucination, and the evaluation metrics used to compare
+configurations.
 
-\par \textbf{Chapter~\ref{chap:design} --- System Design} describes the overall system architecture, the two-stage recommendation pipeline, the reactive interaction model, the behavioral tracking mechanism, the review summarization flow and comparison mode, as well as the justification for architectural decisions.
+Chapter~\ref{chap:system} documents the prototype. It opens with
+the requirements and the overall architecture, then walks
+through the data layer, the classical recommendation engine, the
+behavior tracking and readiness pipeline, the LLM advisor with
+its tools and prompt, the review summarization batch flow, the
+AI-assisted comparison surface, the output validation pipeline,
+and the frontend. The chapter closes with the evaluation harness
+and the measured results across a nine-configuration sweep,
+including pareto fronts on cost-quality and latency-quality and
+a composite ranking that justifies the shipped configuration.
 
-\par \textbf{Chapter~\ref{chap:implementation} --- Implementation} presents the technical details of the prototype: the technology stack, the monorepo structure, the Convex data model, the implemented recommendation algorithms, the LLM integration with Gemini Flash, and the user interface.
-
-\par \textbf{Chapter~\ref{chap:evaluation} --- Evaluation} describes the evaluation methodology and presents results at all three levels: offline recommendation metrics, system performance measurements, and user study results. It includes a discussion of the results, limitations, and threats to validity.
-
-\par \textbf{Chapter~\ref{chap:conclusions} --- Conclusions} summarizes the contributions, answers the research questions based on the obtained results, and proposes future directions for research and development.
+Chapter~\ref{chap:conclusions} summarizes what the prototype
+demonstrates, what the measured evaluation supports, and the
+limitations and directions for future work.
