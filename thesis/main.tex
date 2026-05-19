@@ -125,7 +125,7 @@ This thesis designs, implements, and evaluates a hybrid LLM-augmented shopping r
 
 The prototype combines three structural decisions: a reactive-first interaction model where behavior signals prepare context but the user always initiates an LLM call, a two-stage recommendation pipeline where classical algorithms generate candidates and the LLM only re-ranks and explains, and a hydration-over-generation principle where the LLM emits product identifiers, the client renders live catalog data, and an output-validation layer verifies every cited identifier, strips factual claims from free text, and checks review themes against the source corpus.
 
-A custom evaluation harness scores grounded quality, latency, and cost across an eight-configuration sweep, combining deterministic shopping-domain scorers with cross-family LLM-judge rubrics. The harness produces a pareto front on cost-quality and latency-quality plus a composite ranking that defends the shipped configuration on measured evidence; the best-composite cell costs \$0.0003 per query at 4.2~s p95 latency, with grounded output across the entire sweep.
+A custom evaluation harness scores grounded quality, latency, and cost across an eight-configuration sweep, combining deterministic shopping-domain scorers with cross-family LLM-judge rubrics. The harness produces tradeoff curves on cost-quality and latency-quality plus a composite ranking, so the shipped configuration is chosen on measured evidence rather than vendor defaults or intuition.
 
 \tableofcontents
 
