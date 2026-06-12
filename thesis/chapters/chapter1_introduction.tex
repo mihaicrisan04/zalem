@@ -42,7 +42,11 @@ The open question is not whether to put LLMs into e-commerce,
 but how. The architecture and interaction choices that decide
 whether the assistant is trusted, accurate, and welcome have not
 been studied systematically at bachelor-thesis scale against a
-documented production baseline.
+documented production baseline. This thesis proposes both: an
+architecture that grounds every factual claim in the live
+catalog, and a process that backs every configuration choice
+with measured evidence. Both are validated in a working
+prototype.
 
 \section{Motivation}
 \label{sec:intro-motivation}
@@ -81,9 +85,10 @@ backed by measured evidence rather than intuition.
 \section{Objectives}
 \label{sec:intro-objectives}
 
-This thesis sets out to design, build, and evaluate a hybrid
-LLM-augmented shopping recommender with grounded output that
-puts the central claim above into practice.
+This thesis proposes an architecture for grounded, LLM-augmented
+shopping recommendation and a process for configuring it on
+measured evidence, then realizes both in a working prototype
+that puts the central claim above into practice.
 
 \begin{enumerate}
   \item Design a hybrid recommendation architecture in which a
@@ -141,7 +146,8 @@ and structured output, the hydration-over-generation principle as
 a structural defense against hallucination, and the evaluation
 metrics used to compare configurations.
 
-Chapter~\ref{chap:system} documents the prototype. It opens with
+Chapter~\ref{chap:system} documents Zalem, the prototype store
+built for this thesis, as a case study. It opens with
 the requirements and the overall architecture, then walks
 through the data layer, the classical recommendation engine, the
 behavior tracking and readiness pipeline, the LLM advisor with

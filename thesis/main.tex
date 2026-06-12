@@ -5,6 +5,10 @@
 % type may be bachelor or master (default is bachelor)
 \usepackage[language=english, type=bachelor]{style}
 
+% let long URLs (bibliography, footnotes) break at any character
+% instead of overflowing the text block
+\usepackage{xurl}
+
 %controlling the appearance of your headers and footers
 \usepackage{fancyhdr}
 \pagestyle{fancy}
@@ -64,8 +68,8 @@
 \specialization{Computer Science}
 \title{A Hybrid LLM-Augmented Shopping Recommender
 with Grounded Output}
-\author{Mihai Crisan}
-\supervisor{Lect. Adriana Guran}
+\author{Mihai-Dan Crisan}
+\supervisor{PhD Assoc. Professor Adriana Guran}
 
 \maketitle
 
@@ -103,7 +107,7 @@ with Grounded Output}
   \vspace{3em}
 
   \begin{flushright}
-    {\Large\textit{Absolvent \\ Mihai Crisan}}
+    {\Large\textit{Absolvent \\ Mihai-Dan Crisan}}
   \end{flushright}
 
   \vfill
@@ -121,7 +125,7 @@ with Grounded Output}
 \hrule
 \vspace{0.5cm}
 
-This thesis designs, implements, and evaluates a hybrid LLM-augmented shopping recommender with grounded output. The work is motivated by the failure modes documented in the largest production AI shopping assistant: Amazon's Rufus is credited with roughly \$12 billion of incremental revenue in 2025, yet independent investigations report 32\% recommendation accuracy, 28\% price hallucination, 83\% self-serving recommendations, and routine fabrication of review themes. The thesis argues that these failures are not intrinsic to the AI-shopping problem but follow from specific integration choices, and that a different system can make those choices differently.
+This thesis studies how large language models can be brought into e-commerce recommendation: the classical recommender algorithms, the ways production AI shopping assistants fail, and the grounding techniques that prevent those failures. It then builds and evaluates an application that puts the study into practice: a hybrid LLM-augmented shopping recommender with grounded output. The work is motivated by the failure modes documented in the largest production AI shopping assistant: Amazon's Rufus is credited with roughly \$12 billion of incremental revenue in 2025, yet independent investigations report 32\% recommendation accuracy, 28\% price hallucination, 83\% self-serving recommendations, and routine fabrication of review themes. The thesis argues that these failures are not intrinsic to the AI-shopping problem but follow from specific integration choices, and that a different system can make those choices differently.
 
 The prototype combines three structural decisions: a reactive-first interaction model where behavior signals prepare context but the user always initiates an LLM call, a two-stage recommendation pipeline where classical algorithms generate candidates and the LLM only re-ranks and explains, and a hydration-over-generation principle where the LLM emits product identifiers, the client renders live catalog data, and an output-validation layer verifies every cited identifier, strips factual claims from free text, and checks review themes against the source corpus.
 

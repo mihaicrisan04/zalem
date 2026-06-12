@@ -23,6 +23,9 @@ papers, studies, engineering blogs, and market research used to inform the zalem
 | 13  | [The Application of Large Language Models in Recommendation Systems](https://arxiv.org/abs/2501.02178)                                                           | arXiv                                  | 2025 | general survey on LLMs in recommendation systems                                         |
 | 14  | [Proactive vs Reactive Personalization](https://www.sciencedirect.com/science/article/abs/pii/S1071581918301824)                                                 | Int. Journal of Human-Computer Studies | —    | when proactive personalization helps vs harms — informs hybrid interaction model         |
 | 15  | [Consumer Resistance to AI Chatbots](https://www.emerald.com/sjme/article/doi/10.1108/SJME-07-2024-0187/)                                                        | Spanish Journal of Marketing (Emerald) | —    | why consumers resist AI chatbots — informs trust-building design                         |
+| 16  | [The Distribution of the Flora in the Alpine Zone](https://doi.org/10.1111/j.1469-8137.1912.tb05611.x)                                                           | Jaccard — New Phytologist              | 1912 | original source of the Jaccard similarity coefficient (thesis eq. reference)            |
+| 17  | [Introduction to Information Retrieval](https://nlp.stanford.edu/IR-book/)                                                                                       | Manning, Raghavan, Schütze — CUP       | 2008 | textbook source for cosine similarity over vector representations (thesis eq. reference) |
+| 18  | [The Weighted Sum Method for Multi-Objective Optimization: New Insights](https://doi.org/10.1007/s00158-009-0460-7)                                              | Marler & Arora — Struct. Multidisc. Optim. | 2010 | source for the weighted-sum aggregation behind the composite eval score (thesis eq. reference) |
 
 ---
 

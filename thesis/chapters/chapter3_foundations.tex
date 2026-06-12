@@ -42,12 +42,14 @@ and the LLM as a writer over those candidates.
 
 Four formal definitions support the classical layer.
 
-\paragraph{Jaccard similarity.} Jaccard measures how much two
-sets overlap, normalized by their combined size --- the share of
+\paragraph{Jaccard similarity.} Jaccard
+similarity~\cite{Jaccard1912} measures how much two
+sets overlap, normalized by their combined size: the share of
 elements they share. For two finite sets $A$ and $B$,
-\[
+\begin{equation}
   J(A, B) \;=\; \frac{|A \cap B|}{|A \cup B|},
-\]
+  \label{eq:jaccard}
+\end{equation}
 with $J(\emptyset, \emptyset) := 0$ by convention. The coefficient
 is symmetric, lives in $[0, 1]$, and equals one iff $A = B$.
 Applied to the buyer sets of two products $p_a, p_b$, it produces
@@ -55,8 +57,8 @@ a similarity score that is robust to popularity differences: a
 product with many buyers does not automatically score high
 against another just because their intersection is
 large~\cite{ComprehensiveRecSys2024}. The
-prototype uses Jaccard over buyer sets for the ``frequently
-bought together'' slot, with a minimum-support filter requiring
+prototype uses Equation~\ref{eq:jaccard} over buyer sets for the
+``frequently bought together'' slot, with a minimum-support filter requiring
 $|B(p_a) \cap B(p_b)| \ge 2$ for a pair to enter the precomputed
 co-occurrence index. The filter suppresses spurious links from
 incidental co-purchases.
@@ -65,13 +67,17 @@ incidental co-purchases.
 compared by averaging seven small attribute comparisons, with the
 heaviest weight on the simplest signal (same category) and small
 equal contributions from price, rating, brand, and the
-LLM-enriched fields. Formally,
-\[
+LLM-enriched fields. Formally, the score is a weighted sum of
+attribute similarities, the standard form in content-based
+filtering~\cite{ComprehensiveRecSys2024}:
+\begin{equation}
   \mathrm{sim}(p_a, p_b) \;=\; \sum_{i=1}^{7} w_i \cdot f_i(p_a, p_b),
-\]
-where each $f_i$ is one of three primitives --- an indicator
+  \label{eq:attr-sim}
+\end{equation}
+where each $f_i$ is one of three primitives: an indicator
 $\mathbb{1}[\cdot]$ (1 if equal, 0 otherwise), the Jaccard
-coefficient $J(\cdot, \cdot)$ over a tag-set argument, or a
+coefficient $J(\cdot, \cdot)$ of Equation~\ref{eq:jaccard} over a
+tag-set argument, or a
 proximity score $\mathrm{prox}(x, y) = 1 - |x-y|/\max(x,y)$ for
 numeric attributes. Table~\ref{tab:found-sim-weights} lists the
 components and their weights.
@@ -105,13 +111,16 @@ At query time, $\mathrm{sim}$ is pure attribute arithmetic over
 the denormalized product row.
 
 \paragraph{Cosine similarity.} Cosine treats two vectors as
-directions and measures the angle between them --- values near
+directions and measures the angle between them: values near
 one mean the vectors point the same way, values near zero mean
-they are orthogonal. For two vectors $u, v \in \mathbb{R}^d$,
-\[
+they are orthogonal~\cite{ManningIR2008}. For two vectors
+$u, v \in \mathbb{R}^d$,
+\begin{equation}
   \cos(u, v) \;=\; \frac{\langle u, v \rangle}{\|u\| \cdot \|v\|}.
-\]
-The prototype uses cosine over text embeddings only inside the
+  \label{eq:cosine}
+\end{equation}
+The prototype uses Equation~\ref{eq:cosine} over text embeddings
+only inside the
 review-theme-fidelity scorer of Section~\ref{sec:found-eval}:
 each candidate review-summary theme is embedded and compared
 against the embeddings of the source reviews, and themes whose
@@ -122,13 +131,16 @@ carry no semantic content.
 \paragraph{Exponential time decay.} Trending is a weighted count
 of recent events where each event's contribution shrinks
 exponentially as it ages, so a sale from yesterday counts more
-than a sale from a month ago. For a product $p$ with event set
+than a sale from a month ago. This recency weighting is standard
+in session-based recommendation~\cite{SessionRecSys2021}. For a
+product $p$ with event set
 $E_p$, per-event weight $w(\cdot)$ (a purchase weighs more than a
 view), and event age $\mathrm{age}(e)$ measured in days from now,
-\[
+\begin{equation}
   \mathrm{trending}(p) \;=\; \sum_{e \in E_p} w(e) \cdot
   \exp\!\big(-\lambda \cdot \mathrm{age}(e)\big).
-\]
+  \label{eq:trending}
+\end{equation}
 The decay rate $\lambda$ is set by the desired half-life:
 $\lambda = \ln 2 / T_{1/2}$. The prototype uses $T_{1/2} = 14$
 days, giving $\lambda \approx 0.0495$. The score is precomputed
@@ -150,21 +162,26 @@ the question Chapter~\ref{chap:background} raised about Rufus,
 namely how an LLM-assisted shopping system avoids hallucinating
 products and specifications.
 
-Formally, let $\mathcal{C}$ be the full product catalog and $q$ a
+Formally, following the cascade-ranking
+formulation~\cite{HSTU2024}, let $\mathcal{C}$ be the full
+product catalog and $q$ a
 slot intent or user query. A retrieve function $R$ produces a
 small candidate set
-\[
+\begin{equation}
   S \;=\; R(q, \mathcal{C}), \qquad |S| \ll |\mathcal{C}|,
   \qquad S \subseteq \mathcal{C},
-\]
+  \label{eq:retrieve}
+\end{equation}
 under a tight latency budget $\tau_R$. A rerank-and-explain
 function $L$ then runs over $S$ alone:
-\[
+\begin{equation}
   (\hat{S}, r) \;=\; L(q, S, \textrm{ctx}), \qquad \hat{S} \subseteq S,
-\]
+  \label{eq:rerank}
+\end{equation}
 producing a final ranked subset $\hat{S}$ and a free-text
 rationale $r$. The LLM never reads $\mathcal{C}$ directly. By
-construction $\hat{S} \subseteq S \subseteq \mathcal{C}$, so every
+construction of Equations~\ref{eq:retrieve} and~\ref{eq:rerank},
+$\hat{S} \subseteq S \subseteq \mathcal{C}$, so every
 product identifier reaching the user is a real catalog item.
 
 Three properties of the pattern matter for trust and cost.
@@ -197,10 +214,12 @@ model alternates between reasoning, picking a tool, executing it,
 and reading the observations it returns. The pattern is the
 ReAct loop, introduced for multi-step reasoning over external
 data~\cite{ReAct2022}, and now standard in tool-augmented LLM
-deployments. A single iteration produces a triple
-\[
+deployments. A single iteration produces a
+triple~\cite{ReAct2022}
+\begin{equation}
   (\mathrm{thought}_t, \mathrm{action}_t, \mathrm{observation}_t),
-\]
+  \label{eq:react-triple}
+\end{equation}
 where $\mathrm{action}_t$ is either a tool call or a terminal
 text response, and $\mathrm{observation}_t$ is the tool's
 structured return value. The loop ends when the model emits a
@@ -265,15 +284,19 @@ the model class~\cite{HallucinationSurvey2023}; mitigation has to
 be structural.
 
 \paragraph{Hydration over generation.} The prototype enforces a
-single principle: the LLM emits structured references, and the
-client renders live data from the catalog. Formally, let $\hat{S}$
+single principle, which this thesis defines as hydration over
+generation: the LLM emits structured references, and the
+client renders live data from the catalog. Grounding generation
+in source data is the standard structural mitigation for
+hallucination~\cite{HallucinationSurvey2023}. Formally, let $\hat{S}$
 be the set of productIds the agent emits and let $H : \hat{S} \to
 \mathcal{P}$ be the hydration function that maps each identifier
 to the canonical product record fetched at render time from the
 live catalog. The user-visible surface is
-\[
+\begin{equation}
   \{ H(p) \,:\, p \in \hat{S} \} \;\cup\; \mathrm{sanitize}(r),
-\]
+  \label{eq:hydration}
+\end{equation}
 where $r$ is the agent's free-text rationale and $\mathrm{sanitize}$
 removes price and specification claims (defined below). The LLM
 never sees a price, never produces a price for display, and never
@@ -281,17 +304,19 @@ renders a product attribute. Every factual surface the user sees
 was read from the catalog at render time.
 
 \paragraph{Validation pipeline.} The hydration principle is
-backed by a post-generation validation pipeline with three
-sequential checks. Let $\mathcal{C}_{id}$ denote the set of
+backed by a post-generation validation pipeline designed for
+this thesis, with three sequential checks; the definitions below
+are the thesis's own. Let $\mathcal{C}_{id}$ denote the set of
 product identifiers in the live catalog at the moment of the
 agent turn.
 
 \begin{enumerate}
   \item \textbf{Identifier-existence.} The structured part of the
     response is intersected with $\mathcal{C}_{id}$:
-    \[
+    \begin{equation}
       \hat{S}' \;=\; \hat{S} \cap \mathcal{C}_{id}.
-    \]
+      \label{eq:id-existence}
+    \end{equation}
     Identifiers in $\hat{S} \setminus \mathcal{C}_{id}$ are dropped
     silently. The check is a single indexed read per identifier and
     runs inside the same Convex action that wraps the agent call,
@@ -312,12 +337,14 @@ agent turn.
   \item \textbf{Theme fidelity (batch path).} For review summaries
     only, each claimed theme $t$ is checked against the embedding
     set $\mathcal{E}_{\mathrm{rev}}$ of the source review corpus by
-    a nearest-neighbor lookup under cosine similarity
-    (Section~\ref{sec:found-similarity}). A theme is accepted iff
-    \[
+    a nearest-neighbor lookup under the cosine similarity of
+    Equation~\ref{eq:cosine}~\cite{ManningIR2008}. A theme is
+    accepted iff
+    \begin{equation}
       \max_{e \in \mathcal{E}_{\mathrm{rev}}} \cos(\mathrm{embed}(t), e)
       \;\geq\; \tau,
-    \]
+      \label{eq:theme-fidelity}
+    \end{equation}
     with threshold $\tau$ tuned on a small held-out batch. Themes
     that fail the test are dropped before the summary is
     persisted. This is the defense against the review-fabrication
@@ -392,16 +419,19 @@ $(\mathrm{lat}, Q)$. The front is the natural object for choosing
 a deployment configuration under explicit budget.
 
 A composite score collapses the measurement vector into a single
-number by taking a weighted average across the five axes, used
+number by taking a weighted average across the five axes, the
+standard weighted-sum method for multi-objective
+ranking~\cite{MarlerArora2010}, used
 when one ranked list is needed. The prototype defines
-\[
+\begin{equation}
   \mathrm{composite}(c) \;=\;
   0.30 \cdot Q(c) +
   0.25 \cdot C(c) +
   0.20 \cdot (1 - P_{\mathrm{cost}}(c)) +
   0.15 \cdot (1 - P_{\mathrm{lat}}(c)) +
   0.10 \cdot E(c),
-\]
+  \label{eq:composite}
+\end{equation}
 where $P_{\mathrm{cost}}(c)$ and $P_{\mathrm{lat}}(c)$ are the
 cost and latency of $c$ normalized linearly into $[0, 1]$ against
 the cheapest and fastest configurations in the sweep. The weights
@@ -413,8 +443,9 @@ reader who disagrees with the weights can read the underlying
 tradeoffs directly.
 
 The metrics defined here are the same ones reported in the
-results section of Chapter~\ref{chap:system}. The next chapter
-moves from the abstract architecture to the concrete prototype:
+results section of the case study.
+Chapter~\ref{chap:system} moves from the abstract architecture
+to the concrete prototype:
 the codebase, the data layer, the classical algorithm
 implementations, the agent infrastructure, the validation
 pipeline, the frontend surfaces, the evaluation harness, and the
