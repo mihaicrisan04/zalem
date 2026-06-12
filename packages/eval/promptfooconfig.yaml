@@ -97,6 +97,25 @@ providers:
       promptVariant: current
       providerOrder: ["cerebras", "groq"]
 
+  # ablation baseline: grounding removed. same model + reasoning as
+  # gpt-oss-120b-medium, but the agent gets NO tools and a prompt that says
+  # to answer from the conversation context and its own knowledge (the way a
+  # chatbot without catalog access would). this is the benchmark that
+  # validates the architecture: groundedness / factuality / theme fidelity
+  # should collapse here, or the model refuses to be specific and the judge
+  # scores drop instead. tool metrics (expectedToolCoverage,
+  # toolCallEfficiency) are structurally inapplicable for this row — exclude
+  # them when comparing against the grounded configs.
+  - id: file://src/providers/advisorProvider.ts
+    label: oss-120b-ungrounded
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: medium
+      maxSteps: 12
+      promptVariant: ungrounded
+      disableTools: true
+      providerOrder: ["cerebras", "groq"]
+
   # to add another model, copy a block above and tweak modelId / config.
   # OpenRouter model IDs: https://openrouter.ai/models
   # examples worth trying:

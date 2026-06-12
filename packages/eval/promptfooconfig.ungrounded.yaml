@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+#
+# ablation-only config: runs JUST the ungrounded baseline against the same
+# dataset and judges as the main sweep. exists as a separate file because
+# `--filter-providers` in promptfoo 0.119 does not reliably match custom
+# file:// providers by label, and the canonical 8-config sweep is expensive
+# to re-run by accident. run with:
+#   bun run eval:ablation        # from packages/eval
+#
+# see promptfooconfig.yaml for the full sweep and the design comment on the
+# oss-120b-ungrounded provider (kept in both files, in sync).
+
+description: zalem shopping advisor — ungrounded ablation baseline only
+
+providers:
+  - id: file://src/providers/advisorProvider.ts
+    label: oss-120b-ungrounded
+    config:
+      modelId: openai/gpt-oss-120b
+      reasoningEffort: medium
+      maxSteps: 12
+      promptVariant: ungrounded
+      disableTools: true
+      providerOrder: ["cerebras", "groq"]
+
+prompts:
+  - "{{question}}"
+
+# identical to the main sweep's defaultTest — same judges, same thresholds —
+# so the ablation rows are directly comparable to results/latest.json.
+defaultTest:
+  options:
+    provider: openrouter:anthropic/claude-haiku-4-5
+
+  assert:
+    - type: javascript
+      value: file://src/scorers/hasFinalAnswer.ts
+      metric: programmatic
+    - type: javascript
+      value: file://src/scorers/groundedness.ts
+      metric: programmatic
+    - type: javascript
+      value: file://src/scorers/factuality.ts
+      metric: programmatic
+    - type: javascript
+      value: file://src/scorers/toolCallEfficiency.ts
+      metric: programmatic
+    - type: javascript
+      value: file://src/scorers/expectedToolCoverage.ts
+      metric: programmatic
+    - type: javascript
+      value: file://src/scorers/reviewThemeFidelity.ts
+      metric: programmatic
+
+    - type: llm-rubric
+      metric: judge_completeness
+      threshold: 0.6
+      value: |
+        Rate the response on completeness. Does it directly and fully
+        address what the user asked? Penalise: evasive answers, asking
+        clarifying questions when the original question was clear,
+        missing the actual question. Reward: directly answering the
+        specific question with the relevant facts.
+
+    - type: llm-rubric
+      metric: judge_helpfulness
+      threshold: 0.6
+      value: |
+        Rate how useful the response is for a real shopper trying to
+        make a purchase decision. Penalise: vague hedging, generic
+        sales-speak, lack of concrete information. Reward: specific
+        prices, ratings, comparisons, actionable recommendations.
+
+    - type: llm-rubric
+      metric: judge_tradeoff_surfacing
+      threshold: 0.5
+      value: |
+        Rate whether the response surfaces relevant tradeoffs and
+        downsides. The advisor's role is to be honest, not pushy. For
+        product validation, comparison, and recommendation queries the
+        response should mention at least one downside or tradeoff if
+        one is relevant. For simple factual queries (e.g. "what's the
+        price?") this rubric does not apply — score 1.0 in that case.
+
+    - type: llm-rubric
+      metric: judge_tone
+      threshold: 0.7
+      value: |
+        Rate the response's tone. The advisor should sound like a
+        knowledgeable friend, not a salesperson. Penalise: pushy
+        upselling, "great choice!" boilerplate, overly formal
+        corporate-speak, condescension. Reward: calm, specific,
+        honest, concise.
+
+tests: file://src/datasets/shopping-v1.yaml
+
+evaluateOptions:
+  maxConcurrency: 4
+  delay: 0
+  showProgressBar: true
+
+outputPath: results/ungrounded.json

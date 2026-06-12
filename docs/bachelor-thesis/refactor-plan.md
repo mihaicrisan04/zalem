@@ -19,16 +19,16 @@ reference: `thesis-example/Solving_Techniques_for_Rubik_s_Cube_in_Software_and_R
 
 ## final structure
 
-| ch | title | target | content |
-| --- | --- | --- | --- |
-| — | front matter | 3p | abstract (tight), TOC |
-| 1 | Introduction | 3p | Context · Motivation · Objectives · Thesis Structure |
-| 2 | Background and Related Work | 8p | classical recsys, LLMs in recsys, trust/HCI (brief), Rufus case study (kept at strength) |
-| 3 | **Hybrid Recommendation with Grounded LLM Assistance** | 10p | the CS theoretical chapter — see § Ch3 detail below |
-| 4 | **System Implementation** | 23p | one consolidated chapter covering everything from architecture to frontend, plus eval harness and results — see § Ch4 detail below |
-| 5 | Conclusions and Future Work | 2p | summary, future work bullets |
-| — | references | 3p | audited bibliography |
-| | **total** | **~52p** | aim 50, accept 52 |
+| ch  | title                                                  | target   | content                                                                                                                            |
+| --- | ------------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| —   | front matter                                           | 3p       | abstract (tight), TOC                                                                                                              |
+| 1   | Introduction                                           | 3p       | Context · Motivation · Objectives · Thesis Structure                                                                               |
+| 2   | Background and Related Work                            | 8p       | classical recsys, LLMs in recsys, trust/HCI (brief), Rufus case study (kept at strength)                                           |
+| 3   | **Hybrid Recommendation with Grounded LLM Assistance** | 10p      | the CS theoretical chapter — see § Ch3 detail below                                                                                |
+| 4   | **System Implementation**                              | 23p      | one consolidated chapter covering everything from architecture to frontend, plus eval harness and results — see § Ch4 detail below |
+| 5   | Conclusions and Future Work                            | 2p       | summary, future work bullets                                                                                                       |
+| —   | references                                             | 3p       | audited bibliography                                                                                                               |
+|     | **total**                                              | **~52p** | aim 50, accept 52                                                                                                                  |
 
 ---
 
@@ -37,35 +37,41 @@ reference: `thesis-example/Solving_Techniques_for_Rubik_s_Cube_in_Software_and_R
 this is the "How to Solve a Rubik's Cube" equivalent. its job is to make the thesis feel like CS, not app development. it has formal definitions, equations, and architecture patterns that the implementation chapter then maps onto.
 
 ### 3.1 Classical Recommender Foundations (1.5p)
+
 - collaborative filtering via co-occurrence
 - content-based filtering
 - hybrid approaches (switching, weighted, mixed)
 - temporal decay and popularity bias
 
 ### 3.2 Similarity Measures (2p)
+
 - **Jaccard** similarity `J(A,B) = |A ∩ B| / |A ∪ B|` — set-theoretic justification, why it suits co-purchase signals
 - **Weighted attribute similarity** for content-based — formal scoring function
 - **Cosine** similarity (for the embedding-based theme-fidelity scorer)
 - **Exponential time decay** `score = count × e^(−λt)` — derivation of λ from desired half-life
 
 ### 3.3 The Two-Stage Retrieve-and-Rerank Pattern (1.5p)
+
 - IR-theoretic lineage (BM25 retrieval + neural rerank)
 - latency-bounding argument: candidate generation O(ms), rerank O(s)
 - why the pattern is dominant in production recsys
 
 ### 3.4 LLM Agents and Tool Use (2p)
+
 - the ReAct loop (Thought → Action → Observation)
 - function calling and structured output (JSON-mode, schemas)
 - step budgets and termination conditions
 - multi-turn context assembly
 
 ### 3.5 Grounded Generation and Output Validation (2p)
+
 - hallucination as a fundamental failure mode of free-form generation
 - hydration-over-generation principle
 - post-generation validation: identifier-existence checks, factual-claim stripping, theme-fidelity via embeddings
 - formal statement of the validation pipeline
 
 ### 3.6 Evaluation Metrics for Hybrid Systems (1p)
+
 - programmatic scorers (groundedness, factuality, theme fidelity, tool-call efficiency)
 - LLM-as-judge with cross-family bias mitigation
 - pareto fronts on (cost, quality) and (latency, quality)
@@ -78,30 +84,36 @@ this is the "How to Solve a Rubik's Cube" equivalent. its job is to make the the
 one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web Application" chapter pattern but extended to absorb the eval contribution. **bold** sub-sections are the load-bearing ones; others are intentionally short.
 
 ### 4.1 Requirements and Specifications (1.5p)
+
 - compressed functional + non-functional requirements
 - architecture overview figure (TikZ)
 - tech stack one-paragraph
 
 ### 4.2 Codebase and Deployment (1p)
+
 - monorepo layout (one paragraph + figure)
 - Convex + Next.js + OpenRouter + Dokploy topology
 
 ### 4.3 Data Layer (2p)
+
 - Convex schema, ER diagram (TikZ)
 - seed data (DummyJSON + faker, deterministic seeds)
 - index strategy
 
 ### 4.4 **Recommendation Engine** (2p)
+
 - co-occurrence with Jaccard (cross-ref §3.2) — keep `contentSimilarity` listing
 - content similarity, trending, personalized — prose only
 - two-stage pipeline figure (TikZ)
 
 ### 4.5 **Behavior Tracking and Readiness Signals** (2p)
+
 - client hooks (`useHover`, `useDwellTime`, `useViewportTracking`) — keep `useDwellTime` listing
 - aggregation + flush (figure)
 - readiness evaluator (composite score, cooldowns)
 
 ### 4.6 **LLM Advisor** (3p)
+
 - model routing across Cerebras-served `gpt-oss-120b` + Gemini Flash-Lite — keep `selectModel` listing
 - agent construction via `@convex-dev/agent` (prose, no listing)
 - system prompt summary + few-shot strategy
@@ -109,15 +121,18 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 - advisor sidebar UI (figure + screenshot)
 
 ### 4.7 Review Summarization (1.5p)
+
 - batch generation pipeline
 - conflict surfacing with counts
 - ground-truth check against review corpus
 
 ### 4.8 AI-Assisted Comparison (1.5p)
+
 - comparison tool + structured JSON schema
 - comparison UI (table render, no winner verdict)
 
 ### 4.9 **Output Validation Pipeline** (2p)
+
 - schema validation
 - catalog hydration (identifier-existence)
 - factual-claim stripping (regex over free text)
@@ -125,10 +140,12 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 - validation-pipeline figure
 
 ### 4.10 Frontend Walkthrough (1.5p)
+
 - UI screenshots (homepage recs, product page with review summary)
 - store flow narrative
 
 ### 4.11 **Evaluation Harness** (2p)
+
 - Promptfoo + custom Convex provider (build-vs-buy paragraph)
 - 5 programmatic scorers (groundedness, factuality, theme-fidelity, tool-call efficiency, has-final-answer)
 - LLM-as-judge with cross-family Claude Haiku 4.5
@@ -136,6 +153,7 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 - eval architecture figure
 
 ### 4.12 **Results** (3p)
+
 - ranked-configs table
 - pareto plot: cost × quality
 - pareto plot: latency × quality
@@ -144,6 +162,7 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 - selected configuration: justification on measured numbers
 
 ### 4.13 Engineering Challenges (compact, ~0.5p)
+
 - bullet list (not prose paragraphs)
 - 3–5 entries max
 
@@ -152,6 +171,7 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 ## what gets cut
 
 ### whole sections removed
+
 - Ch3 (Problem Definition) as a standalone chapter — content scatters into Ch1 (motivation) and Ch4 §4.1 (requirements)
 - Ch6 (Evaluation Methodology) as a standalone chapter — folds into Ch4 §4.11
 - Ch7 (Results) as a standalone chapter — folds into Ch4 §4.12
@@ -162,18 +182,22 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 - Ch3 (current) §3.3 non-goals as a list (folded into prose in §4.1 or dropped)
 
 ### figures cut
+
 - `monorepo-graph.pdf` (low value)
 - `eval-run-lifecycle.pdf` (subsumed by eval architecture figure)
 
 ### figures kept
+
 - `architecture-overview` (TikZ), `validation-pipeline`, `model-routing`, `advisor-request`, `deployment-topology`, `eval-architecture`, `readiness-loop`, `behavior-flush`, ER diagram (TikZ), two-stage-pipeline (TikZ), `ui-homepage-recommendations.png`, `ui-product-review-summary.png`, both pareto `.tex` plots, ranked-configs `.tex` table, per-category `.tex` table
 
 ### code listings kept
+
 - `contentSimilarity` (in §4.4)
 - `useDwellTime` (in §4.5)
 - `selectModel` (in §4.6)
 
 ### code listings dropped
+
 - schema-products listing (duplicates ER diagram)
 - second behavior listing (one is enough)
 - agent-construction listing (prose-only is fine)
@@ -183,17 +207,21 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 ## file-level migration
 
 ### new files
+
 - `thesis/chapters/chapter3_foundations.tex` — the hybrid braid, drafted from scratch using current `chapter4_design.tex` theoretical/rationale sections as raw material
 - `thesis/chapters/chapter4_system.tex` — consolidated impl + eval + results, merging current `chapter4_design.tex` impl parts + `chapter5_implementation.tex` + `chapter6_evaluation_methodology.tex` + `chapter7_results.tex`
 
 ### files heavily rewritten
+
 - `thesis/chapters/chapter1_introduction.tex` — trim from 7 sections to 4 (Context, Motivation, Objectives, Thesis Structure). drop H1/H2 hypotheses. fold contributions into closing of Objectives or move to Conclusions.
 - `thesis/chapters/chapter2_background.tex` — trim from 10p to 8p. compress the four LLM-in-RecSys subsections to two. shorten Positioning to one paragraph. **keep Rufus case study at full strength.**
 
 ### files renamed
+
 - `chapter8_conclusions.tex` → `chapter5_conclusions.tex`. trim from 4p to 2p. drop the contributions-revisited list (covered by closing of Ch1 Motivation). compress future-work subsections to one paragraph each.
 
 ### files deleted
+
 - `chapter3_problem.tex` — content scattered as described
 - `chapter4_design.tex` — split into new ch3 (theory) and new ch4 (impl)
 - `chapter5_implementation.tex` — content absorbed by new ch4
@@ -202,6 +230,7 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 - `chapter8_conclusions.tex` — replaced by `chapter5_conclusions.tex`
 
 ### main.tex changes
+
 ```latex
 \input{chapters/chapter1_introduction}
 \input{chapters/chapter2_background}
@@ -209,10 +238,12 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 \input{chapters/chapter4_system}
 \input{chapters/chapter5_conclusions}
 ```
+
 - update abstract (current abstract is acceptable; may need a sentence reflecting the consolidated structure)
 - title page: no change (already matches the UBB template via `style.sty`)
 
 ### references.bib
+
 - audit unused `\cite` entries; remove ones not actually cited in the final manuscript
 - consider switching from `alpha` to `abbrv` if faculty rules allow — saves 1–2p
 
@@ -220,16 +251,16 @@ one consolidated chapter. every subsection is 1–2p. mirrors the example's "Web
 
 ## order of operations
 
-| step | what | est | notes |
-| --- | --- | --- | --- |
-| 1 | trim ch1 (drop RQ/H/Contrib sections) | 0.5d | quick |
-| 2 | draft new ch3 foundations (hybrid braid) | 2d | most novel work; needs careful formula writing |
-| 3 | draft new ch4 system (merge 4 existing chapters) | 3d | biggest job; needs aggressive trimming |
-| 4 | trim ch2 background | 0.5d | line-level work |
-| 5 | trim new ch5 conclusions (former ch8) | 0.5d | quick |
-| 6 | update main.tex + abstract | 0.5d | mechanical |
-| 7 | bibliography audit + optional bibstyle swap | 0.5d | verify with faculty rules first |
-| 8 | build, fix refs, page count check, polish pass | 1d | iterate to hit 50p |
+| step | what                                             | est  | notes                                          |
+| ---- | ------------------------------------------------ | ---- | ---------------------------------------------- |
+| 1    | trim ch1 (drop RQ/H/Contrib sections)            | 0.5d | quick                                          |
+| 2    | draft new ch3 foundations (hybrid braid)         | 2d   | most novel work; needs careful formula writing |
+| 3    | draft new ch4 system (merge 4 existing chapters) | 3d   | biggest job; needs aggressive trimming         |
+| 4    | trim ch2 background                              | 0.5d | line-level work                                |
+| 5    | trim new ch5 conclusions (former ch8)            | 0.5d | quick                                          |
+| 6    | update main.tex + abstract                       | 0.5d | mechanical                                     |
+| 7    | bibliography audit + optional bibstyle swap      | 0.5d | verify with faculty rules first                |
+| 8    | build, fix refs, page count check, polish pass   | 1d   | iterate to hit 50p                             |
 
 **total estimate: ~1 week** of focused writing.
 

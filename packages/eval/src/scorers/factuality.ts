@@ -8,7 +8,10 @@ type Context = {
   providerResponse?: { metadata?: { dbSnapshot?: Snapshot } };
 };
 
-const PRICE_REGEX = /\$\s?(\d+(?:\.\d{1,2})?)/g;
+// price regex accepts thousands separators ("$1,199" and "$1199.99") —
+// without the comma branch, "$1,199" parses as a claim of "$1" and inflates
+// the fabricated-claim count. see docs/lessons-learned.md.
+const PRICE_REGEX = /\$\s?(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)/g;
 const RATING_REGEX = /(\d(?:\.\d)?)\s*(?:\/\s*5|stars?|★)/gi;
 const PRICE_TOLERANCE = 0.01;
 const RATING_TOLERANCE = 0.1;
@@ -18,7 +21,9 @@ export default function factuality(output: string, context: Context) {
   const truePrices = new Set(Object.values(snapshot).map((p) => Number(p.price.toFixed(2))));
   const trueRatings = new Set(Object.values(snapshot).map((p) => Number(p.rating.toFixed(1))));
 
-  const claimedPrices = Array.from(output.matchAll(PRICE_REGEX), (m) => Number(m[1]));
+  const claimedPrices = Array.from(output.matchAll(PRICE_REGEX), (m) =>
+    Number((m[1] ?? "").replace(/,/g, "")),
+  );
   const claimedRatings = Array.from(output.matchAll(RATING_REGEX), (m) => Number(m[1]));
 
   if (claimedPrices.length === 0 && claimedRatings.length === 0) {

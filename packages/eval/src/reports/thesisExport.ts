@@ -276,7 +276,9 @@ function emitParetoTex(xKey: "cost" | "latency", csvName: string): string {
 % requires: \\usepackage{pgfplots}
 \\begin{tikzpicture}
   \\begin{axis}[
-    width=\\linewidth,
+    % pgfplots' width covers the axis box only; tick + axis labels
+    % stick out left of it, so leave 8% headroom for the text block
+    width=0.92\\linewidth,
     height=8cm,
     xlabel={${xLabel}},
     ylabel={Quality (LLM-judge mean)},

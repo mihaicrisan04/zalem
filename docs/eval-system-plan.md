@@ -457,6 +457,21 @@ written directly as the `providers:` section of `promptfooconfig.yaml`. Promptfo
 
 9 configs × 25 rows = **225 advisor calls per sweep + 225 × 5 ≈ 1,125 judge calls**. at OpenRouter's gpt-oss prices (Cerebras tier) and Haiku 4.5's judge cost, a full sweep is well under $5.
 
+### ungrounded ablation baseline (added 2026-06-12, supervisor feedback)
+
+supervisor asked for "a benchmark that validates the approach". the sweep above compares configurations _within_ the grounded architecture; nothing measured the architecture _against the alternative_. the `oss-120b-ungrounded` config fixes that:
+
+| label               | model               | reasoning | maxSteps | prompt variant | tools    |
+| ------------------- | ------------------- | --------- | -------- | -------------- | -------- |
+| oss-120b-ungrounded | openai/gpt-oss-120b | medium    | 12       | ungrounded     | **none** |
+
+design choices:
+
+- **one variable changes**: same model, reasoning effort, step budget, few-shots, and context assembly as `gpt-oss-120b-medium`. only tool access is removed (`disableTools: true` in `runOnce.ts`) plus the minimal prompt edit that removes the now-impossible tool instructions (`ungrounded` variant in `promptVariants.ts`). the prompt still asks for specific products, prices, and review counts, the way a naive chatbot deployment would
+- **expected outcome is a dichotomy**: the model either fabricates specifics (groundedness / factuality / theme fidelity drop) or refuses to be specific (judge completeness / helpfulness drop). either result validates the grounded architecture
+- **tool metrics are structurally inapplicable** for this row (`expectedToolCoverage` F1 = 0 by construction, `toolCallEfficiency` vacuous 1). exclude both when comparing against grounded configs; compare on groundedness, factuality, theme fidelity, and the judge metrics
+- **caveat for the thesis**: the system context still includes the current product card (price, rating) because the client assembles that in any deployment; the ablation removes catalog _access_, not page _context_. claims about the context product can be correct; claims about anything else cannot be verified by the model
+
 ---
 
 ## storage

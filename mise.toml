@@ -9,7 +9,4 @@ run = "open -a Skim thesis/build/main.pdf"
 
 [tasks."thesis:preview"]
 description = "build the thesis, then open it in Skim (Skim auto-reloads on subsequent rebuilds)"
-run = [
-  "bun run thesis:build",
-  "open -a Skim thesis/build/main.pdf",
-]
+run = ["bun run thesis:build", "open -a Skim thesis/build/main.pdf"]

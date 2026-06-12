@@ -62,6 +62,9 @@ export const runOnce = action({
       maxSteps: v.number(),
       promptVariant: v.string(),
       providerOrder: v.optional(v.array(v.string())),
+      // ablation knob: run the agent with no tools at all. pairs with the
+      // "ungrounded" prompt variant to measure what grounding buys.
+      disableTools: v.optional(v.boolean()),
     }),
     sweepLabel: v.optional(v.string()),
   },
@@ -99,13 +102,15 @@ export const runOnce = action({
         providerOrder: args.config.providerOrder,
       }),
       instructions: systemPrompt,
-      tools: {
-        getProductDetails,
-        searchProducts,
-        getRecommendations,
-        getCartContents,
-        getReviewsSummary,
-      },
+      tools: args.config.disableTools
+        ? {}
+        : {
+            getProductDetails,
+            searchProducts,
+            getRecommendations,
+            getCartContents,
+            getReviewsSummary,
+          },
       maxSteps: args.config.maxSteps,
     });
 

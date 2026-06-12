@@ -11,7 +11,7 @@ measures and the time-decay function used throughout the system.
 Section~\ref{sec:found-two-stage} states the two-stage
 retrieve-and-rerank pattern. Section~\ref{sec:found-agents}
 describes the LLM-agent loop with tool use and structured output.
-Section~\ref{sec:found-grounding} develops hydration over
+Section~\ref{sec:found-grounding} presents hydration over
 generation and the post-generation validation pipeline as a
 structural defense against hallucination.
 Section~\ref{sec:found-eval} defines the evaluation metrics used
@@ -28,10 +28,10 @@ popularity for trending. The personalized slot uses a switching
 hybrid as defined by Burke~\cite{Burke2002Hybrid}, picking the
 algorithm per request based on how deep the user's purchase
 history goes. Three properties of this layer matter for what
-follows: every algorithm runs on the live catalog and returns
-real product identifiers (it cannot invent products), every
+follows. Every algorithm runs on the live catalog and returns
+real product identifiers (it cannot invent products). Every
 algorithm is deterministic given the catalog state (the candidate
-set is reproducible across evaluation runs), and every algorithm
+set is reproducible across evaluation runs). Every algorithm
 runs inside a single Convex query within a tight latency budget
 (Section~\ref{sec:found-two-stage}). Together they justify
 treating the classical layer as the trusted source of candidates
@@ -43,25 +43,25 @@ and the LLM as a writer over those candidates.
 Four formal definitions support the classical layer.
 
 \paragraph{Jaccard similarity.} Jaccard
-similarity~\cite{Jaccard1912} measures how much two
-sets overlap, normalized by their combined size: the share of
-elements they share. For two finite sets $A$ and $B$,
+similarity~\cite{Jaccard1912} measures the share of elements two
+sets have in common. For two finite sets $A$ and $B$,
 \begin{equation}
   J(A, B) \;=\; \frac{|A \cap B|}{|A \cup B|},
   \label{eq:jaccard}
 \end{equation}
-with $J(\emptyset, \emptyset) := 0$ by convention. The coefficient
-is symmetric, lives in $[0, 1]$, and equals one iff $A = B$.
+where two empty sets score zero by convention. The coefficient
+is symmetric, takes values in $[0, 1]$, and equals one exactly
+when $A = B$.
 Applied to the buyer sets of two products $p_a, p_b$, it produces
 a similarity score that is robust to popularity differences: a
 product with many buyers does not automatically score high
 against another just because their intersection is
 large~\cite{ComprehensiveRecSys2024}. The
 prototype uses Equation~\ref{eq:jaccard} over buyer sets for the
-``frequently bought together'' slot, with a minimum-support filter requiring
-$|B(p_a) \cap B(p_b)| \ge 2$ for a pair to enter the precomputed
-co-occurrence index. The filter suppresses spurious links from
-incidental co-purchases.
+``frequently bought together'' slot. A minimum-support filter
+requires $|B(p_a) \cap B(p_b)| \ge 2$ for a pair to enter the
+precomputed co-occurrence index. The filter removes spurious
+links from chance co-purchases.
 
 \paragraph{Weighted attribute similarity.} Two products are
 compared by averaging seven small attribute comparisons, with the
@@ -79,7 +79,9 @@ $\mathbb{1}[\cdot]$ (1 if equal, 0 otherwise), the Jaccard
 coefficient $J(\cdot, \cdot)$ of Equation~\ref{eq:jaccard} over a
 tag-set argument, or a
 proximity score $\mathrm{prox}(x, y) = 1 - |x-y|/\max(x,y)$ for
-numeric attributes. Table~\ref{tab:found-sim-weights} lists the
+numeric attributes, which equals one when the two values match
+and falls toward zero as they move apart.
+Table~\ref{tab:found-sim-weights} lists the
 components and their weights.
 
 \begin{table}[ht]
@@ -113,7 +115,8 @@ the denormalized product row.
 \paragraph{Cosine similarity.} Cosine treats two vectors as
 directions and measures the angle between them: values near
 one mean the vectors point the same way, values near zero mean
-they are orthogonal~\cite{ManningIR2008}. For two vectors
+they are orthogonal (the vectors share no
+direction)~\cite{ManningIR2008}. For two vectors
 $u, v \in \mathbb{R}^d$,
 \begin{equation}
   \cos(u, v) \;=\; \frac{\langle u, v \rangle}{\|u\| \cdot \|v\|}.
@@ -121,12 +124,12 @@ $u, v \in \mathbb{R}^d$,
 \end{equation}
 The prototype uses Equation~\ref{eq:cosine} over text embeddings
 only inside the
-review-theme-fidelity scorer of Section~\ref{sec:found-eval}:
-each candidate review-summary theme is embedded and compared
-against the embeddings of the source reviews, and themes whose
+review-theme-fidelity scorer of Section~\ref{sec:found-eval}.
+Each candidate review-summary theme is embedded and compared
+against the embeddings of the source reviews. Themes whose
 nearest review falls below a threshold $\tau$ are rejected.
-Cosine beats Euclidean distance here because embedding norms
-carry no semantic content.
+Cosine is preferred over Euclidean distance here because
+embedding norms carry no meaning.
 
 \paragraph{Exponential time decay.} Trending is a weighted count
 of recent events where each event's contribution shrinks
@@ -146,7 +149,7 @@ $\lambda = \ln 2 / T_{1/2}$. The prototype uses $T_{1/2} = 14$
 days, giving $\lambda \approx 0.0495$. The score is precomputed
 nightly into the \texttt{trendingScore} column on the
 \texttt{products} table, so the trending slot is one indexed read
-at query time. The half-life is the only meaningful knob, and it
+at query time. The half-life is the only meaningful parameter, and it
 depends on category; durable goods would justify a longer
 half-life and fashion a shorter one~\cite{SessionRecSys2021}.
 
@@ -154,12 +157,12 @@ half-life and fashion a shorter one~\cite{SessionRecSys2021}.
 \label{sec:found-two-stage}
 
 The two-stage retrieve-and-rerank pattern connects the classical
-layer to the LLM layer. Its information-retrieval lineage runs
+layer to the LLM layer. It comes from information retrieval,
 from cascade ranking in web search~\cite{HSTU2024} through to
 production e-commerce deployments~\cite{ShopifyHSTU}. The thesis
-adopts it for a specific reason: it is the structural answer to
-the question Chapter~\ref{chap:background} raised about Rufus,
-namely how an LLM-assisted shopping system avoids hallucinating
+adopts it for one reason. It is the structural answer to
+the question Chapter~\ref{chap:background} raised about Rufus:
+how an LLM-assisted shopping system avoids hallucinating
 products and specifications.
 
 Formally, following the cascade-ranking
@@ -168,11 +171,13 @@ product catalog and $q$ a
 slot intent or user query. A retrieve function $R$ produces a
 small candidate set
 \begin{equation}
-  S \;=\; R(q, \mathcal{C}), \qquad |S| \ll |\mathcal{C}|,
-  \qquad S \subseteq \mathcal{C},
+  S \;=\; R(q, \mathcal{C}), \quad |S| \ll |\mathcal{C}|,
+  \quad S \subseteq \mathcal{C},
   \label{eq:retrieve}
 \end{equation}
-under a tight latency budget $\tau_R$. A rerank-and-explain
+under a tight latency budget $\tau_R$. In words, the retrieve
+stage narrows the full catalog down to a small set of real
+catalog products before the LLM is involved. A rerank-and-explain
 function $L$ then runs over $S$ alone:
 \begin{equation}
   (\hat{S}, r) \;=\; L(q, S, \textrm{ctx}), \qquad \hat{S} \subseteq S,
@@ -195,15 +200,15 @@ consumer-acceptable end-to-end budget goes to $L$. Third, LLM
 inference cost scales with input context size, so bounding $|S|$
 caps the per-request token cost regardless of
 $|\mathcal{C}|$~\cite{HSTU2024}. At the prototype scale
-($|\mathcal{C}| \approx 200$) the second property is comfortable;
-the bound on $|S|$ is what keeps the pattern viable as
+($|\mathcal{C}| \approx 200$) the second property is easy to
+meet; the bound on $|S|$ is what keeps the pattern viable as
 $|\mathcal{C}|$ grows.
 
 The pattern also splits responsibilities cleanly. The retrieve
 function $R$ owns relevance and recall over the full catalog and
 only ever sees structural data. The rerank-and-explain function
 $L$ owns natural-language presentation, conflict surfacing, and
-tradeoff articulation, and only ever sees the candidate set plus
+tradeoff explanation, and only ever sees the candidate set plus
 context. Neither concern leaks into the other.
 
 \section{LLM Agents and Tool Use}
@@ -233,10 +238,10 @@ the start of every turn. Each tool has a name, a JSON schema for
 its arguments, and a deterministic implementation that the agent
 runtime executes in a sandbox with access to the catalog. The
 prototype exposes seven tools to the advisor:
-\texttt{getProductDetails}, \texttt{searchProducts},
-\texttt{getRecommendations}, \texttt{getCartContents},
-\texttt{getReviewSummary}, \texttt{compareProducts}, and
-\texttt{getCategoryStructure}. Each tool is a thin wrapper over a
+\code{getProductDetails}, \texttt{searchProducts},
+\code{getRecommendations}, \texttt{getCartContents},
+\code{getReviewSummary}, \texttt{compareProducts}, and
+\code{getCategoryStructure}. Each tool is a thin wrapper over a
 Convex query, so the agent reads the same data the production
 client reads. The tool catalog is the only way the LLM can pull
 information from the live catalog during an advisor turn.
@@ -244,12 +249,12 @@ information from the live catalog during an advisor turn.
 \paragraph{Structured output.} For surfaces that render
 structured UI (the productId list on the advisor surface, the
 comparison table, the review-summary object), the final agent
-response has to validate against a JSON schema. Native JSON-mode
+response must validate against a JSON schema. Native JSON-mode
 support in modern LLMs~\cite{StructuredOutput2024} pushes the
 adherence rate above 99\% for moderate-depth schemas, so the
 prototype treats schema validation as a hard contract rather than
 a best-effort guardrail. A schema-invalid response counts as a
-failed turn and is not surfaced to the user.
+failed turn and is not shown to the user.
 
 \paragraph{Step budget and termination.} The step budget $B$ caps
 the loop length to bound worst-case latency and cost. The
@@ -258,8 +263,8 @@ agent ran out of steps making redundant tool calls and never
 produced a terminal text response. The eval harness
 (Section~\ref{sec:found-eval}) tracks both the
 \texttt{hasFinalAnswer} property (did the agent terminate before
-$B$?) and the \texttt{toolCallEfficiency} property (how many of
-the calls were duplicates?), and any regression on either shows
+$B$?) and the \code{toolCallEfficiency} property (how many of
+the calls were duplicates?). Any regression on either shows
 up immediately in the configuration sweep.
 
 The agent loop's cost is dominated by the LLM call at each
@@ -275,12 +280,12 @@ execution.
 
 Hallucination is the LLM behavior where the model produces
 plausible-sounding output that is not supported by its inputs. In
-a shopping context, the failure modes catalogued in
+a shopping context, the failure modes listed in
 Chapter~\ref{chap:background} are all instances: invented product
 identifiers, fabricated prices, mismatched specifications, and
 review themes that do not appear in the source corpus. The
-generative behavior that produces these failures is baked into
-the model class~\cite{HallucinationSurvey2023}; mitigation has to
+generative behavior that produces these failures is inherent to
+the model class~\cite{HallucinationSurvey2023}; mitigation must
 be structural.
 
 \paragraph{Hydration over generation.} The prototype enforces a
@@ -298,7 +303,9 @@ live catalog. The user-visible surface is
   \label{eq:hydration}
 \end{equation}
 where $r$ is the agent's free-text rationale and $\mathrm{sanitize}$
-removes price and specification claims (defined below). The LLM
+removes price and specification claims (defined below). In words,
+the user sees the live catalog record for every cited identifier,
+plus the cleaned rationale text. The LLM
 never sees a price, never produces a price for display, and never
 renders a product attribute. Every factual surface the user sees
 was read from the catalog at render time.
@@ -317,11 +324,11 @@ agent turn.
       \hat{S}' \;=\; \hat{S} \cap \mathcal{C}_{id}.
       \label{eq:id-existence}
     \end{equation}
-    Identifiers in $\hat{S} \setminus \mathcal{C}_{id}$ are dropped
+    Cited identifiers that do not exist in the catalog are dropped
     silently. The check is a single indexed read per identifier and
     runs inside the same Convex action that wraps the agent call,
     so the client never sees an unverified identifier. This is the
-    primary defense against the 32\% recommendation accuracy
+    main defense against the 32\% recommendation accuracy
     failure mode documented for
     Rufus~\cite{RufusWrong2024}.
   \item \textbf{Claim stripping.} The free-text rationale $r$ is
@@ -332,20 +339,22 @@ agent turn.
     keywords like ``GB'', ``inches'', ``mAh'', ``Hz'', ``W'').
     The sanitized output is $\mathrm{sanitize}(r)$. The system
     prompt forbids the model from quoting these in the first
-    place; stripping is a belt-and-braces measure that catches
-    prompt-following lapses~\cite{ShopifyAgentic}.
+    place; stripping is a second layer that catches lapses in
+    prompt following~\cite{ShopifyAgentic}.
   \item \textbf{Theme fidelity (batch path).} For review summaries
     only, each claimed theme $t$ is checked against the embedding
     set $\mathcal{E}_{\mathrm{rev}}$ of the source review corpus by
     a nearest-neighbor lookup under the cosine similarity of
     Equation~\ref{eq:cosine}~\cite{ManningIR2008}. A theme is
-    accepted iff
+    accepted exactly when
     \begin{equation}
       \max_{e \in \mathcal{E}_{\mathrm{rev}}} \cos(\mathrm{embed}(t), e)
       \;\geq\; \tau,
       \label{eq:theme-fidelity}
     \end{equation}
-    with threshold $\tau$ tuned on a small held-out batch. Themes
+    with threshold $\tau$ tuned on a small held-out batch. In
+    words, a theme is kept only when at least one real review is
+    close enough to it. Themes
     that fail the test are dropped before the summary is
     persisted. This is the defense against the review-fabrication
     failure mode~\cite{RufusConfidentlyWrong2024}.
@@ -363,7 +372,8 @@ candidate selector and a writer, never a source of facts.
 
 A hybrid system with a classical layer and an LLM layer cannot be
 evaluated by a single metric. The prototype's evaluation rests on
-three layers of scorer, each addressing a different failure mode.
+three layers of scorers, each addressing a different failure
+mode.
 
 \paragraph{Programmatic scorers.} A programmatic scorer is a
 deterministic function from the agent's response and the live
@@ -374,17 +384,18 @@ are used in the canonical sweep.
   \item \texttt{hasFinalAnswer}: did the agent terminate before the
     step budget? Catches the maxSteps-cutoff bug class.
   \item \texttt{groundedness}: is every productId cited in the
-    answer in the catalog?
-    Formally, $|\hat{S} \setminus \mathcal{C}_{id}| / |\hat{S}|$,
-    inverted so higher is better.
+    answer in the catalog? Scored as the share of cited productIds
+    that exist in the catalog, formally
+    $|\hat{S} \cap \mathcal{C}_{id}| / |\hat{S}|$, so higher is
+    better.
   \item \texttt{factuality}: do claimed prices and ratings match
     the database snapshot captured at run start? Scored as the
     fraction of claims that match.
-  \item \texttt{reviewThemeFidelity}: do claimed review themes
+  \item \code{reviewThemeFidelity}: do claimed review themes
     have an embedding match in the source corpus above
     threshold $\tau$? Generalizes the validator described in
     Section~\ref{sec:found-grounding}.
-  \item \texttt{toolCallEfficiency}: a duplicate-call penalty
+  \item \code{toolCallEfficiency}: a duplicate-call penalty
     plus the fraction of the step budget used.
 \end{itemize}
 
@@ -410,18 +421,18 @@ $\mathrm{cost}(c)$, p95 latency $\mathrm{lat}(c)$, and tool-step
 efficiency $E(c)$. The sweep produces this vector for every
 configuration. Two reporting forms are used.
 
-The pareto front on $(\mathrm{cost}, Q)$ identifies the
+The Pareto front on $(\mathrm{cost}, Q)$ identifies the
 configurations that no other configuration strictly dominates on
 both axes: for any $c$ on the front, no $c'$ exists with
 $\mathrm{cost}(c') < \mathrm{cost}(c)$ and $Q(c') > Q(c)$. The
-same construction yields the pareto front on
-$(\mathrm{lat}, Q)$. The front is the natural object for choosing
-a deployment configuration under explicit budget.
+same construction yields the Pareto front on
+$(\mathrm{lat}, Q)$. The front is the natural way to choose
+a deployment configuration under an explicit budget.
 
 A composite score collapses the measurement vector into a single
-number by taking a weighted average across the five axes, the
+number through a weighted average across the five axes, the
 standard weighted-sum method for multi-objective
-ranking~\cite{MarlerArora2010}, used
+ranking~\cite{MarlerArora2010}. It is used
 when one ranked list is needed. The prototype defines
 \begin{equation}
   \mathrm{composite}(c) \;=\;
@@ -438,7 +449,7 @@ the cheapest and fastest configurations in the sweep. The weights
 are an explicit editorial choice: quality dominates, correctness
 is the second largest factor, cost and latency contribute
 moderately, and efficiency is a tie-breaker. The composite is
-always reported alongside the pareto front, never instead, so a
+always reported alongside the Pareto front, never instead, so a
 reader who disagrees with the weights can read the underlying
 tradeoffs directly.
 

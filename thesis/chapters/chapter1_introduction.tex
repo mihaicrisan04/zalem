@@ -6,20 +6,21 @@
 
 Online retail has outgrown what any one shopper can browse. A
 single category page on a large marketplace lists thousands of
-substitutes, and shoppers spend a lot of time browsing, comparing,
-and validating products before they buy. Recommender systems
+substitutes, and shoppers spend considerable time browsing,
+comparing, and checking products before they buy. Recommender systems
 narrow the search space using signals like co-purchase frequency,
 content similarity over product attributes, and ranking models
 trained on historical
 interactions~\cite{ComprehensiveRecSys2024, LLM4Rec2025}. These
 methods are well studied, fast, and widely deployed. They share
-one limitation that hits the user directly: the output is opaque.
+one limitation that affects the user directly: the output is
+opaque.
 A shopper who sees a ``frequently bought together'' or
 ``similar items'' panel is not told why those products were
 chosen.
 
 Large language models reopen the explanation problem. An LLM can
-write natural-language rationales, summarize customer reviews,
+write natural-language explanations, summarize customer reviews,
 and surface tradeoffs between similar
 products~\cite{LLMEnhancedRecSys2024, ExplainableRecKG2024}.
 Putting an LLM into a shopping flow brings new risks, though.
@@ -30,22 +31,22 @@ Despite that scale, independent studies report a 32\% accuracy
 rate for picking the right product, a 28\% price hallucination
 rate, and an 83\% bias toward Amazon-owned
 products~\cite{RufusWrong2024,RufusConfidentlyWrong2024}.
-Consumer surveys back this up. 55\% of users say they do not
+Consumer surveys support this: 55\% of users say they do not
 trust AI chatbot product
 recommendations~\cite{ConsumerDistrust2025}, and 42\% see
 e-commerce AI assistants as upsell tools, not
 advisors~\cite{AIUpsell2025}. HCI research adds a timing angle:
-AI suggestions offered after a natural pause land better than
-proactive interruptions~\cite{CHI2024Timing}.
+AI suggestions offered after a natural pause are better received
+than proactive interruptions~\cite{CHI2024Timing}.
 
 The open question is not whether to put LLMs into e-commerce,
-but how. The architecture and interaction choices that decide
-whether the assistant is trusted, accurate, and welcome have not
-been studied systematically at bachelor-thesis scale against a
-documented production baseline. This thesis proposes both: an
-architecture that grounds every factual claim in the live
-catalog, and a process that backs every configuration choice
-with measured evidence. Both are validated in a working
+but how. The architecture and interaction choices decide whether
+the assistant is trusted, accurate, and welcome. At
+bachelor-thesis scale, they have not been studied systematically
+against a documented production system. This thesis proposes
+both: an architecture that grounds every factual claim in the
+live catalog, and a process that backs every configuration
+choice with measured evidence. Both are validated in a working
 prototype.
 
 \section{Motivation}
@@ -58,37 +59,37 @@ and perceived intrusiveness all show up in Rufus and in user
 surveys, and they are not edge
 cases~\cite{RufusWrong2024,ConsumerResistanceAI}. Second, the
 timing of an AI suggestion matters. Suggestions offered after a
-natural pause read as helpful. Suggestions injected during active
-deliberation read as
+natural pause read as helpful. Suggestions injected while the
+user is still deciding read as
 interruption~\cite{CHI2024Timing,ProactiveReactivePersonalization}.
 
 A reactive-first interaction model follows. The system tracks
 lightweight browsing signals (dwell time on a product, scroll
 depth, engagement with the reviews tab) to infer when help might
-be welcome, but it never auto-fires AI advice. The user has to
-engage on purpose. Behavior signals prepare context. The user
+be welcome, but it never triggers AI advice automatically. The
+user must engage deliberately. Behavior signals prepare context. The user
 pulls.
 
-Amazon's own product timeline backs this up. Rufus launched as a
-reactive assistant. The proactive ``Help Me Decide'' surface was
+Amazon's own product timeline points the same way. Rufus
+launched as a reactive assistant. The proactive ``Help Me Decide'' surface was
 added ten months later, after the reactive product had
 stabilized~\cite{RufusTechnology,RufusScaling}. Reactive came
 first at the scale that matters most.
 
-The central claim of this thesis is that a hybrid architecture
-combining classical recommender algorithms with a reactive,
-grounded LLM advisor can answer real shopping questions without
-inheriting the trust failures of production systems, and that
-every model and prompt choice in such an architecture can be
-backed by measured evidence rather than intuition.
+The central claim of this thesis has two parts. A hybrid
+architecture that combines classical recommender algorithms with
+a reactive, grounded LLM advisor can answer real shopping
+questions without inheriting the trust failures of production
+systems. Every model and prompt choice in such an architecture
+can be backed by measured evidence rather than intuition.
 
 \section{Objectives}
 \label{sec:intro-objectives}
 
 This thesis proposes an architecture for grounded, LLM-augmented
 shopping recommendation and a process for configuring it on
-measured evidence, then realizes both in a working prototype
-that puts the central claim above into practice.
+measured evidence. Both are realized in a working prototype that
+puts the central claim above into practice.
 
 \begin{enumerate}
   \item Design a hybrid recommendation architecture in which a
@@ -107,7 +108,7 @@ that puts the central claim above into practice.
 
   \item Build a review summarization flow that surfaces
     conflicting buyer opinions with counts, fixing the failure
-    most criticized in comparable production systems.
+    most criticized in similar production systems.
 
   \item Build an AI-assisted comparison flow that produces a
     structured tradeoff between two or three same-category
@@ -155,9 +156,11 @@ its tools and prompt, the review summarization batch flow, the
 AI-assisted comparison surface, the output validation pipeline,
 and the frontend. The chapter closes with the evaluation harness
 and the measured results across an eight-configuration sweep,
-including pareto fronts on cost-quality and latency-quality and
-a composite ranking that justifies the shipped configuration.
+including Pareto fronts on cost-quality and latency-quality, a
+composite ranking that justifies the shipped configuration, and
+an ungrounded ablation baseline that measures what the grounded
+architecture buys.
 
 Chapter~\ref{chap:conclusions} summarizes what the prototype
-demonstrates, what the measured evaluation supports, and the
+shows, what the measured evaluation supports, and the
 limitations and directions for future work.

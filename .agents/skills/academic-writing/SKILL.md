@@ -779,11 +779,13 @@ Most journals want a methods/acknowledgments statement that names the
 tool, version (if available), and what it was used for. Example:
 
 > During the preparation of this work the author(s) used [tool name,
+>
 > > e.g., ChatGPT-5, Claude Opus 4.7, Gemini 3 Pro] in order to
-> [specific use, e.g., language polishing of the introduction; drafting
-> > code for the cluster analysis in section 3.2]. After using this tool,
-> the author(s) reviewed and edited the content as needed and take(s)
-> full responsibility for the content of the publication.
+> > [specific use, e.g., language polishing of the introduction; drafting
+> >
+> > > > code for the cluster analysis in section 3.2]. After using this tool,
+> > > > the author(s) reviewed and edited the content as needed and take(s)
+> > > > full responsibility for the content of the publication.
 
 Adjust to match the target journal's exact required wording — Elsevier,
 Springer Nature, Wiley, Taylor & Francis, IEEE, and ACM each publish

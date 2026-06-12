@@ -37,8 +37,9 @@ stripping, theme-fidelity) and evaluation instrumentation
 
 \paragraph{Non-functional requirements.} The classical layer
 targets p95 latency below 50~ms; the advisor end-to-end target
-is p95 below 3~s, with the time-to-first-content target of 1~s
-aspirational since tool-calling depth dominates inference speed.
+is p95 below 3~s. The 1~s time-to-first-content target is
+aspirational because tool-calling depth dominates inference
+speed.
 Per-session token cost has to be measurable and within a
 consumer-application budget; review summarization amortizes its
 cost over the lifetime of a product. The LLM must never generate
@@ -71,52 +72,53 @@ The backend is a single Convex deployment. Convex provides
 queries (read-only, reactive, transactional), mutations (write,
 transactional), actions (non-transactional, allowed to call
 external services), crons, and a TypeScript schema. All
-persistent state lives in Convex tables. The seed pipeline runs
-as a Convex action, the recommendation cron runs as a Convex
-action, and the advisor agent runs as a Convex action with
-tool-calling enabled. Convex was chosen over a conventional
-REST-plus-SQL-plus-queue stack because the prototype needs
-reactive UI updates, scheduled batch flows, and a shared schema
-between server and client, and Convex delivers these natively.
+persistent state lives in Convex tables. The seed pipeline, the
+recommendation cron, and the advisor agent all run as Convex
+actions, the agent with tool-calling enabled. Convex was chosen
+over a conventional REST-plus-SQL-plus-queue stack because the
+prototype needs reactive UI updates, scheduled batch flows, and
+a shared schema between server and client. Convex provides all
+three natively.
 The tradeoff is vendor lock-in, accepted at prototype scale.
 
 \section{Codebase and Deployment}
 \label{sec:sys-codebase}
 
 The repository is a Turborepo monorepo using bun workspaces:
-\texttt{apps/web} (the Next.js frontend),
-\texttt{packages/backend} (the Convex backend with
-  \texttt{convex/ai/} grouping the advisor, prompts, models,
+\code{apps/web} (the Next.js frontend),
+\code{packages/backend} (the Convex backend with
+  \code{convex/ai/} grouping the advisor, prompts, models,
 review summaries, and eval integration),
-\texttt{packages/ui} (shared design system),
-\texttt{packages/eval} (the LLM eval harness),
-\texttt{packages/env} (type-safe environment validation), and
-\texttt{packages/config} (shared TypeScript configuration). The
+\code{packages/ui} (shared design system),
+\code{packages/eval} (the LLM eval harness),
+\code{packages/env} (type-safe environment validation), and
+\code{packages/config} (shared TypeScript configuration). The
 eval harness depends on the backend, so scoring runs invoke the
 same advisor action as the production client.
 
-The application is deployed on a single VPS. Dokploy orchestrates
+The application is deployed on a single VPS. Dokploy runs
 four containerized services behind a Traefik reverse proxy (TLS
 via Let's Encrypt, hostname-based routing): the Next.js app, the
 Convex API origin, the Convex HTTP-actions site, and the Convex
-admin dashboard, with the Convex deployment self-hosted against a
+admin dashboard. The Convex deployment is self-hosted against a
 co-located Postgres instance. Push-to-main triggers a GitHub
 Actions workflow that runs \texttt{convex deploy} in parallel
 with Dokploy's auto-deploy of the Next.js Docker image. The
-posture is deliberately not hyperscale: the prototype runs on one
-VPS and has to run convincingly end to end, not at scale.
+setup is deliberately small: the prototype runs on one VPS and
+has to run convincingly end to end, not at scale.
 
 \section{Data Layer}
 \label{sec:sys-data}
 
-The Convex schema defines twelve tables grouped logically into
-four domains: catalog, transactional, behavior-and-AI, and
+The Convex schema defines twelve tables grouped into four
+domains: catalog, transactional, behavior-and-AI, and
 recommendation precomputation.
 Figure~\ref{fig:er-diagram} shows the grouped
 entity-relationship view.
 
 \begin{figure}[ht]
   \centering
+  \resizebox{\linewidth}{!}{%
   \begin{tikzpicture}[
       node distance=0.6cm and 0.7cm,
       tab/.style={draw, rounded corners=2pt, align=left,
@@ -171,7 +173,8 @@ entity-relationship view.
     \draw[rel] (prod) -- (ord);
     \draw[rel] (prod.south) to[bend right=10] (cooc.north);
     \draw[rel] (prod.south) to[bend left=5] (beh.east);
-  \end{tikzpicture}
+  \end{tikzpicture}%
+  }
   \caption{Data model grouped by domain. Foreign keys flow from
     \texttt{products} into the transactional, behavior, and
     recommendation tables. Anonymous behavior sessions carry only
@@ -183,9 +186,9 @@ entity-relationship view.
 The \texttt{products} table is denormalized: it stores
 \texttt{category} as a string alongside \texttt{categoryId} and
 keeps \texttt{rating} and \texttt{reviewCount} on the row. Every
-product card render is a single indexed read with no joins, which
-is what lets grid pages stream from Convex with no intermediate
-compute. The table declares nine indices, each tied to a specific
+product card render is a single indexed read with no joins, so
+grid pages stream from Convex with no intermediate compute. The
+table declares nine indices, each tied to a specific
 recommendation-slot query pattern. The \texttt{reviews} table
 carries a 3072-dimensional vector index over its embedding field,
 which powers the theme-verification path in
@@ -193,9 +196,9 @@ Section~\ref{sec:sys-validation}.
 
 \paragraph{Seed pipeline.} The seed runs as a Convex action with
 a deterministic faker seed. About 200 products from the
-DummyJSON feed are supplemented with faker.js attributes and
-enriched with \texttt{useCases} and \texttt{goodFor} fields by a
-batch Flash-Lite call modeled on COSMO~\cite{COSMO}. Roughly 50
+DummyJSON feed are extended with faker.js attributes, plus
+\texttt{useCases} and \texttt{goodFor} fields from a batch
+Flash-Lite call modeled on COSMO~\cite{COSMO}. Roughly 50
 user personas and 500 orders cluster each persona's history
 around its preferences with a power-law spend distribution.
 Reviews are AI-generated by a Flash-Lite batch call (20--30
@@ -209,31 +212,31 @@ summarization has something to summarize.
 The classical recommendation engine implements the four families
 formalized in Section~\ref{sec:found-similarity} as a Stage~1
 candidate generator. The pipeline lives in two files:
-\texttt{convex/recommendations.ts} (Convex queries, mutations,
-actions) and \texttt{convex/recommendationHelpers.ts} (pure
+\code{convex/recommendations.ts} (Convex queries, mutations,
+actions) and \code{convex/recommendationHelpers.ts} (pure
 TypeScript algorithms with no Convex imports). Splitting the
 algorithms from the runtime makes them independently testable.
 
 \paragraph{Co-occurrence with Jaccard.} The
 ``frequently bought together'' slot reads precomputed Jaccard
-scores from the \texttt{productCoOccurrences} table. Computation
+scores from the \code{productCoOccurrences} table. Computation
 runs as a daily cron action that reads all orders, builds the
 pair counts and per-product order counts, and emits the
 top-$N$ Jaccard-scored neighbors per product. At the seeded scale
 (about 500 orders averaging three items each) a single Convex
 action recomputes the full top-20-per-product set well under the
 action timeout. A minimum-support filter of $\ge 2$
-co-occurrences suppresses spurious pairs.
+co-occurrences drops spurious pairs.
 
 \paragraph{Content-based similarity.}
 Listing~\ref{lst:content-similarity} shows the content-similarity
 function in full. It is a weighted sum over six attribute
 comparisons with the weights from
-Section~\ref{sec:found-similarity}. The fact that this is a
-12-line function with zero external dependencies is the point: at
-the prototype's catalog scale, classical content-based similarity
-is trivially cheap and is enough to fill the
-``similar products'' slot on every product detail page.
+Section~\ref{sec:found-similarity}. The point is that this is a
+12-line function with no external dependencies: at the
+prototype's catalog scale, classical content-based similarity is
+trivially cheap and enough to fill the ``similar products'' slot
+on every product detail page.
 
 \begin{listing}[ht]
 \begin{minted}{typescript}
@@ -352,23 +355,23 @@ field the user sees comes from the catalog and not from the LLM.
 \label{sec:sys-behavior}
 
 Behavior tracking is five client-side hooks in
-\texttt{apps/web/src/hooks/}. \texttt{useDwellTime} runs a tick
+\code{apps/web/src/hooks/}. \code{useDwellTime} runs a tick
 counter while the cursor is over a product container.
-\texttt{useViewportTracking} accumulates
+\code{useViewportTracking} accumulates
 IntersectionObserver-reported visible time.
-\texttt{useScrollDepth} maintains the page-level maximum scroll
-fraction. \texttt{useProductEngagement} composes the first three
+\code{useScrollDepth} maintains the page-level maximum scroll
+fraction. \code{useProductEngagement} composes the first three
 behind a single product-scoped facade.
-\texttt{useBehaviorTracker} aggregates everything into the
+\code{useBehaviorTracker} aggregates everything into the
 per-session buffer that flushes to the backend.
 
 Listing~\ref{lst:use-dwell-time} shows the core of
-\texttt{useDwellTime}. The hook has two effects: one attaches the
+\code{useDwellTime}. The hook has two effects: one attaches the
 \texttt{mouseenter} and \texttt{mouseleave} listeners, and one
 runs a 100~ms tick interval while the cursor is hovering. The
-cumulative dwell time is the sum of previous hover sessions plus
-the current ongoing tick count, which lets the consuming
-component read the live value without waiting for a hover to end.
+cumulative dwell time is the sum of past hover sessions plus the
+current tick count, so the consuming component reads the live
+value without waiting for a hover to end.
 
 \begin{listing}[ht]
 \begin{minted}{typescript}
@@ -398,14 +401,14 @@ useEffect(() => {
 \end{listing}
 
 \paragraph{Aggregation and flush.}
-\texttt{useBehaviorTracker} keeps a
+\code{useBehaviorTracker} keeps a
 \texttt{Map<productId, TrackedProduct>} buffer plus a
 \texttt{ref} mirror so the flush callback reads current state
 without triggering a re-render. Aggregation is lossless within
 the flush window (maximum dwell, scroll depth, hover time, and
 the boolean OR of \texttt{viewedReviews} per product). Three
-subscriptions invoke the flush: a 5-second interval, a
-pathname-change effect, and a \texttt{visibilitychange} listener
+triggers invoke the flush: a 5-second interval, a
+pathname-change effect, and a \code{visibilitychange} listener
 that catches tab close. Convex performs max-value merging on
 conflict, so the same session can flush multiple times without
 losing aggregate state (Figure~\ref{fig:behavior-flush}).
@@ -429,14 +432,14 @@ the advisor button. Review-section visibility surfaces a
 category without an add-to-cart surfaces a
 ``Compare these products?'' chip. Items in the cart during
 away-navigation surface a ``Need help deciding?'' chip. The
-\texttt{useReadinessSignals} hook reads the in-memory behavior
-state and returns \texttt{shouldPulseAdvisor} and
-\texttt{activeChips}; dismissed chips persist for the session.
-A composite interest score over dwell, scroll, hover, and
-review-tab engagement is also computed and kept as a
-context-richness hint for the advisor prompt, but the simpler
-per-signal thresholds proved more legible during early
-dogfooding and are what currently drive the indicators. The
+\code{useReadinessSignals} hook reads the in-memory behavior
+state and returns \code{shouldPulseAdvisor} and
+\code{activeChips}; dismissed chips stay dismissed for the
+session. A composite interest score over dwell, scroll, hover,
+and review-tab engagement is also computed and kept as a
+context-richness hint for the advisor prompt. The simpler
+per-signal thresholds were easier to interpret during early
+internal use, so they currently drive the indicators. The
 evaluator runs entirely client-side; no LLM call is issued by
 this loop.
 
@@ -444,7 +447,7 @@ this loop.
 \label{sec:sys-llm}
 
 The advisor is a Convex action wrapping an instance of
-\texttt{@convex-dev/agent}, the official Convex agent component.
+\code{@convex-dev/agent}, the official Convex agent component.
 The component handles thread persistence, message ordering,
 streaming, and AI SDK integration. The application code defines
 the model selection, the system prompt, and the tools the agent
@@ -452,12 +455,11 @@ can call.
 
 \paragraph{Model routing.} Two tiers from a single provider
 (OpenRouter) are used. The conversational tier is
-\texttt{openai/gpt-oss-120b}, served by Cerebras with Groq as
+\code{openai/gpt-oss-120b}, served by Cerebras with Groq as
 fallback, at medium reasoning effort. The batch tier is
-\texttt{google/gemini-3.1-flash-
-lite-preview} with reasoning
+\code{google/gemini-3.1-flash-lite-preview} with reasoning
 disabled. Listing~\ref{lst:select-model} shows
-\texttt{selectModel} from \texttt{convex/ai/models.ts}: the model
+\code{selectModel} from \code{convex/ai/models.ts}: the model
 map resolves a query type to a model identifier, and for gpt-oss
 models, provider routing prefers Cerebras then Groq for
 throughput.
@@ -465,7 +467,7 @@ throughput.
 \begin{calloutbox}{Model Routing by Query Type}
   \textbf{Reasoning tier} (\texttt{gpt-oss-120b}, Cerebras with
   Groq fallback): conversational, comparison, personalized advice.
-  \textbf{Batch tier} (\texttt{gemini-3.1-flash-lite-preview},
+  \textbf{Batch tier} (\code{gemini-3.1-flash-lite-preview},
   reasoning disabled): review summary, quick Q\&A, homepage hero.
 \end{calloutbox}
 
@@ -503,18 +505,18 @@ export function selectModel(queryType: QueryType) {
   \label{lst:select-model}
 \end{listing}
 
-\paragraph{Agent, tools, and prompt.} The agent is constructed
+\paragraph{Agent, tools, and prompt.} The agent is created
 once per cold start as a module-level constant with
 \texttt{maxSteps: 12} as the step budget. The value is tuned by
 hand: \texttt{gpt-oss-120b} is aggressive with tool calls (three
 to five per turn is typical), and an earlier value of 5 caused
 the agent to exhaust the budget before producing a final text
 answer. That is the failure the eval harness's
-\texttt{hasFinalAnswer} scorer was added to catch automatically.
-Five tools are registered: \texttt{getProductDetails},
-\texttt{searchProducts}, \texttt{getRecommendations} (which
+\code{hasFinalAnswer} scorer was added to catch automatically.
+Five tools are registered: \code{getProductDetails},
+\code{searchProducts}, \code{getRecommendations} (which
 dispatches to similar, frequently-bought-together, or trending),
-\texttt{getCartContents}, and \texttt{getReviewsSummary} (which
+\code{getCartContents}, and \code{getReviewsSummary} (which
 returns the structured summary including the conflicts list).
 Each tool wraps a Zod input schema and an async execute function
 via the \texttt{createTool} helper. No tool generates free text
@@ -533,8 +535,8 @@ structural guarantee.
 
 \paragraph{Advisor sidebar UI.} The advisor surface is a
 push-content sidebar (page content shifts left instead of being
-overlaid by a modal). Four components compose it under
-\texttt{components/advisor/}: the floating button with the
+covered by a modal). Four components compose it under
+\code{components/advisor/}: the floating button with the
 breathing animation, the sidebar container, the input composer,
 and the message list. Streaming comes from the agent component's
 \texttt{useUIMessages} hook, keyed on a thread ID created with a
@@ -563,8 +565,8 @@ advisor request.
 Per-product review summaries serve two surfaces: the product
 detail page and the advisor. The summary is generated offline,
 batch-style, against the actual review corpus. No summary is
-ever generated on a user-facing critical path. The conflict-
-surfacing structure is the anti-Rufus design choice from
+ever generated on a user-facing critical path. The
+conflict-surfacing structure is the anti-Rufus design choice from
 Chapter~\ref{chap:background}: ``45 reviews praise battery life,
 12 reviews call it disappointing'' is more useful than ``most
 users are happy with the battery''.
@@ -583,14 +585,14 @@ from the current count, or older than seven days) and
 regenerates each. Generation reads the full review corpus,
 batches it into a Flash-Lite prompt with a structured JSON
 schema, and persists the result; every theme carries a
-representative quote and the originating reviewId. After
+representative quote and the source reviewId. After
 generation, each theme is verified against the review corpus
 using the embedding index on the reviews table: the verifier
 embeds the theme text, runs a vector search scoped to the
 product, and accepts the theme only if at least one review in
 the top-$k$ neighbors clears the cosine-similarity threshold
 $\tau$ from Section~\ref{sec:found-grounding}. Failing themes
-are dropped before persistence; the \texttt{validationDetails}
+are dropped before persistence; the \code{validationDetails}
 field records how many were verified versus dropped.
 
 \section{AI-Assisted Comparison}
@@ -611,10 +613,10 @@ refuses comparisons across incompatible categories or duplicate
 SKUs. Three structural choices define the surface: the user
 picks the products (the system does not), the comparison is
 multidimensional across price, specs, ratings, and review
-themes, and no winner is named. The user makes the call. This is
-a deliberate departure from how most shopping AI handles
+themes, and no winner is named; the decision stays with the
+user. This deliberately departs from how most shopping AI handles
 comparison; the related-work survey in
-Section~\ref{sec:bg-comparison} arrives at the same
+Section~\ref{sec:bg-comparison} reaches the same
 recommendation~\cite{ShopifyAgentic,SmashingAgenticUX}. The
 structured output renders as a side-by-side table built from the
 live catalog using the LLM-emitted productIds, plus a free-text
@@ -624,9 +626,9 @@ strips price and specification claims from the narrative.
 \section{Output Validation Pipeline}
 \label{sec:sys-validation}
 
-Output validation is implemented at the boundary between the
-agent action and the client response, inside the same Convex
-action that wraps the agent invocation. The three validators run
+Output validation runs at the boundary between the agent action
+and the client response, inside the same Convex action that
+wraps the agent call. The three validators run
 sequentially as formalized in
 Section~\ref{sec:found-grounding}. Figure~\ref{fig:validation-pipeline}
 shows the pipeline.
@@ -675,14 +677,14 @@ currency-prefixed numbers, decimal patterns next to keywords
 like ``costs'' or ``priced at'', and unit-suffixed numbers near
 keywords like ``GB'', ``inches'', ``mAh'', or ``Hz''. Matches
 are removed from the rationale. The system prompt already
-forbids these claims; the regex pass is the second-line defense
-for prompt-following lapses.
+forbids these claims; the regex pass is the second line of
+defense when the model fails to follow the prompt.
 
 \paragraph{Theme verification.} Verification only applies to
 outputs that include claimed review themes (the review-summary
-  surface and certain advisor responses that quote review
-feedback). The verifier reuses the embedding-search machinery
-from Section~\ref{sec:sys-reviews}: each claimed theme is
+  surface and some advisor responses that quote review
+feedback). The verifier reuses the embedding search from
+Section~\ref{sec:sys-reviews}: each claimed theme is
 embedded, a vector search runs against reviews scoped to the
 relevant product, and the theme is dropped if no review in the
 top-$k$ clears the similarity threshold.
@@ -697,8 +699,8 @@ candidate selector and a writer, never a source of facts.
 \section{Frontend Walkthrough}
 \label{sec:sys-frontend}
 
-Two surfaces illustrate the visual contract the system makes
-with the user. The first is the homepage with its recommendation
+Two surfaces show the visual contract the system makes with
+the user. The first is the homepage with its recommendation
 rows. The second is the AI-generated review summary on the
 product detail page.
 
@@ -713,10 +715,10 @@ product detail page.
   \label{fig:ui-homepage}
 \end{figure}
 
-The homepage is composed entirely of classical recommendation
+The homepage is built entirely from classical recommendation
 slots: a popularity row on top, the personalized
 ``Recommended for you'' switching-hybrid output below. None of
-these invokes an LLM call. The entire homepage renders from
+these calls an LLM. The entire homepage renders from
 Stage~1. The advisor button in the lower-right corner is idle
 until a readiness signal fires, expressing the reactive-first
 model visually: the AI is available, never imposed.
@@ -733,35 +735,35 @@ model visually: the AI is available, never imposed.
   \label{fig:ui-review-summary}
 \end{figure}
 
-The review-summary surface concentrates the anti-Rufus design
-choices. The explicit positives-and-complaints split shows each
-theme with a per-theme count and a representative quote. The
-bipartite conflicts bar visualizes divided opinions with
+The review-summary surface brings together the anti-Rufus
+design choices. The explicit positives-and-complaints split
+shows each theme with a per-theme count and a representative
+quote. The bipartite conflicts bar shows divided opinions with
 agreeing- and disagreeing-review counts. The ``Best for'' pills
-expose the buyer-cohort field. A small ``AI-generated'' tag
+display the buyer-cohort field. A small ``AI-generated'' tag
 discloses the synthetic origin. The contextual
 ``What do buyers think?'' chip is the review-engagement
-readiness signal: it dispatches a question to the advisor on
-click but never triggers an LLM call by itself. Neither surface
-displays a number, attribute, or price that originates in the
-LLM rather than in the live catalog.
+readiness signal: it sends a question to the advisor on click
+but never triggers an LLM call by itself. Neither surface shows
+a number, attribute, or price that comes from the LLM rather
+than from the live catalog.
 
 \section{Evaluation Harness}
 \label{sec:sys-eval}
 
-The eval harness lives in \texttt{packages/eval} and is built
+The eval harness lives in \code{packages/eval} and is built
 around Promptfoo as the runner with custom shopping-domain
 scorers. Section~\ref{sec:found-eval} formalized the scorers and
 the composite ranking; this section describes the implementation.
 Promptfoo runs the cartesian product of dataset rows and provider
 configurations. A custom \texttt{advisorProvider} invokes a
-Convex action wrapping the production advisor agent, and
-programmatic, built-in, and LLM-as-judge scorers all write into a
-single JSON results file per sweep.
+Convex action wrapping the production advisor agent.
+Programmatic, built-in, and LLM-as-judge scorers all write into
+a single JSON results file per sweep.
 
-\paragraph{Build vs.\ buy.} An honest accounting of where the
-engineering effort has thesis value left only the scoring as
-distinctive: whether an answer cited a real product, whether a
+\paragraph{Build vs.\ buy.} Of the engineering effort, only the
+scoring is distinctive to this thesis: whether an answer cited a
+real product, whether a
 quoted price matches the database, whether a review theme is
 supported by the actual review corpus. These scorers depend on
 the live catalog and the embedded review index, and they do not
@@ -772,14 +774,16 @@ ships the shopping-domain scorers as custom JavaScript
 assertions.
 
 \paragraph{Dataset.} The dataset is
-\texttt{src/datasets/shopping-v1.yaml}, a 25-row YAML file with
+\code{src/datasets/shopping-v1.yaml}, a 25-row YAML file with
 each row carrying the question, a simulated context
-(\texttt{productId}, \texttt{recentlyViewedIds}), the expected
+(\code{productId}, \code{recentlyViewedIds}), the expected
 tools the agent should call, and the productIds the answer
-should reference. Rows are distributed across seven categories
+should reference. Nine rows appear twice with different expected
+tools, so one sweep runs 34 test cases per configuration. Rows
+are distributed across seven categories
 (Table~\ref{tab:eval-dataset-categories}). Dataset changes are
-versioned by filename, so historical runs are never compared
-against new questions.
+versioned by filename, so old runs are never compared against
+new questions.
 
 \begin{table}[ht]
   \centering
@@ -809,7 +813,7 @@ evaluated in the canonical sweep
 (Table~\ref{tab:eval-sweep-configs}). The sweep varies four axes:
 model identifier, reasoning effort, step budget, and prompt
 variant. Promptfoo runs the cartesian product
-($8 \times 25 = 200$ advisor invocations).
+($8 \times 34 = 272$ advisor invocations).
 
 \begin{table}[ht]
   \centering
@@ -840,17 +844,18 @@ variant. Promptfoo runs the cartesian product
     \end{tabular}%
   }
   \caption{Configuration sweep for the canonical evaluation.
-    Each configuration is run against all 25 dataset rows,
-    producing 200 advisor invocations and approximately 1\,000
+    Each configuration is run against all 34 test cases,
+    producing 272 advisor invocations and approximately 1\,100
   LLM-judge calls.}
   \label{tab:eval-sweep-configs}
 \end{table}
 
-\paragraph{Scorers.} Five programmatic scorers
-(\texttt{hasFinalAnswer}, \texttt{groundedness},
-  \texttt{factuality}, \texttt{reviewThemeFidelity},
-\texttt{toolCallEfficiency}) plus Promptfoo's built-in
-\texttt{tool-call-f1} are registered. Listing~\ref{lst:groundedness}
+\paragraph{Scorers.} Six programmatic scorers are registered:
+\code{hasFinalAnswer}, \code{groundedness},
+\code{factuality}, \code{reviewThemeFidelity},
+\code{toolCallEfficiency}, and \code{expectedToolCoverage}
+(an F1 score between the tools the agent called and the tools
+the row expected). Listing~\ref{lst:groundedness}
 shows \texttt{groundedness.ts} in full. It is the scorer most
 directly aimed at the Rufus 32\% accuracy failure mode.
 
@@ -890,8 +895,8 @@ export default async function groundedness(output: string, _ctx: Context) {
 
 Five LLM-as-judge rubrics (completeness, helpfulness, tradeoff
 surfacing, tool appropriateness, tone) run on a 0--5 scale with
-Claude Haiku~4.5 as the judge model, chosen across model families
-to mitigate self-preference bias as formalized in
+Claude Haiku~4.5 as the judge model, chosen from a different
+model family to reduce self-preference bias, as formalized in
 Section~\ref{sec:found-eval}.
 
 \section{Results}
@@ -906,8 +911,9 @@ programmatic correctness (0.25), per-query dollar cost (0.20),
 p95 latency (0.15), and tool-step efficiency (0.10); cost and
 latency enter with negative weight and a per-dimension normalizer
 so the composite stays in $[0,1]$. Every configuration ran the
-full 34 rows of the dataset (25 questions plus four-rubric judge
-invocations), so row coverage is uniform across cells.
+full 34 test cases of the dataset (25 questions, nine of them in
+two expected-tool variants), so row coverage is uniform across
+cells.
 
 \subsection{Ranked Configurations}
 \label{subsec:results-sweep}
@@ -921,16 +927,16 @@ Table~\ref{tab:results-ranked-configs} reports the ranking.
     \input{figures/eval-ranked-configs}%
   }
   \caption{Configurations ranked by composite score. Each row is
-    a single configuration evaluated against the 25 rows of
+    a single configuration evaluated against the 34 test cases of
   \texttt{shopping-v1.yaml}.}
   \label{tab:results-ranked-configs}
 \end{table}
 
 Three observations follow. The Gemini~3.1 Flash-Lite baseline
-ranks \#1 on composite (0.807) despite being treated by the
-original design as a cheaper fallback. It loses on raw quality
+ranks \#1 on composite (0.807) even though the original design
+treated it as a cheaper fallback. It loses on raw quality
 by 3.9 points to \texttt{no-fewshot} \texttt{gpt-oss-120b}
-(0.776 vs.\ 0.815) but wins decisively on both penalty axes:
+(0.776 vs.\ 0.815) but wins clearly on both penalty axes:
 \$0.0003 per query versus \$0.0005--0.0010, and 4.2~s p95
 versus 4.2--12.1~s. Second, \texttt{gpt-oss-120b} at \emph{low}
 reasoning ranks \#2 (0.795), and \texttt{no-fewshot} ranks \#3
@@ -942,7 +948,7 @@ production prompt are a net negative on this dataset
 one. Third, raising reasoning effort and loosening the step
 budget both hurt the composite uniformly:
 \texttt{gpt-oss-120b} high-reasoning is the worst at 0.492
-despite competitive raw quality (cost doubles, p95 inflates to
+despite competitive raw quality (cost doubles, p95 rises to
 12.1~s), and \texttt{ms15} comes in at 0.683 with raw quality
 \emph{below} the \texttt{ms12} default (the extra steps did not
 improve the answer).
@@ -957,7 +963,7 @@ on the (cost, quality) and (latency, quality) planes.
 \begin{figure}[ht]
   \centering
   \input{figures/eval-pareto-cost-quality}
-  \caption{Cost-quality pareto plot. $x$-axis is average
+  \caption{Cost-quality Pareto plot. $x$-axis is average
     per-query cost in USD, $y$-axis is the LLM-judge mean
     quality. Flash-Lite (leftmost) and \texttt{no-fewshot}
   (topmost) are the two non-dominated configurations.}
@@ -967,7 +973,7 @@ on the (cost, quality) and (latency, quality) planes.
 \begin{figure}[ht]
   \centering
   \input{figures/eval-pareto-latency-quality}
-  \caption{Latency-quality pareto plot. Flash-Lite anchors the
+  \caption{Latency-quality Pareto plot. Flash-Lite anchors the
     low-latency end at competitive quality; \texttt{no-fewshot}
   anchors the high-quality end at moderately higher latency.}
   \label{fig:results-pareto-latency-quality}
@@ -977,14 +983,13 @@ On the cost-quality plane, only two configurations sit on the
 frontier. Flash-Lite is unbeaten on cost at the price of 3.9
 quality points; \texttt{no-fewshot} is unbeaten on quality at
 the price of roughly doubling per-query cost. Every other
-configuration lies in the strictly-dominated interior. The
-implication for production is that the choice between
-Flash-Lite and \texttt{no-fewshot} is the only choice that has
-to be made on this evidence. The latency-quality plane tells
-the same structural story. Flash-Lite and \texttt{no-fewshot}
-again anchor the frontier, with Flash-Lite cheaper \emph{and}
-faster (4.2~s p95 versus 5.9~s) at the cost of those 3.9
-quality points.
+configuration lies in the strictly-dominated interior. For
+production, the only choice that has to be made on this
+evidence is between Flash-Lite and \texttt{no-fewshot}. The
+latency-quality plane tells the same structural story.
+Flash-Lite and \texttt{no-fewshot} again anchor the frontier,
+with Flash-Lite cheaper \emph{and} faster (4.2~s p95 versus
+5.9~s) at the cost of those 3.9 quality points.
 
 \subsection{Per-Category Programmatic Correctness}
 \label{subsec:results-per-category}
@@ -1030,12 +1035,12 @@ production prompt (\texttt{gpt-oss-120b}, medium reasoning,
 responses on simple, ambiguous questions systematically
 reference products from the few-shot examples (Logitech~K380
 keyboard, Samsung Galaxy~S24~Ultra, iPhone~15~Pro) instead of
-the product carried in the row's system context. Removing the
-few-shot examples eliminates the contamination.
+the product in the row's system context. Dropping the few-shot
+examples removes the contamination.
 
-The qualitative form is clearest on a single row. The dataset
-row asks for the price of a Vivo~V9; the row's system context
-names the product explicitly.
+The failure is clearest on a single row. The dataset row asks
+for the price of a Vivo~V9; the row's system context names the
+product explicitly.
 
 \begin{quote}
   \textbf{\texttt{current} (few-shots included).} ``I'm happy to
@@ -1052,7 +1057,7 @@ names the product explicitly.
   on the product page.''
 \end{quote}
 
-The mechanism is mechanical: few-shot examples are injected into
+The mechanism is simple: few-shot examples are injected into
 the model's \texttt{messages} array as JSON-encoded
 \texttt{user} and \texttt{assistant} turns. On a short ambiguous
 query like ``what's the price of this phone?'' the model treats
@@ -1065,10 +1070,92 @@ broader query distribution surfaces it. Programmatic and judge
 measurements agree on direction: \texttt{no-fewshot} hits the
 highest raw judge quality (0.815 vs.\ 0.764 for the
 otherwise-identical \texttt{current}) while keeping correctness
-within 0.3~pp, and a focused two-configuration A/B from earlier
+within 0.3~pp. A focused two-configuration A/B from earlier
 development ranked the variants identically on all four judge
-rubrics. Two scoring methodologies converging on the same
-ordinal is what argues the finding is not an artifact of either.
+rubrics. Two scoring methods agreeing on the same ordering
+argues the finding is not an artifact of either.
+
+\subsection{Ablation: Removing Grounding}
+\label{subsec:results-ablation}
+
+The sweep compares configurations that all share the grounded
+architecture. To measure what the architecture itself buys, a
+ninth configuration was run separately with the grounding
+removed. It keeps the same model, reasoning effort, step budget,
+few-shot examples, and system context as
+\code{gpt-oss-120b-medium}, but the agent gets no tools, and
+its prompt tells it to answer from the conversation context and
+its own knowledge. This is what a chatbot without catalog access
+looks like, and it is the direct-generation pattern that
+Chapter~\ref{chap:background} identified as the root cause of
+the Rufus failures. Table~\ref{tab:results-ablation} compares
+the two configurations on the same 34 test cases.
+
+\begin{table}[ht]
+  \centering
+  \footnotesize
+  \begin{tabular}{lcc}
+    \toprule
+    & Grounded & Ungrounded \\
+    \midrule
+    specific price and rating claims & 83 & 162 \\
+    claims not matching the store database & 48\% & 67\% \\
+    factuality mean & 0.76 & 0.53 \\
+    judge helpfulness & 0.57 & 0.78 \\
+    judge completeness & 0.70 & 0.89 \\
+    latency p50 & 2.4~s & 1.4~s \\
+    \bottomrule
+  \end{tabular}
+  \caption{The grounded \texttt{gpt-oss-120b-medium}
+    configuration against the ungrounded ablation on the same 34
+  test cases.}
+  \label{tab:results-ablation}
+\end{table}
+
+Three findings follow.
+
+First, without tools the model answers anyway, and makes twice
+as many specific claims: 162 price and rating claims against 83,
+with 67\% failing the database check against 48\%. The grounded
+mismatches are mostly a coverage artifact (the snapshot only
+holds the products the row referenced, so a correct mention of
+any other catalog product counts against it). The ungrounded
+mismatches are fabrication. One row asks for the price of the
+phone the user is viewing. The ungrounded answer is a confident
+price table quoting the Samsung Galaxy S24 Ultra at \$1,199 and
+the iPhone 15 Pro at \$999: products pulled from the few-shot
+examples, priced from the model's memory of the real world, and
+none of it from the store. Every claim in that row fails the
+check, and the table format makes the answer look authoritative.
+The identifier check does not discriminate here (both
+configurations score 1.0 on \texttt{groundedness}) because the
+ungrounded model only repeats the one identifier it got from
+context and invents none. The fabrication shows up in prices and
+ratings, not in identifier syntax.
+
+Second, the LLM judges prefer the fabricating configuration:
+helpfulness 0.78 against 0.57, completeness 0.89 against 0.70.
+The judges see only the question and the answer, and a specific,
+confident answer reads better than a careful grounded one. They
+reward exactly the failure the architecture exists to prevent.
+This is the strongest argument in the thesis for the harness
+design of Section~\ref{sec:sys-eval}: programmatic checks
+against the live database carry the trust signal, and judge
+scores are a secondary quality signal, never the gate.
+
+Third, grounding has a latency price: p50 of 2.4~s against
+1.4~s. The ungrounded model answers in a single call; the
+grounded one pays for tool round-trips. The architecture spends
+about one second per query to make its answers checkable.
+
+In production, the validation pipeline of
+Section~\ref{sec:sys-validation} sits after the model, strips
+unverifiable claims from free text, and drops unknown
+identifiers, so the user never sees most of what the ungrounded
+configuration would say. The ablation measures the raw model
+output before that layer, which is the right place to measure:
+it shows the architecture does real work, rather than guarding
+against a failure that would not happen anyway.
 
 \subsection{Summary and Validity}
 \label{subsec:results-summary}
@@ -1094,12 +1181,12 @@ choice.
 \textbf{Construct validity.} Groundedness verifies existence,
 not relevance. Factuality verifies values, not semantic
 correctness. Theme fidelity verifies embedding match, not
-salience. The composite is reported alongside the pareto fronts,
+salience. The composite is reported alongside the Pareto fronts,
 so disagreement with the weights is recoverable.
 
 \textbf{External validity.} 200 products on a development-tier
 deployment do not predict 10\,000-product production load, and
-the 25-row dataset cannot cover every failure mode. The
+the 25-question dataset cannot cover every failure mode. The
 methodological finding (programmatic and cross-family judges
 agree on ordinal ranking) argues that the harness produces a robust
 ranking even when individual scorers are imperfect.
@@ -1107,9 +1194,9 @@ ranking even when individual scorers are imperfect.
 \section{Engineering Challenges}
 \label{sec:sys-engineering}
 
-Six engineering challenges hit during implementation justify
+Six engineering challenges met during implementation justify
 choices that affect the metrics above. Each is documented at
-length in \texttt{docs/lessons-learned.md}.
+length in \code{docs/lessons-learned.md}.
 
 \begin{itemize}
   \item \textbf{Hooks before returns.} Every React hook appears
@@ -1117,7 +1204,7 @@ length in \texttt{docs/lessons-learned.md}.
     violations are caught by strict mode and the React Compiler.
   \item \textbf{Hydration mismatches with Base UI.} Components
     are gated by a \texttt{useMounted} hook implemented with
-    \texttt{useSyncExternalStore}, returning \texttt{false} from
+    \code{useSyncExternalStore}, returning \texttt{false} from
     the server snapshot to collapse the typical two-render
     pattern into one.
   \item \textbf{Convex action abort.}
@@ -1126,15 +1213,13 @@ length in \texttt{docs/lessons-learned.md}.
     server-side action runs to completion (cost acknowledged in
     the per-turn token figures).
   \item \textbf{\texttt{useUIMessages} typing.} The message type
-    is derived from \texttt{api.ai.querie-
-    s.listMessages} via
-    \texttt{UIMessagesQueryResult<typeof ...>}, avoiding a hand-
-    duplicated type.
+    is derived from \code{api.ai.queries.listMessages} via
+    \texttt{UIMessagesQueryResult<typeof ...>}, avoiding a
+    hand-duplicated type.
   \item \textbf{\texttt{content-visibility} grid
-    virtualization.} The CSS-native
-    \texttt{content-visi-
-    bility: auto} property paired with
-    \texttt{contain-intrinsic-size} virtualizes 50--150-card
+    virtualization.} The CSS-native \code{content-visibility}
+    property, set to \texttt{auto} and paired with
+    \code{contain-intrinsic-size}, virtualizes 50--150-card
     grids without a JavaScript library.
   \item \textbf{100~ms tracking-hook intervals.} Per-element
     intervals are cheap on desktop hardware; potentially

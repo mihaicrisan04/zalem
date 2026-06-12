@@ -1,15 +1,15 @@
 # Prompt
 
-also for any formula that we have we need to  put a refrence of where we took this formula from
+also for any formula that we have we need to put a refrence of where we took this formula from
 like on this:
 The prototype defines
 \[
-  \mathrm{composite}(c) \;=\;
-  0.30 \cdot Q(c) +
-  0.25 \cdot C(c) +
-  0.20 \cdot (1 - P_{\mathrm{cost}}(c)) +
-  0.15 \cdot (1 - P_{\mathrm{lat}}(c)) +
-  0.10 \cdot E(c),
+\mathrm{composite}(c) \;=\;
+0.30 \cdot Q(c) +
+0.25 \cdot C(c) +
+0.20 \cdot (1 - P*{\mathrm{cost}}(c)) +
+0.15 \cdot (1 - P*{\mathrm{lat}}(c)) +
+0.10 \cdot E(c),
 \]
 
 ---

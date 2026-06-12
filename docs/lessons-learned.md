@@ -28,3 +28,7 @@ Hard-won bugs, gotchas, and patterns discovered during development. Update this 
 
 - **`contentVisibility: auto`**: CSS-native virtualization for product grids. set `contain-intrinsic-size` to the estimated card height so the browser can compute scroll height without rendering off-screen cards.
 - **100ms `setInterval` in tracking hooks**: `useDwellTime` and `useViewportTracking` each run a 100ms interval that updates state. multiple product cards on screen means multiple intervals. acceptable for now but watch for jank on low-end devices.
+
+## Eval harness
+
+- **factuality price regex and thousands separators**: the original `PRICE_REGEX` (`/\$\s?(\d+(?:\.\d{1,2})?)/`) parses "$1,199" as a claim of "$1", which inflates the fabricated-claim count for any answer that formats prices with commas. fixed with an alternation that accepts `\d{1,3}(?:,\d{3})+` and strips commas before `Number()`. discovered while scoring the ungrounded ablation baseline, whose answers use comma-formatted prices much more often than the grounded configs (asymmetric noise = biased comparison).

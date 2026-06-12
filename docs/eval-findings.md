@@ -257,7 +257,7 @@ gpt-oss-20b; gemini-3.1-flash-lite-preview; the no-fewshot variant), the
 configuration we previously treated as a fallback. the gpt-oss-120b
 no-fewshot variant ranks #2 with the highest **quality** subscore but
 loses on cost and latency. higher reasoning effort (`high`) and looser
-step budget (`ms15`) both *hurt* composite — confirming the spec's
+step budget (`ms15`) both _hurt_ composite — confirming the spec's
 hypothesis that reasoning effort is not a free lunch.
 
 ### evidence
@@ -266,16 +266,16 @@ generated 2026-05-09 by `bun --filter @zalem/eval eval:export` from
 `results/latest.json`. `thesis/figures/eval-ranked-configs.tex` — the
 ranked LaTeX table that goes into chapter 7:
 
-| # | configuration | quality | correctness | efficiency | avg cost | p95 latency (ms) | composite |
-|---|---|---:|---:|---:|---:|---:|---:|
-| 1 | gemini-3.1-flash-lite · none · ms12 · current        | 0.828 | 0.960 | 0.500 | $0.0003 | 4934  | **0.870** |
-| 2 | gpt-oss-120b · medium · ms12 · **no-fewshot**        | **0.870** | 0.940 | 0.487 | $0.0006 | 3860  | 0.819 |
-| 3 | gpt-oss-120b · low · ms12 · current                  | 0.842 | 0.894 | 0.489 | $0.0006 | 4465  | 0.788 |
-| 4 | gpt-oss-120b · medium · ms12 · current               | 0.818 | 0.953 | 0.484 | $0.0008 | 5309  | 0.752 |
-| 5 | gpt-oss-120b · medium · ms8 · be-efficient           | 0.834 | 0.900 | 0.483 | $0.0007 | 5572  | 0.740 |
-| 6 | gpt-oss-120b · medium · ms15 · current               | 0.795 | 0.926 | 0.453 | $0.0007 | 7848  | 0.731 |
-| 7 | gpt-oss-20b · medium · ms12 · current                | 0.749 | 0.932 | 0.496 | $0.0005 | **33456** | 0.664 |
-| 8 | gpt-oss-120b · **high** · ms12 · current             | 0.821 | 0.942 | 0.475 | $0.0010 | 8129  | 0.658 |
+| #   | configuration                                 |   quality | correctness | efficiency | avg cost | p95 latency (ms) | composite |
+| --- | --------------------------------------------- | --------: | ----------: | ---------: | -------: | ---------------: | --------: |
+| 1   | gemini-3.1-flash-lite · none · ms12 · current |     0.828 |       0.960 |      0.500 |  $0.0003 |             4934 | **0.870** |
+| 2   | gpt-oss-120b · medium · ms12 · **no-fewshot** | **0.870** |       0.940 |      0.487 |  $0.0006 |             3860 |     0.819 |
+| 3   | gpt-oss-120b · low · ms12 · current           |     0.842 |       0.894 |      0.489 |  $0.0006 |             4465 |     0.788 |
+| 4   | gpt-oss-120b · medium · ms12 · current        |     0.818 |       0.953 |      0.484 |  $0.0008 |             5309 |     0.752 |
+| 5   | gpt-oss-120b · medium · ms8 · be-efficient    |     0.834 |       0.900 |      0.483 |  $0.0007 |             5572 |     0.740 |
+| 6   | gpt-oss-120b · medium · ms15 · current        |     0.795 |       0.926 |      0.453 |  $0.0007 |             7848 |     0.731 |
+| 7   | gpt-oss-20b · medium · ms12 · current         |     0.749 |       0.932 |      0.496 |  $0.0005 |        **33456** |     0.664 |
+| 8   | gpt-oss-120b · **high** · ms12 · current      |     0.821 |       0.942 |      0.475 |  $0.0010 |             8129 |     0.658 |
 
 pareto data + plots: `thesis/figures/eval-pareto-cost-quality.{csv,tex}`
 and `thesis/figures/eval-pareto-latency-quality.{csv,tex}` (pgfplots
@@ -295,7 +295,7 @@ per-category programmatic-correctness breakdown: `thesis/figures/eval-per-catego
 - **caveats**:
   1. ~86 row-runs hit an OpenRouter `max_tokens` credit-limit error
      mid-sweep (account-side credit limit, not a model failure). this
-     biased the *coverage* of long-output configs (high reasoning, loose
+     biased the _coverage_ of long-output configs (high reasoning, loose
      step budget) downward — they're penalised partly for failing rather
      than partly for being slow. fix: lowered `maxOutputTokens` to 2048
      in `runOnce.ts` for the next sweep.
@@ -320,7 +320,7 @@ three distinct conclusions:
 
 2. **few-shots remain a net negative.** finding #1 said no-fewshot beats
    current on a 2-config A/B; finding #3 says no-fewshot beats current
-   when *both* are dropped into a larger 8-config matrix (the only place
+   when _both_ are dropped into a larger 8-config matrix (the only place
    no-fewshot loses to current is on `correctness`, where the gap is
    1.3pp). cumulative across three measurements (programmatic A/B, judge
    A/B, full sweep), the few-shot configuration consistently
@@ -343,7 +343,7 @@ three distinct conclusions:
   paragraphs (one per conclusion above).
 - **chapter 7 — pareto figures.** `\input{figures/eval-pareto-cost-quality.tex}`
   and the latency variant. the cost pareto front clearly shows Flash-Lite
-  + no-fewshot dominate everything else.
+  - no-fewshot dominate everything else.
 - **chapter 7 — defended choice.** the shipped configuration should be
   argued for explicitly: "we ship gpt-oss-120b @ medium with the reformed
   no-fewshot prompt because [reasons], even though the harness suggests
@@ -438,3 +438,29 @@ happened, with reference to prompt design / dataset / model behavior.>
 
 - <open question or planned follow-up, with assignee if applicable>
 ```
+
+---
+
+## ungrounded ablation baseline (2026-06-12)
+
+run: `bun run eval:ablation` (config `promptfooconfig.ungrounded.yaml`, output `results/ungrounded.json`). one config, 34 test cases, ~226k tokens, a few cents. compared against the `gpt-oss-120b-medium` rows of `results/latest.json` (same dataset, same judges).
+
+| metric                         | grounded    | ungrounded  |
+| ------------------------------ | ----------- | ----------- |
+| specific price/rating claims   | 83          | 162         |
+| claims not matching store DB   | 48.2%       | 67.3%       |
+| factuality mean (fixed scorer) | 0.760       | 0.533       |
+| judge helpfulness              | 0.572       | 0.776       |
+| judge completeness             | 0.702       | 0.885       |
+| latency p50 / p95              | 2.4s / 5.3s | 1.4s / 3.3s |
+
+findings:
+
+- **without tools the model answers anyway, twice as loudly.** 162 specific claims vs 83, 67% failing the DB check vs 48%. flagship example: asked the price of the context phone, the ungrounded config produced a confident price table for the Samsung Galaxy S24 Ultra ($1,199) and iPhone 15 Pro ($999) — few-shot products priced from world memory, none of it in the store
+- **LLM judges prefer the fabricator** (helpfulness 0.78 vs 0.57, completeness 0.89 vs 0.70). judges see only {question, answer}; confident specifics read better than careful grounded answers. validates the harness split: programmatic checks carry the trust signal, judges are secondary
+- **grounding costs ~1s p50 latency** (tool round-trips vs single call)
+- **groundedness (ID-existence) does not discriminate in free text** — the ungrounded model repeats the context ID and invents none; fabrication lives in prices/ratings, not ID syntax
+- numbers above use the comma-fix factuality scorer (see lessons-learned); both runs re-scored offline with the same fixed scorer for a fair comparison
+- caveat: the May 18 canonical sweep shows near-zero tool calls across all configs (context pre-feeds the agent, known finding above), so the grounded side's advantage here comes mostly from DB-fed context + grounding rules rather than live tool calls
+
+written into thesis ch4 as `\subsection{Ablation: Removing Grounding}`.

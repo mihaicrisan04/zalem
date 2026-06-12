@@ -52,6 +52,7 @@ UI-first approach: design the store experience first, then build the data layer 
 ### cleanup status — completed 2026-05-13
 
 thesis manuscript: **done**.
+
 - [x] `thesis/main.tex` — abstract + chapter input lines
 - [x] `thesis/chapters/chapter1_introduction.tex` — RQs, hypotheses, objectives, contributions, thesis-structure section
 - [x] `thesis/chapters/chapter2_background.tex` — three-layer-evaluation phrasing
@@ -438,38 +439,38 @@ a purpose-built eval harness for monitoring and ranking LLM configurations (mode
 
 ### current page distribution (post chapters 7 + 8)
 
-| chapter                          | pages | % of total |
-| -------------------------------- | ----- | ---------- |
-| front matter (abstract, TOC)     | 5     | 5%         |
-| ch 1 introduction                | 6     | 6%         |
-| ch 2 background                  | 10    | 11%        |
-| ch 3 problem                     | 7     | 7%         |
-| **ch 4 design**                  | **23**| **24%**    |
-| **ch 5 implementation**          | **23**| **24%**    |
-| ch 6 methodology                 | 6     | 6%         |
-| ch 7 results                     | 7     | 7%         |
-| ch 8 conclusions & future work   | 4     | 4%         |
-| references                       | 6     | 6%         |
-| **total**                        | **94**| —          |
+| chapter                        | pages  | % of total |
+| ------------------------------ | ------ | ---------- |
+| front matter (abstract, TOC)   | 5      | 5%         |
+| ch 1 introduction              | 6      | 6%         |
+| ch 2 background                | 10     | 11%        |
+| ch 3 problem                   | 7      | 7%         |
+| **ch 4 design**                | **23** | **24%**    |
+| **ch 5 implementation**        | **23** | **24%**    |
+| ch 6 methodology               | 6      | 6%         |
+| ch 7 results                   | 7      | 7%         |
+| ch 8 conclusions & future work | 4      | 4%         |
+| references                     | 6      | 6%         |
+| **total**                      | **94** | —          |
 
 bulk still lives in chapters 4 and 5: together 46p = 49% of the manuscript. chapters 7 and 8 are already tight at 7p + 4p.
 
 ### target distribution for 60 pages
 
-| chapter                          | now  | target | cut    |
-| -------------------------------- | ---- | ------ | ------ |
-| front matter                     | 5    | 4      | 1p     |
-| ch 1                             | 6    | 4      | 2p     |
-| ch 2                             | 10   | 6      | 4p     |
-| ch 3                             | 7    | 5      | 2p     |
-| **ch 4**                         | **23**| **16**| **7p** |
-| **ch 5**                         | **23**| **15**| **8p** |
-| ch 6                             | 6    | 5      | 1p     |
-| ch 7                             | 7    | 6      | 1p     |
-| ch 8                             | 4    | 3      | 1p     |
-| references                       | 6    | 4      | 2p     |
-| margin                           | —    | —      | ~5p slack |
-| **total**                        | **94**| **~63** (aim ~60) | —      |
+| chapter      | now    | target            | cut       |
+| ------------ | ------ | ----------------- | --------- |
+| front matter | 5      | 4                 | 1p        |
+| ch 1         | 6      | 4                 | 2p        |
+| ch 2         | 10     | 6                 | 4p        |
+| ch 3         | 7      | 5                 | 2p        |
+| **ch 4**     | **23** | **16**            | **7p**    |
+| **ch 5**     | **23** | **15**            | **8p**    |
+| ch 6         | 6      | 5                 | 1p        |
+| ch 7         | 7      | 6                 | 1p        |
+| ch 8         | 4      | 3                 | 1p        |
+| references   | 6      | 4                 | 2p        |
+| margin       | —      | —                 | ~5p slack |
+| **total**    | **94** | **~63** (aim ~60) | —         |
 
 less aggressive than the 50p plan: ~7p saved each on chapters 4 and 5 instead of 12p. that means preserving most subsections rather than collapsing them. tightening at the sentence/paragraph level, not deletion of structure.
 
@@ -480,82 +481,82 @@ less aggressive than the 50p plan: ~7p saved each on chapters 4 and 5 instead of
 | action                                                                                                            | savings |
 | ----------------------------------------------------------------------------------------------------------------- | ------- |
 | drop §4.2 codebase structure (one paragraph or absorb a sentence into §4.1; monorepo-graph figure → kill or move) | 1.5p    |
-| compress §4.13 end-to-end advisor request (its job is partly done by §4.1; halve the trace)                      | 1p      |
-| compress §4.12 eval harness — keep the architecture figure, fold lifecycle into chapter 6                        | 0.5p    |
-| merge §4.10 auth into a paragraph in §4.11 data model                                                            | 0.5p    |
-| line-level tightening of §4.4–§4.9 (transitional sentences, redundant framings, recapping)                       | 2.5p    |
-| trim opening of every section by 1–2 sentences                                                                   | 1p      |
+| compress §4.13 end-to-end advisor request (its job is partly done by §4.1; halve the trace)                       | 1p      |
+| compress §4.12 eval harness — keep the architecture figure, fold lifecycle into chapter 6                         | 0.5p    |
+| merge §4.10 auth into a paragraph in §4.11 data model                                                             | 0.5p    |
+| line-level tightening of §4.4–§4.9 (transitional sentences, redundant framings, recapping)                        | 2.5p    |
+| trim opening of every section by 1–2 sentences                                                                    | 1p      |
 | **keep:** every TikZ figure, two-stage-pipeline, ER diagram, all the mermaid PDFs                                 | —       |
 
 #### chapter 5 — implementation (cut ~8p)
 
-| action                                                                                                            | savings |
-| ----------------------------------------------------------------------------------------------------------------- | ------- |
-| compress §5.1 tech stack to a tight paragraph + one figure (drop the version-by-version walkthrough)             | 1p      |
-| §5.3 convex data layer — drop the schema code listing (duplicates §4.11), keep prose                              | 0.5p    |
-| §5.4 recommendation engine — keep the `contentSimilarity` listing only, summarize the other three algorithms      | 1p      |
-| §5.5 behavior tracking — keep `useDwellTime` listing only, drop the second listing                                | 0.5p    |
-| §5.6 LLM advisor — keep `selectModel` listing, compress the agent-construction subsection to prose                | 1p      |
-| §5.7–§5.11 (review summaries, comparison, validation, instrumentation) — each section tightened 30%               | 2p      |
-| §5.13 engineering challenges — convert from prose paragraphs into a compact bullet list                            | 1p      |
-| trim cross-references and transitions across the whole chapter                                                    | 1p      |
-| **keep:** UI walkthrough screenshots, deployment figure, `contentSimilarity`, `useDwellTime`, `selectModel`        | —       |
+| action                                                                                                       | savings |
+| ------------------------------------------------------------------------------------------------------------ | ------- |
+| compress §5.1 tech stack to a tight paragraph + one figure (drop the version-by-version walkthrough)         | 1p      |
+| §5.3 convex data layer — drop the schema code listing (duplicates §4.11), keep prose                         | 0.5p    |
+| §5.4 recommendation engine — keep the `contentSimilarity` listing only, summarize the other three algorithms | 1p      |
+| §5.5 behavior tracking — keep `useDwellTime` listing only, drop the second listing                           | 0.5p    |
+| §5.6 LLM advisor — keep `selectModel` listing, compress the agent-construction subsection to prose           | 1p      |
+| §5.7–§5.11 (review summaries, comparison, validation, instrumentation) — each section tightened 30%          | 2p      |
+| §5.13 engineering challenges — convert from prose paragraphs into a compact bullet list                      | 1p      |
+| trim cross-references and transitions across the whole chapter                                               | 1p      |
+| **keep:** UI walkthrough screenshots, deployment figure, `contentSimilarity`, `useDwellTime`, `selectModel`  | —       |
 
 #### chapter 2 — background (cut 4p)
 
-| action                                                                                         | savings |
-| ---------------------------------------------------------------------------------------------- | ------- |
-| collapse the four LLM-in-RecSys subsections into one (or at most two)                          | 1.5p    |
-| trim UX/timing literature section by half                                                      | 1p      |
-| compress "Positioning of This Thesis" to one short paragraph                                   | 0.5p    |
-| line-level tightening of remaining sections                                                    | 1p      |
-| **keep:** the Rufus case study at full strength — most-cited evidence in the thesis            | —       |
+| action                                                                              | savings |
+| ----------------------------------------------------------------------------------- | ------- |
+| collapse the four LLM-in-RecSys subsections into one (or at most two)               | 1.5p    |
+| trim UX/timing literature section by half                                           | 1p      |
+| compress "Positioning of This Thesis" to one short paragraph                        | 0.5p    |
+| line-level tightening of remaining sections                                         | 1p      |
+| **keep:** the Rufus case study at full strength — most-cited evidence in the thesis | —       |
 
 #### chapter 3 — problem (cut 2p)
 
-| action                                                                                         | savings |
-| ---------------------------------------------------------------------------------------------- | ------- |
-| compress the F1–F10 functional-requirements list to one-line entries                           | 0.5p    |
-| tighten the NFR paragraphs (each currently 4–5 sentences → 2–3)                                | 0.75p   |
-| merge §3.3 non-goals into §3.7 constraints                                                     | 0.5p    |
-| line-level tightening                                                                          | 0.25p   |
+| action                                                               | savings |
+| -------------------------------------------------------------------- | ------- |
+| compress the F1–F10 functional-requirements list to one-line entries | 0.5p    |
+| tighten the NFR paragraphs (each currently 4–5 sentences → 2–3)      | 0.75p   |
+| merge §3.3 non-goals into §3.7 constraints                           | 0.5p    |
+| line-level tightening                                                | 0.25p   |
 
 #### chapter 1 — introduction (cut 2p)
 
-| action                                                                                         | savings |
-| ---------------------------------------------------------------------------------------------- | ------- |
-| compress the contributions list (currently multi-line bullets → tight one-liners)              | 1p      |
-| compress the thesis-structure section from one paragraph per chapter to a single short paragraph | 1p     |
+| action                                                                                           | savings |
+| ------------------------------------------------------------------------------------------------ | ------- |
+| compress the contributions list (currently multi-line bullets → tight one-liners)                | 1p      |
+| compress the thesis-structure section from one paragraph per chapter to a single short paragraph | 1p      |
 
 #### chapter 6 — methodology (cut 1p)
 
-| action                                                                                         | savings |
-| ---------------------------------------------------------------------------------------------- | ------- |
-| tighten the bias-mitigations paragraph from four points to three                               | 0.5p    |
-| compress §6.3 validity threats from three full paragraphs to three short ones                  | 0.5p    |
-| **chapter is already lean at 6p; very small headroom here**                                    | —       |
+| action                                                                        | savings |
+| ----------------------------------------------------------------------------- | ------- |
+| tighten the bias-mitigations paragraph from four points to three              | 0.5p    |
+| compress §6.3 validity threats from three full paragraphs to three short ones | 0.5p    |
+| **chapter is already lean at 6p; very small headroom here**                   | —       |
 
 #### chapter 7 — results (cut 1p)
 
-| action                                                                                         | savings |
-| ---------------------------------------------------------------------------------------------- | ------- |
-| compress §7.4 prompt-variant comparison — keep the Vivo V9 quote, tighten the contamination-mechanism paragraph | 0.5p |
-| tighten the §7.5 per-RQ summary paragraphs                                                     | 0.5p    |
+| action                                                                                                          | savings |
+| --------------------------------------------------------------------------------------------------------------- | ------- |
+| compress §7.4 prompt-variant comparison — keep the Vivo V9 quote, tighten the contamination-mechanism paragraph | 0.5p    |
+| tighten the §7.5 per-RQ summary paragraphs                                                                      | 0.5p    |
 
 #### chapter 8 — conclusions (cut 1p)
 
-| action                                                                                         | savings |
-| ---------------------------------------------------------------------------------------------- | ------- |
-| compress the §8.4 contributions-revisited list (one line each instead of two)                  | 0.5p    |
-| compress the future-work subsections (one tight paragraph each instead of 2–3 sentences expanded) | 0.5p |
+| action                                                                                            | savings |
+| ------------------------------------------------------------------------------------------------- | ------- |
+| compress the §8.4 contributions-revisited list (one line each instead of two)                     | 0.5p    |
+| compress the future-work subsections (one tight paragraph each instead of 2–3 sentences expanded) | 0.5p    |
 
 #### bibliography (cut 2p)
 
-| action                                                                                         | savings |
-| ---------------------------------------------------------------------------------------------- | ------- |
-| switch from `alpha` (the institutional default) to `abbrv` or `unsrt` if faculty rules permit  | 1–2p    |
-| audit for unused `\cite` entries — every `references.bib` entry not actually `\cite`d in the manuscript can be removed | 0.5p |
-| **verify with UBB submission rules before changing bib style**                                  | —       |
+| action                                                                                                                 | savings |
+| ---------------------------------------------------------------------------------------------------------------------- | ------- |
+| switch from `alpha` (the institutional default) to `abbrv` or `unsrt` if faculty rules permit                          | 1–2p    |
+| audit for unused `\cite` entries — every `references.bib` entry not actually `\cite`d in the manuscript can be removed | 0.5p    |
+| **verify with UBB submission rules before changing bib style**                                                         | —       |
 
 ### order of operations (highest cut-per-effort first)
 

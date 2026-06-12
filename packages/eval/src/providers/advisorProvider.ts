@@ -21,6 +21,7 @@ type ProviderConfig = {
   maxSteps: number;
   promptVariant: string;
   providerOrder?: string[];
+  disableTools?: boolean;
 };
 
 type RowVars = {
@@ -104,6 +105,7 @@ export default class AdvisorProvider {
       maxSteps: this.config.maxSteps,
       promptVariant: this.config.promptVariant,
       ...(this.config.providerOrder ? { providerOrder: this.config.providerOrder } : {}),
+      ...(this.config.disableTools ? { disableTools: true } : {}),
     };
 
     try {

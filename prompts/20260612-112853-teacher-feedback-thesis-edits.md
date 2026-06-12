@@ -44,8 +44,7 @@ Reply
 e prea lung captionul
 Reply
 
-___
-
+---
 
 v main.tex
 • adriana
@@ -61,13 +60,11 @@ si apoi sa realizeze o
 aplicatie
 Reply
 
-
 if u need actual line corrections u can tell me
 some of the modifications are just some word changes
 like PhD Assoc Proffessor instead of Lect Adriana Guran
 
 or the lucrarea ar trebui sa studieze ... we should just word it like that, the thesis studies x and implements y in the abstract
-
 
 the only one that will require more thought is for chapter 4 which is said to be too long we have to think more about that
 

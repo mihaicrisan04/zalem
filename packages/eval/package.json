@@ -7,6 +7,7 @@
   "scripts": {
     "eval": "promptfoo eval",
     "eval:sweep": "promptfoo eval --no-cache",
+    "eval:ablation": "promptfoo eval --no-cache -c promptfooconfig.ungrounded.yaml",
     "eval:view": "promptfoo view",
     "eval:export": "bun run src/reports/thesisExport.ts",
     "eval:reset": "rm -rf results/* .promptfoo-cache",
