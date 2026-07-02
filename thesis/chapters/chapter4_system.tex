@@ -14,7 +14,7 @@ and a live deployment is
 available\footnote{\url{https://zalem.mihais-vps.xyz}}.
 Cross-references back to Chapter~\ref{chap:foundations} appear
 where an implementation choice resolves an abstract design from
-the theory chapter.
+the foundations chapter.
 
 \section{Requirements and Architecture}
 \label{sec:sys-requirements}
@@ -54,9 +54,7 @@ Figure~\ref{fig:architecture-overview} shows the layout.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.95\linewidth]{architecture-overview.pdf}
-  \caption{High-level system architecture: Next.js client, Convex
-    backend (queries, mutations, actions, crons, database), and
-  external services (Clerk and OpenRouter).}
+  \caption{High-level system architecture.}
   \label{fig:architecture-overview}
 \end{figure}
 
@@ -175,13 +173,14 @@ entity-relationship view.
     \draw[rel] (prod.south) to[bend left=5] (beh.east);
   \end{tikzpicture}%
   }
-  \caption{Data model grouped by domain. Foreign keys flow from
-    \texttt{products} into the transactional, behavior, and
-    recommendation tables. Anonymous behavior sessions carry only
-    \texttt{sessionId}; \texttt{clerkUserId} is attached for
-  authenticated traffic.}
+  \caption{The schema grouped into four domains.}
   \label{fig:er-diagram}
 \end{figure}
+
+Foreign keys flow from \texttt{products} into the
+transactional, behavior, and recommendation tables. Anonymous
+behavior sessions carry only a \texttt{sessionId} until a
+\texttt{clerkUserId} is attached for authenticated traffic.
 
 The \texttt{products} table is denormalized: it stores
 \texttt{category} as a string alongside \texttt{categoryId} and
@@ -236,7 +235,10 @@ Section~\ref{sec:found-similarity}. The point is that this is a
 12-line function with no external dependencies: at the
 prototype's catalog scale, classical content-based similarity is
 trivially cheap and enough to fill the ``similar products'' slot
-on every product detail page.
+on every product detail page. The \texttt{useCases} and
+\texttt{goodFor} fields it reads are produced once per product
+during seed by a batch Flash-Lite call~\cite{COSMO}, adding
+structured similarity that pure attribute matching would miss.
 
 \begin{listing}[ht]
 \begin{minted}{typescript}
@@ -254,11 +256,7 @@ export function contentSimilarity(
   );
 }
 \end{minted}
-  \caption{The content-similarity function. Weights sum to 1.0. The
-    \texttt{useCases} and \texttt{goodFor} fields are produced
-    once per product during seed via a batch Flash-Lite
-    call~\cite{COSMO}, contributing structured similarity that
-  pure attribute matching would miss.}
+  \caption{The content-similarity function.}
   \label{lst:content-similarity}
 \end{listing}
 
@@ -345,9 +343,7 @@ field the user sees comes from the catalog and not from the LLM.
     \node[note, below=0.4cm of s1] {Convex query \\ p95 $<$ 50\,ms};
     \node[note, below=0.4cm of s2] {LLM call, \\ candidate-bounded};
   \end{tikzpicture}
-  \caption{Two-stage recommendation pipeline: classical
-    candidate retrieval, LLM rerank-and-explain, and client-side
-  hydration against the live catalog.}
+  \caption{The two-stage recommendation pipeline.}
   \label{fig:two-stage-pipeline}
 \end{figure}
 
@@ -393,10 +389,7 @@ useEffect(() => {
   };
 }, [element]);
 \end{minted}
-  \caption{The hover-tracking effect inside \texttt{useDwellTime}.
-    Mouse enter and leave listeners are attached imperatively; on
-    leave, the in-progress tick total is folded into the
-  cumulative dwell value.}
+  \caption{The hover-tracking effect inside \texttt{useDwellTime}.}
   \label{lst:use-dwell-time}
 \end{listing}
 
@@ -416,10 +409,7 @@ losing aggregate state (Figure~\ref{fig:behavior-flush}).
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.88\linewidth]{behavior-flush.pdf}
-  \caption{Behavior aggregation and flush pipeline. Events from
-    four tracking hooks are buffered per product and flushed on
-    a 5-second interval, route change, or tab visibility change,
-  sending only aggregate fields to the backend.}
+  \caption{Behavior aggregation and flush pipeline.}
   \label{fig:behavior-flush}
 \end{figure}
 
@@ -497,11 +487,7 @@ export function selectModel(queryType: QueryType) {
   return openrouter(modelId);
 }
 \end{minted}
-  \caption{The model-routing function. The \texttt{provider.order}
-    array pins Cerebras as the preferred backend for gpt-oss-120b;
-    \texttt{allow\_fallbacks} permits OpenRouter to switch to Groq
-    if Cerebras is unavailable. The throughput sort matches the
-  latency-sensitive nature of the conversational tier.}
+  \caption{The model-routing function.}
   \label{lst:select-model}
 \end{listing}
 
@@ -548,14 +534,8 @@ advisor request.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=\linewidth]{advisor-request.pdf}
-  \caption{End-to-end advisor request. The user click is the
-    only entry point. The client assembles context from the
-    readiness and behavior hooks. The Convex action invokes the
-    agent with a model routed per query type. The agent runs a
-    tool-calling loop against the catalog. Validation strips any
-    unverifiable claims. The client hydrates the productIds
-    against the live catalog and renders. No factual data flows
-  from the LLM to the UI directly.}
+  \caption{End-to-end advisor request, from user click to
+  hydrated render.}
   \label{fig:advisor-request}
 \end{figure}
 
@@ -653,12 +633,7 @@ shows the pipeline.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.94\linewidth]{validation-pipeline.pdf}
-  \caption{Output validation pipeline. The structured part of the
-    LLM response is checked against the live catalog (productId
-    existence). The free-text rationale is scrubbed of price and
-    specification claims. Review-summary themes are verified
-    against the review corpus before persistence. Failures
-  result in dropped references rather than user-visible errors.}
+  \caption{The output validation pipeline.}
   \label{fig:validation-pipeline}
 \end{figure}
 
@@ -707,11 +682,7 @@ product detail page.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.95\linewidth]{ui-homepage-recommendations.png}
-  \caption{Homepage surface. Two consecutive recommendation rows
-    are visible: a popularity-driven row at the top and the
-    personalized ``Recommended for you'' row below it. The
-    floating advisor button in the lower-right corner is always
-  present and idle until a readiness signal fires.}
+  \caption{The homepage surface.}
   \label{fig:ui-homepage}
 \end{figure}
 
@@ -726,12 +697,8 @@ model visually: the AI is available, never imposed.
 \begin{figure}[ht]
   \centering
   \includegraphics[width=0.95\linewidth]{ui-product-review-summary.png}
-  \caption{AI-generated review summary on the product detail
-    page. The bipartite conflicts bar surfaces divided opinions
-    visually, with per-side counts and a one-sentence
-    characterization of each side. The ``Best for'' pills
-    surface the structured buyer-cohort field from the summary
-  schema. A small ``AI-generated'' tag discloses the synthetic origin.}
+  \caption{The AI-generated review summary on the product
+  detail page.}
   \label{fig:ui-review-summary}
 \end{figure}
 
@@ -813,7 +780,8 @@ evaluated in the canonical sweep
 (Table~\ref{tab:eval-sweep-configs}). The sweep varies four axes:
 model identifier, reasoning effort, step budget, and prompt
 variant. Promptfoo runs the cartesian product
-($8 \times 34 = 272$ advisor invocations).
+($8 \times 34 = 272$ advisor invocations and roughly
+1\,100 LLM-judge calls).
 
 \begin{table}[ht]
   \centering
@@ -843,10 +811,7 @@ variant. Promptfoo runs the cartesian product
       \hline
     \end{tabular}%
   }
-  \caption{Configuration sweep for the canonical evaluation.
-    Each configuration is run against all 34 test cases,
-    producing 272 advisor invocations and approximately 1\,100
-  LLM-judge calls.}
+  \caption{The canonical configuration sweep.}
   \label{tab:eval-sweep-configs}
 \end{table}
 
@@ -857,7 +822,10 @@ variant. Promptfoo runs the cartesian product
 (an F1 score between the tools the agent called and the tools
 the row expected). Listing~\ref{lst:groundedness}
 shows \texttt{groundedness.ts} in full. It is the scorer most
-directly aimed at the Rufus 32\% accuracy failure mode.
+directly aimed at the Rufus 32\% accuracy failure mode. Convex
+product IDs are 32-character URL-safe strings that start with a
+lowercase \texttt{k}, which the regex matches before each cited
+identifier is looked up against the live catalog.
 
 \begin{listing}[ht]
 \begin{minted}{typescript}
@@ -885,11 +853,7 @@ export default async function groundedness(output: string, _ctx: Context) {
   };
 }
 \end{minted}
-  \caption{The \texttt{groundedness} scorer. Convex IDs are
-    32-character URL-safe alphanumerics; products start with a
-    lowercase ``k''. Every cited identifier is looked up against
-    the live catalog through a typed Convex client. A perfect
-  score requires every cited identifier to exist.}
+  \caption{The \texttt{groundedness} scorer.}
   \label{lst:groundedness}
 \end{listing}
 
@@ -926,9 +890,7 @@ Table~\ref{tab:results-ranked-configs} reports the ranking.
   \resizebox{\textwidth}{!}{%
     \input{figures/eval-ranked-configs}%
   }
-  \caption{Configurations ranked by composite score. Each row is
-    a single configuration evaluated against the 34 test cases of
-  \texttt{shopping-v1.yaml}.}
+  \caption{Configurations ranked by composite score.}
   \label{tab:results-ranked-configs}
 \end{table}
 
@@ -963,19 +925,14 @@ on the (cost, quality) and (latency, quality) planes.
 \begin{figure}[ht]
   \centering
   \input{figures/eval-pareto-cost-quality}
-  \caption{Cost-quality Pareto plot. $x$-axis is average
-    per-query cost in USD, $y$-axis is the LLM-judge mean
-    quality. Flash-Lite (leftmost) and \texttt{no-fewshot}
-  (topmost) are the two non-dominated configurations.}
+  \caption{The cost-quality Pareto front.}
   \label{fig:results-pareto-cost-quality}
 \end{figure}
 
 \begin{figure}[ht]
   \centering
   \input{figures/eval-pareto-latency-quality}
-  \caption{Latency-quality Pareto plot. Flash-Lite anchors the
-    low-latency end at competitive quality; \texttt{no-fewshot}
-  anchors the high-quality end at moderately higher latency.}
+  \caption{The latency-quality Pareto front.}
   \label{fig:results-pareto-latency-quality}
 \end{figure}
 
@@ -1005,9 +962,8 @@ enough rows to support a breakdown.
   \resizebox{\textwidth}{!}{%
     \input{figures/eval-per-category}%
   }
-  \caption{Mean programmatic correctness per category, per
-    configuration. Values are bounded in $[0,1]$, higher is
-  better.}
+  \caption{Mean programmatic correctness per category and
+  configuration.}
   \label{tab:results-per-category}
 \end{table}
 
@@ -1107,8 +1063,7 @@ the two configurations on the same 34 test cases.
     \bottomrule
   \end{tabular}
   \caption{The grounded \texttt{gpt-oss-120b-medium}
-    configuration against the ungrounded ablation on the same 34
-  test cases.}
+  configuration against the ungrounded ablation.}
   \label{tab:results-ablation}
 \end{table}
 

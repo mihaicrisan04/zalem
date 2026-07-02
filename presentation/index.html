@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Zalem — Thesis Defense</title>
+<meta name="description" content="A Hybrid LLM-Augmented Shopping Recommender with Grounded Output" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --fg:#171717; --fg-2:#4d4d4d; --fg-3:#8f8f8f;
+    --bg:#ffffff; --bg-2:#fafafa; --fill:#f2f2f2;
+    --line:#00000015; --line-2:#0000000d;
+    --blue:#006bff; --red:#ea001d; --green:#28a948; --ghost:#f4f4f4;
+    --sans:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:"Geist Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --ease:cubic-bezier(0.175,0.885,0.32,1.1);
+    --w:1280px; --h:720px; --pad-x:104px; --pad-y:84px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; background:#0a0a0a; font-family:var(--sans); color:var(--fg);
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; overflow:hidden; }
+
+  #stage { position:fixed; inset:0; display:grid; place-items:center; }
+  #scaler { width:var(--w); height:var(--h); transform-origin:center center; position:relative; }
+
+  .slide { position:absolute; inset:0; width:var(--w); height:var(--h);
+    background:var(--bg); padding:var(--pad-y) var(--pad-x);
+    display:flex; flex-direction:column; justify-content:center;
+    opacity:0; visibility:hidden; overflow:hidden; }
+  .slide.is-active { opacity:1; visibility:visible; }
+
+  /* top-left badge */
+  .slide::before { content:attr(data-kicker); position:absolute; top:40px; left:var(--pad-x);
+    font-family:var(--mono); font-size:12px; letter-spacing:.02em; color:var(--fg-2);
+    border:1px solid var(--line); background:var(--bg-2); border-radius:9999px; padding:5px 12px; }
+  .slide[data-kicker=""]::before, .slide:not([data-kicker])::before { content:none; }
+  .slide::after { content:attr(data-idx); position:absolute; bottom:34px; right:var(--pad-x);
+    font-family:var(--mono); font-size:13px; color:var(--fg-3); }
+
+  .slide.is-active [data-r] { animation:rise .5s var(--ease) both; }
+  .slide.is-active [data-r="1"]{animation-delay:.02s}
+  .slide.is-active [data-r="2"]{animation-delay:.08s}
+  .slide.is-active [data-r="3"]{animation-delay:.14s}
+  .slide.is-active [data-r="4"]{animation-delay:.20s}
+  .slide.is-active [data-r="5"]{animation-delay:.26s}
+  .slide.is-active [data-r="6"]{animation-delay:.32s}
+  @keyframes rise { from{opacity:0;transform:translateY(13px)} to{opacity:1;transform:translateY(0)} }
+
+  h1 { font-weight:600; font-size:74px; line-height:1.0; letter-spacing:-.045em; max-width:17ch; }
+  h2 { font-weight:600; font-size:46px; line-height:1.06; letter-spacing:-.04em; max-width:24ch; text-wrap:balance; }
+  .lead { font-size:21px; line-height:1.45; color:var(--fg-2); max-width:58ch; margin-top:20px; letter-spacing:-.01em; }
+  .muted { color:var(--fg-3); } .em { color:var(--fg); font-weight:500; } .accent { color:var(--blue); }
+  .eyebrow { font-family:var(--mono); font-size:13px; letter-spacing:.04em; color:var(--fg-3); margin-bottom:16px; }
+
+  /* title */
+  .ttl { font-weight:600; font-size:46px; line-height:1.1; letter-spacing:-.035em; max-width:23ch; }
+  .title-sub { margin-top:22px; font-size:19px; line-height:1.4; letter-spacing:-.015em; color:var(--fg-2); }
+  .title-foot { position:absolute; left:var(--pad-x); bottom:54px; font-size:16px; line-height:1.7; color:var(--fg-2); }
+  .title-foot b { color:var(--fg); font-weight:600; }
+
+  /* table of contents */
+  .toc { margin-top:30px; display:flex; flex-direction:column; gap:18px; max-width:74ch; }
+  .toc .row { display:flex; gap:20px; align-items:baseline; }
+  .toc .n { font-family:var(--mono); font-size:15px; color:var(--blue); flex:none; width:26px; }
+  .toc .t { font-size:22px; font-weight:600; letter-spacing:-.02em; }
+  .toc .s { font-size:15px; color:var(--fg-3); margin-left:10px; font-weight:400; letter-spacing:0; }
+
+  /* bullets */
+  .bullets { margin-top:28px; display:flex; flex-direction:column; gap:18px; max-width:62ch; }
+  .bullets li { list-style:none; display:flex; gap:16px; align-items:baseline; font-size:21px; line-height:1.4; letter-spacing:-.015em; color:var(--fg); }
+  .bullets li .mk { color:var(--blue); font-family:var(--mono); font-size:15px; flex:none; transform:translateY(-1px); }
+
+  /* domain gap cards */
+  .gapwrap { display:flex; align-items:stretch; gap:24px; margin-top:32px; max-width:980px; }
+  .gapcard { flex:1; border:1px solid var(--line); border-radius:14px; padding:24px 26px; background:var(--bg); }
+  .gapcard h3 { font-size:21px; font-weight:600; margin-bottom:14px; letter-spacing:-.02em; }
+  .gapcard .pt { display:flex; gap:11px; font-size:17.5px; margin:10px 0; color:var(--fg-2); align-items:baseline; line-height:1.35; }
+  .gapcard .pt .m { font-family:var(--mono); font-size:15px; flex:none; }
+  .gapcard .pt .m.ok { color:var(--green); } .gapcard .pt .m.no { color:var(--red); }
+  .gapsum { margin-top:26px; font-size:23px; letter-spacing:-.02em; }
+  .gapsum b { font-weight:600; }
+
+  /* stat row */
+  .stats { display:flex; gap:64px; margin-top:36px; }
+  .stat .n { font-size:74px; font-weight:600; letter-spacing:-.045em; line-height:1; color:var(--red); }
+  .stat .l { margin-top:12px; font-size:17px; color:var(--fg-2); line-height:1.4; }
+  .stat .n.dark { color:var(--fg); }
+  .scale-line { margin-top:36px; font-size:20px; color:var(--fg-2); letter-spacing:-.01em; }
+  .scale-line b { color:var(--fg); font-weight:600; }
+  .foot-note { position:absolute; left:var(--pad-x); bottom:50px; font-family:var(--mono); font-size:12.5px; color:var(--fg-3); }
+
+  /* architecture diagram */
+  .arch { margin-top:26px; display:grid; grid-template-columns:1fr auto 1fr; gap:0 30px; align-items:center; max-width:940px; }
+  .spine { grid-column:1 / -1; display:flex; align-items:center; justify-content:center; gap:13px;
+    border:1px solid var(--line); background:var(--fill); border-radius:12px; padding:15px 22px; margin-bottom:6px; }
+  .spine svg { width:22px; height:22px; }
+  .spine .nt { font-size:18px; font-weight:600; letter-spacing:-.02em; }
+  .spine .ns { font-family:var(--mono); font-size:12.5px; color:var(--fg-3); }
+  .vbar { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .vbar.read { color:var(--fg-3); } .vbar .rl { font-family:var(--mono); font-size:11px; color:var(--fg-3); }
+  .vbar svg { width:16px; height:30px; }
+  .abox { border:1px solid var(--line); border-radius:12px; background:var(--bg); padding:16px 18px; }
+  .abox .at { font-size:17px; font-weight:600; letter-spacing:-.02em; }
+  .abox .as { font-family:var(--mono); font-size:12px; color:var(--fg-3); margin-top:6px; line-height:1.5; }
+  .bridge { display:flex; flex-direction:column; align-items:center; gap:6px; padding:0 4px; }
+  .bridge .dl { width:64px; border-top:2px dotted #c9c9c9; height:0; }
+  .bridge .bl { font-family:var(--mono); font-size:10.5px; color:var(--fg-3); text-align:center; line-height:1.3; max-width:96px; }
+  .alabel { font-size:15px; color:var(--fg-2); text-align:center; }
+  .gate { display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px; color:var(--green);
+    border:1px solid var(--line); background:#28a9480d; border-radius:9999px; padding:4px 10px; }
+
+  /* feature two-column (reviews) */
+  .feature { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; margin-top:24px; }
+  .feature .bullets { margin-top:0; gap:16px; }
+  .feature .bullets li { font-size:19px; }
+
+  .rcard { border:1px solid var(--line); border-radius:16px; background:var(--bg); box-shadow:0 1px 2px rgba(0,0,0,.05),0 18px 44px rgba(0,0,0,.08); padding:24px 26px; }
+  .rcard .rh { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .rcard .rh .t { font-size:16px; font-weight:600; letter-spacing:-.02em; }
+  .rcard .rh .tag { font-family:var(--mono); font-size:11px; color:var(--fg-3); border:1px solid var(--line); border-radius:9999px; padding:3px 9px; }
+  .rsec { margin-bottom:15px; }
+  .rsec .rl { font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--fg-3); margin-bottom:8px; }
+  .theme { display:flex; align-items:center; gap:10px; font-size:16px; margin:6px 0; }
+  .theme .dot { width:7px; height:7px; border-radius:50%; flex:none; }
+  .theme .dot.g { background:var(--green); } .theme .dot.r { background:var(--red); }
+  .theme .c { margin-left:auto; font-family:var(--mono); font-size:13px; color:var(--fg-3); }
+  .conflict { border-top:1px solid var(--line); padding-top:14px; }
+  .conflict .ct { font-size:15px; color:var(--fg-2); margin-bottom:8px; }
+  .splitbar { display:flex; height:12px; border-radius:6px; overflow:hidden; }
+  .splitbar .a { background:var(--green); } .splitbar .b { background:var(--red); }
+  .splitbar + .cl { display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:var(--fg-3); margin-top:7px; }
+
+  /* results table */
+  .rtab { margin-top:30px; display:grid; grid-template-columns:1.5fr 1fr 1fr; max-width:780px; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .rtab .c { padding:15px 22px; border-bottom:1px solid var(--line-2); font-size:19px; display:flex; align-items:center; }
+  .rtab .c.r { justify-content:flex-end; font-family:var(--mono); font-size:18px; }
+  .rtab .head { font-family:var(--mono); font-size:13px; color:var(--fg-3); background:var(--bg-2); font-weight:500; }
+  .rtab .head.r { justify-content:flex-end; }
+  .rtab .metric { color:var(--fg-2); font-size:17px; }
+  .rtab .grow { color:var(--green); } .rtab .bad { color:var(--red); }
+  .rtab .row-last .c { border-bottom:none; }
+  .legend { margin-top:18px; font-size:15px; color:var(--fg-3); letter-spacing:-.005em; }
+  .legend code { font-family:var(--mono); font-size:13px; color:var(--fg-2); }
+
+  /* media (video) slides */
+  .slide.media { display:block; padding:0; }
+  .media .head { position:absolute; left:var(--pad-x); top:78px; z-index:2; }
+  .media .head h2 { font-size:42px; }
+  .media .vhero { position:absolute; left:50%; top:96px; transform:translateX(-50%); width:1132px; z-index:1; }
+  .media .vhero video, .media .vhero .vid-print { width:100%; height:auto; display:block; }
+  .media .vid-print { display:none; }
+
+  /* close */
+  .thanks { margin-top:30px; font-family:var(--mono); font-size:16px; color:var(--fg-3); }
+
+  /* ui chrome */
+  #progress { position:fixed; top:0; left:0; height:2px; background:var(--blue); width:0; transition:width .3s var(--ease); z-index:50; }
+  #help { position:fixed; bottom:14px; left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:12px; color:#666; z-index:50; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; }
+  #stage:hover ~ #help { opacity:1; }
+  #notes { position:fixed; left:0; right:0; bottom:0; z-index:60; background:rgba(10,10,10,.94); color:#ededed; backdrop-filter:blur(8px); border-top:1px solid #262626; padding:22px 32px 24px; font-size:16px; line-height:1.55; max-height:42vh; overflow:auto; display:none; }
+  #notes.show { display:block; }
+  #notes .nk { font-family:var(--mono); font-size:12px; color:#8f8f8f; margin-bottom:8px; text-transform:uppercase; letter-spacing:.06em; }
+  #notes p { max-width:94ch; }
+
+  @media (prefers-reduced-motion:reduce) { .slide.is-active [data-r]{animation:none} #progress{transition:none} }
+
+  @page { size:1280px 720px; margin:0; }
+  @media print {
+    html, body { overflow:visible; background:#fff; height:auto; }
+    #stage { position:static; display:block; } #scaler { width:1280px; height:auto; transform:none !important; }
+    #progress, #help, #notes { display:none !important; }
+    .slide { position:relative; opacity:1 !important; visibility:visible !important; width:1280px; height:720px; break-after:page; page-break-after:always; }
+    .slide.is-active [data-r] { animation:none; }
+    .slide:last-child { break-after:auto; page-break-after:auto; }
+    .media .vhero video { display:none !important; }
+    .media .vid-print { display:block !important; }
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div id="stage"><div id="scaler">
+
+  <!-- 1 · TITLE -->
+  <section class="slide is-active" data-kicker="">
+    <div class="ttl" data-r="1">An Architectural Proposal for a Hybrid LLM-Augmented Shopping Recommender with Grounded Output</div>
+    <div class="title-sub" data-r="2">Prototype: <span class="em">Zalem</span> · a working e-commerce store.</div>
+    <div class="title-foot" data-r="3">
+      <b>Author</b> · Mihai-Dan Crisan<br>
+      Supervisor · Assoc. Prof. PhD Adriana Guran<br>
+      <!--UBB Cluj-Napoca · Faculty of Mathematics and Computer Science-->
+    </div>
+  </section>
+
+  <!-- 2 · CONTENTS -->
+  <section class="slide" data-kicker="contents" data-idx="02 / 13">
+    <h2 data-r="1" style="font-size:40px">Contents</h2>
+    <div class="toc">
+      <div class="row" data-r="2" style="max-width:none; white-space:nowrap;"><span class="n">01</span><span class="t">Background &amp; related work<span class="s">classical recommenders · LLMs in recommendation systems · the Rufus case</span></span></div>
+      <div class="row" data-r="3"><span class="n">02</span><span class="t">Foundations<span class="s">grounded generation · two-stage retrieve-and-rerank · evaluation</span></span></div>
+      <div class="row" data-r="4"><span class="n">03</span><span class="t">Zalem: a case study<span class="s">grounded advisor · context · review pipeline · output validation</span></span></div>
+      <div class="row" data-r="5"><span class="n">04</span><span class="t">Evaluation<span class="s">an 8-configuration sweep · the grounding test</span></span></div>
+      <div class="row" data-r="6"><span class="n">05</span><span class="t">Conclusions<span class="s">contributions · limitations · future work</span></span></div>
+    </div>
+  </section>
+
+  <!-- 3 · DOMAIN -->
+  <section class="slide" data-kicker="background · the field" data-idx="03 / 13">
+    <h2 data-r="1">Two tools, opposite weaknesses.</h2>
+    <div class="gapwrap" data-r="2">
+      <div class="gapcard" data-r="2">
+        <h3>Classical recommenders</h3>
+        <div class="pt"><span class="m ok">+</span><span>narrow a huge catalog accurately</span></div>
+        <div class="pt"><span class="m no">−</span><span>opaque; they never say <span class="em">why</span></span></div>
+      </div>
+      <div class="gapcard" data-r="3">
+        <h3>LLM assistants</h3>
+        <div class="pt"><span class="m ok">+</span><span>explain, summarize reviews, compare</span></div>
+        <div class="pt"><span class="m no">−</span><span><span class="em">hallucinate</span> prices, specs, even reviews</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · RUFUS -->
+  <section class="slide" data-kicker="background · the Rufus case" data-idx="04 / 13">
+    <h2 data-r="1">The benchmark and its documented failures.</h2>
+    <div class="stats">
+      <div class="stat" data-r="2"><div class="n">32%</div><div class="l">picks the right product</div></div>
+      <div class="stat" data-r="3"><div class="n">28%</div><div class="l">prices are wrong</div></div>
+      <div class="stat" data-r="4"><div class="n">83%</div><div class="l">favor its own brand</div></div>
+      <div class="stat" data-r="5"><div class="n dark">+</div><div class="l">fabricated<br>review themes</div></div>
+    </div>
+    <div class="scale-line" data-r="6"><b>Amazon Rufus</b> — 300M+ users, ~$12B sales · yet confidently wrong.</div>
+    <div class="foot-note" data-r="6">ConsumerAffairs 2024 · Marketplace Pulse 2024 — trade reports, not peer-reviewed studies.</div>
+  </section>
+
+  <!-- 5 · THE IDEA + ARCHITECTURE -->
+  <section class="slide" data-kicker="approach" data-idx="05 / 13">
+    <h2 data-r="1" style="font-size:40px">Grounded by construction: <span class="muted">hydration over generation.</span></h2>
+    <p class="lead" data-r="2" style="margin-top:12px">The model <span class="em">selects and explains</span>; it never <span class="em">sources</span> a fact. Every price, rating and spec is read from the live catalog, on every request.</p>
+    <div class="arch" data-r="3">
+      <div class="spine">
+        <svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="5" rx="7.5" ry="2.8" stroke="#8f8f8f" stroke-width="1.4"/><path d="M4.5 5v14c0 1.55 3.36 2.8 7.5 2.8s7.5-1.25 7.5-2.8V5" stroke="#8f8f8f" stroke-width="1.4"/><path d="M4.5 12c0 1.55 3.36 2.8 7.5 2.8s7.5-1.25 7.5-2.8" stroke="#8f8f8f" stroke-width="1.4"/></svg>
+        <span class="nt">Live catalog database</span><span class="ns">products · reviews · cart — the single source of truth</span>
+      </div>
+      <!-- up arrows -->
+      <div class="vbar read"><span class="rl">reads</span><svg viewBox="0 0 16 30" fill="none"><line x1="8" y1="30" x2="8" y2="6" stroke="#cfcfcf" stroke-width="1.5"/><path d="M3 11l5-6 5 6" fill="none" stroke="#cfcfcf" stroke-width="1.5"/></svg></div>
+      <div></div>
+      <div class="vbar read"><span class="rl">reads · live</span><svg viewBox="0 0 16 30" fill="none"><line x1="8" y1="30" x2="8" y2="6" stroke="#cfcfcf" stroke-width="1.5"/><path d="M3 11l5-6 5 6" fill="none" stroke="#cfcfcf" stroke-width="1.5"/></svg></div>
+      <!-- boxes + bridge -->
+      <div class="abox"><div class="at">Classical engine</div><div class="as">similar · frequently-bought<br>trending · for-you</div></div>
+      <div class="bridge"><span class="bl">getRecommendations</span><div class="dl"></div><span class="bl">on-demand bridge</span></div>
+      <div class="abox"><div class="at">AI advisor</div><div class="as">assembleContext + 4 read-only tools<br>→ select &amp; explain only</div></div>
+      <!-- down arrows -->
+      <div class="vbar"><svg viewBox="0 0 16 30" fill="none"><line x1="8" y1="0" x2="8" y2="24" stroke="#cfcfcf" stroke-width="1.5"/><path d="M3 19l5 6 5-6" fill="none" stroke="#cfcfcf" stroke-width="1.5"/></svg></div>
+      <div></div>
+      <div class="vbar"><span class="gate">✓ 3-stage validation</span><svg viewBox="0 0 16 30" fill="none"><line x1="8" y1="0" x2="8" y2="24" stroke="#cfcfcf" stroke-width="1.5"/><path d="M3 19l5 6 5-6" fill="none" stroke="#cfcfcf" stroke-width="1.5"/></svg></div>
+      <!-- labels -->
+      <div class="alabel">Store<span class="muted">(home · product · cart)</span></div>
+      <div></div>
+      <div class="alabel">Advisor chat <span class="muted">(user-pulled, reactive)</span></div>
+    </div>
+  </section>
+
+  <!-- 6 · FEATURE 1 · ADVISOR -->
+  <section class="slide media" data-kicker="feature · advisor" data-idx="06 / 13">
+    <div class="head"><h2>The advisor won't make facts up.</h2></div>
+    <div class="vhero">
+      <video class="vid" autoplay loop muted playsinline preload="auto" poster="videos/chat-demo/out/chat-demo-poster.png">
+        <source src="videos/chat-demo/out/chat-demo.webm" type="video/webm" />
+      </video>
+      <img class="vid-print" src="videos/chat-demo/out/chat-demo-poster.png" alt="Advisor chat answering grounded questions about the product being viewed" />
+    </div>
+  </section>
+
+  <!-- 7 · FEATURE 2 · CONTEXT -->
+  <section class="slide media" data-kicker="feature · context" data-idx="07 / 13">
+    <div class="head"><h2>Grounded in the live session.</h2></div>
+    <div class="vhero">
+      <video class="vid" autoplay loop muted playsinline preload="auto" poster="videos/context-demo/out/context-demo-poster.png">
+        <source src="videos/context-demo/out/context-demo.webm" type="video/webm" />
+      </video>
+      <img class="vid-print" src="videos/context-demo/out/context-demo-poster.png" alt="The advisor context assembled from current product, review themes, cart and recently-viewed" />
+    </div>
+  </section>
+
+  <!-- 8 · FEATURE 3 · REVIEWS -->
+  <section class="slide" data-kicker="feature · reviews" data-idx="08 / 13">
+    <h2 data-r="1" style="font-size:42px">Review summaries verified<br>against the reviews.</h2>
+    <div class="feature" data-r="2">
+      <ul class="bullets">
+        <li data-r="2"><span class="mk">—</span><span>A nightly job extracts <span class="em">themes with real counts</span> from every review.</span></li>
+        <li data-r="3"><span class="mk">—</span><span>It surfaces genuine <span class="em">conflicts</span> — who disagrees, and how many.</span></li>
+        <li data-r="4"><span class="mk">—</span><span>Each theme is <span class="em">embedding-verified</span> against the review set before it ships.</span></li>
+      </ul>
+      <div class="rcard" data-r="3">
+        <div class="rh"><span class="t">AirPods Pro 2 · what buyers think</span><span class="tag">38 reviews</span></div>
+        <div class="rsec">
+          <div class="rl">LIKES</div>
+          <div class="theme"><span class="dot g"></span>Battery life<span class="c">14</span></div>
+          <div class="theme"><span class="dot g"></span>Comfortable fit<span class="c">11</span></div>
+          <div class="theme"><span class="dot g"></span>Noise cancellation<span class="c">8</span></div>
+        </div>
+        <div class="rsec">
+          <div class="rl">COMPLAINTS</div>
+          <div class="theme"><span class="dot r"></span>Touch controls<span class="c">6</span></div>
+        </div>
+        <div class="conflict">
+          <div class="ct">Divided on fit for small ears</div>
+          <div class="splitbar"><div class="a" style="width:69%"></div><div class="b" style="width:31%"></div></div>
+          <div class="cl"><span>11 secure</span><span>5 work loose</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · RESULTS · ABLATION -->
+  <section class="slide" data-kicker="results · grounding" data-idx="09 / 13">
+    <h2 data-r="1">Does the grounding actually matter?</h2>
+    <p class="lead" data-r="2" style="margin-top:12px">A controlled comparison: the <span class="em">same model</span>, the same 34 questions — but with the catalog tools removed, answering from memory.</p>
+    <div class="rtab" data-r="3">
+      <div class="c head">Metric</div><div class="c head r">Grounded</div><div class="c head r">Ungrounded</div>
+      <div class="c metric">Specific price / rating claims</div><div class="c r">83</div><div class="c r bad">162</div>
+      <div class="c metric">Claims that fail the catalog</div><div class="c r grow">48%</div><div class="c r bad">67%</div>
+      <div class="row-last" style="display:contents"><div class="c metric">Factuality</div><div class="c r grow">0.76</div><div class="c r bad">0.53</div></div>
+    </div>
+    <div class="legend" data-r="4">A <code>specific claim</code> = a concrete price or rating written in the answer (e.g. <code>1199 lei</code>, <code>4.6/5</code>) checked against the live database.</div>
+  </section>
+
+  <!-- 10 · RESULTS · SWEEP -->
+  <section class="slide" data-kicker="results · the sweep" data-idx="10 / 13">
+    <h2 data-r="1" style="font-size:42px">Trust is an integration problem,<br>not a model-capability problem.</h2>
+    <ul class="bullets" data-r="2" style="margin-top:30px">
+      <li data-r="2"><span class="mk">—</span><span>Best out of 8 configs is the <span class="em">cheapest model</span>: Gemini Flash-Lite · composite 0.807 · <span class="em">~$0.0003/query</span> · p95 4.2s.</span></li>
+      <li data-r="3"><span class="mk">—</span><span><span class="em">More reasoning was worse</span>: the big model at high reasoning was the worst (0.492) and slowest (12.1s p95).</span></li>
+      <li data-r="4"><span class="mk">—</span><span>Grounding held everywhere: <span class="em">groundedness ≥ 0.89</span> across all 8 configurations.</span></li>
+    </ul>
+  </section>
+
+  <!-- 11 · CONCLUSIONS -->
+  <section class="slide" data-kicker="conclusions" data-idx="11 / 13">
+    <h2 data-r="1">Contributions and honest limits.</h2>
+    <ul class="bullets" data-r="2" style="margin-top:28px">
+      <li data-r="2"><span class="mk">—</span><span><span class="em">Contribution:</span> an integration architecture + an honest evaluation against documented production failures.</span></li>
+      <li data-r="3"><span class="mk">—</span><span>Grounding is <span class="em">structural and measured</span>.</span></li>
+      <li data-r="4"><span class="mk">—</span><span><span class="muted">Limits:</span> no user study · not tested against a standard product-search baseline · ~200-product seeded catalog.</span></li>
+      <li data-r="5"><span class="mk">—</span><span><span class="muted">Next:</span> a within-subjects user study on trust and purchase confidence · fine-tuning a smaller model</span></li>
+    </ul>
+  </section>
+
+  <!-- 12 · DEMO -->
+  <section class="slide" data-kicker="">
+    <h1 data-r="1">Demo.</h1>
+  </section>
+
+  <!-- 13 · THANK YOU -->
+  <section class="slide" data-kicker="">
+    <h1 data-r="1">Thank you.</h1>
+    <div class="thanks" data-r="2">Mihai-Dan Crisan &nbsp;·&nbsp; Questions.</div>
+  </section>
+
+</div></div>
+
+<div id="help">← → navigate &nbsp;·&nbsp; F fullscreen &nbsp;·&nbsp; N notes &nbsp;·&nbsp; P print / PDF</div>
+<div id="notes" aria-live="polite"><div class="nk">Speaker notes — <span id="notes-idx"></span></div><p id="notes-body"></p></div>
+
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var scaler = document.getElementById('scaler');
+  var progress = document.getElementById('progress');
+  var notesEl = document.getElementById('notes');
+  var notesBody = document.getElementById('notes-body');
+  var notesIdx = document.getElementById('notes-idx');
+  var i = 0;
+
+  var NOTES = [
+    "Good morning. My thesis is 'An Architectural Proposal for a Hybrid LLM-Augmented Shopping Recommender with Grounded Output.' I'm Mihai-Dan Crisan, supervised by Professor Adriana Guran; the prototype is a working store, Zalem. The one-line version: today's AI shopping assistants are confidently wrong because the model is allowed to invent facts — I built one where, by construction, it can't.",
+    "The thesis runs in five chapters: the background and related work, the theoretical foundations, the Zalem case study where I build the system, the evaluation, and conclusions. Today I'll focus on the idea, three core features, and the results.",
+    "The field sits between two tools that each solve half the problem. Classical recommenders narrow a huge catalog accurately, but they're opaque — they never tell you why an item was chosen. LLMs can explain, summarize reviews and surface tradeoffs — but they hallucinate prices, specs, even review themes. My thesis is about the hybrid: an advisor that explains without inventing.",
+    "The reference point for deployed conversational shopping is Amazon Rufus — over 300 million users, around 12 billion dollars in incremental sales. But it has well-documented failures: it picks the right product about a third of the time, gets a quarter of prices wrong, pushes its own brand 83% of the time, and fabricates review themes. Honest caveat I state in the thesis — these figures come from two 2024 trade articles, not peer-reviewed studies; I use them as a documented target to design against, and my own claims rest on my evaluation, not theirs.",
+    "My design principle is hydration over generation: the model selects and explains, but never sources a fact — every price, rating and spec is read from the live catalog at request time. The architecture is two independent paths around one catalog. The classical engine powers the store's recommendation rails — similar, frequently-bought, trending, recommended-for-you — and never calls the LLM. The AI advisor is a separate path that reads the catalog directly through read-only tools; the only link is one optional tool it can call on demand. The advisor's output then passes a three-stage validation gate. Grounding here isn't a filter at the end — it's the direction every fact flows: up, out of the catalog. (Honest note for Q&A: the thesis prose calls the rail fusion 'RRF k=60' and a 'two-stage LLM rerank' — the code actually uses additive scoring + classical MMR, and the LLM only selects and explains. The grounding claims are fully code-backed; that ranking description is the one place the prose oversells.)",
+    "The first feature is the advisor itself. It's reactive — it opens on a click and never interrupts. You ask about whatever product you're viewing, and it answers in text, grounded in that product's real data through five read-only database tools. Watch how, when I move to a different product, the next question is about that one — the answer always tracks what you're actually looking at, and it never guesses a number. Code: ai/tools.ts, ai/advisor.ts.",
+    "The second feature is what makes those answers personal — the context. On every single request, the advisor's context is rebuilt from your live session: the product you're viewing, its verified review themes, your cart, and your recently-viewed items. It's assembled fresh each time and never cached. So the answer is grounded in your real session, not a generic reply. Code: assembleContext in ai/advisor.ts, lines 12-114, called on every request. (Honest note: the behavior signals — dwell, scroll — drive the reactive nudges; the advisor context itself is the session/navigation state, not the raw signals.)",
+    "The third feature is the review pipeline. A nightly job reads every product's full review corpus and extracts themes, each with a real count — what buyers like, what they complain about. The key part is conflict surfacing: instead of 'people like the fit', it says '11 find it secure, 5 say it works loose'. And every theme is embedding-verified against the actual review text before it's stored — cosine over 0.35, at least two matching reviews — and that same vector check is reused as the advisor's theme-fidelity validator. Code: reviewSummaries.ts, lines 127-162.",
+    "Does the grounding actually matter? I ran an ablation — the same model, the same 34 questions, but with the catalog tools removed, answering from memory. A 'specific claim' is a concrete price or rating written in the answer. Ungrounded, it made twice as many — 162 versus 83 — and two-thirds didn't match the store, versus just under half when grounded; factuality dropped from 0.76 to 0.53. One more finding I'll mention out loud: the LLM judges actually *preferred* the fabricating version — a confident, specific-sounding answer reads better — which is exactly why my trust signal comes from database checks, not from another AI's opinion.",
+    "Across the full eight-configuration sweep, the headline is that the cheapest model won — Gemini Flash-Lite, the best composite score at three-hundredths of a cent per query and a 4.2-second p95. More reasoning was uniformly worse; the big model at high reasoning was my worst and slowest config. And grounding held everywhere — groundedness above 0.89 for all eight. The takeaway is the thesis's central claim: trustworthy AI shopping is a problem of integration discipline, not raw model capability.",
+    "To conclude — the contribution isn't a new algorithm; it's an integration architecture plus an honest evaluation against documented production failures, at a scale a bachelor thesis can actually defend. The grounding is structural and measured, and the cheaper model often wins. The honest limits: no human-subject study yet, no offline-IR baseline, and a small seeded catalog. The most valuable next step is a within-subjects user study on trust and purchase confidence.",
+    "Now — let me show you Zalem running live.",
+    "Thank you. I'm happy to take your questions — and I can jump straight into the live app whenever you'd like."
+  ];
+
+  function fit() { var s = Math.min(window.innerWidth/1280, window.innerHeight/720); scaler.style.transform = 'scale('+s+')'; }
+  function playActiveVideo() {
+    slides.forEach(function (s, k) {
+      var v = s.querySelector('video');
+      if (!v) return;
+      if (k === i) { try { v.currentTime = 0; v.play(); } catch (e) {} }
+      else { try { v.pause(); } catch (e) {} }
+    });
+  }
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length-1, n));
+    slides.forEach(function (s, k) { s.classList.toggle('is-active', k===i); s.setAttribute('aria-hidden', k===i?'false':'true'); });
+    progress.style.width = (i/(slides.length-1)*100)+'%';
+    notesIdx.textContent = (i+1)+' / '+slides.length;
+    notesBody.textContent = NOTES[i] || '';
+    playActiveVideo();
+    if (location.hash !== '#'+(i+1)) history.replaceState(null, '', '#'+(i+1));
+  }
+  function next(){ show(i+1); } function prev(){ show(i-1); }
+
+  document.addEventListener('keydown', function (e) {
+    switch (e.key) {
+      case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ': case 'l': next(); e.preventDefault(); break;
+      case 'ArrowLeft': case 'ArrowUp': case 'PageUp': case 'h': prev(); e.preventDefault(); break;
+      case 'Home': show(0); break;
+      case 'End': show(slides.length-1); break;
+      case 'f': case 'F': if (!document.fullscreenElement) document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); else document.exitFullscreen && document.exitFullscreen(); break;
+      case 'n': case 'N': notesEl.classList.toggle('show'); break;
+      case 'p': case 'P': window.print(); break;
+      default: if (e.key>='1' && e.key<='9') show(parseInt(e.key,10)-1);
+    }
+  });
+  document.getElementById('stage').addEventListener('click', function (e) { if (e.clientX < window.innerWidth*0.25) prev(); else next(); });
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', function () { var n = parseInt(location.hash.slice(1),10); if (!isNaN(n)) show(n-1); });
+
+  fit();
+  var start = parseInt(location.hash.slice(1),10);
+  show(isNaN(start) ? 0 : start-1);
+})();
+</script>
+</body>
+</html>

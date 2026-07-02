@@ -1,0 +1,4 @@
+# Remotion subproject deps & caches — keep the rendered out/*.webm + posters tracked.
+*/node_modules/
+*/package-lock.json
+*/.remotion/

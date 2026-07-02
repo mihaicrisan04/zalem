@@ -1,21 +1,30 @@
-\chapter{Concepts}
+\chapter{Fundamentals of Recommendation and an Approach for
+Grounded Output}
 \label{chap:foundations}
 
-This chapter sets out the building blocks the prototype uses.
-Each section defines the concept, states the property the
-prototype relies on, and leaves the implementation detail for
-Chapter~\ref{chap:system}. Section~\ref{sec:found-classical}
-recaps the classical recommender families.
-Section~\ref{sec:found-similarity} defines the similarity
-measures and the time-decay function used throughout the system.
-Section~\ref{sec:found-two-stage} states the two-stage
-retrieve-and-rerank pattern. Section~\ref{sec:found-agents}
-describes the LLM-agent loop with tool use and structured output.
-Section~\ref{sec:found-grounding} presents hydration over
-generation and the post-generation validation pipeline as a
-structural defense against hallucination.
-Section~\ref{sec:found-eval} defines the evaluation metrics used
-to compare model and prompt configurations.
+This chapter lays out the foundations the prototype rests on and
+the design principles this thesis contributes. It keeps the two
+apart on purpose. The similarity measures, the
+retrieve-and-rerank pattern, and the agent loop are established
+ideas, used here as building blocks and cited to their sources.
+Hydration over generation and the validation pipeline are this
+thesis's own response to the failure modes from
+Chapter~\ref{chap:background}. Each section defines a concept,
+states the property the prototype relies on, and leaves the
+implementation detail for Chapter~\ref{chap:system}.
+
+Section~\ref{sec:found-classical} recaps the classical
+recommender families. Section~\ref{sec:found-similarity} defines
+the similarity measures and the time-decay function used
+throughout the system. Section~\ref{sec:found-two-stage} states
+the two-stage retrieve-and-rerank pattern.
+Section~\ref{sec:found-agents} describes the LLM-agent loop with
+tool use and structured output. These four are standard.
+Section~\ref{sec:found-grounding} then presents hydration over
+generation and the post-generation validation pipeline, the
+structural defense against hallucination that this thesis
+contributes. Section~\ref{sec:found-eval} defines the evaluation
+metrics used to compare model and prompt configurations.
 
 \section{Classical Recommender Foundations}
 \label{sec:found-classical}
@@ -100,8 +109,8 @@ components and their weights.
     rating proximity & 0.10 & proximity \\
     \bottomrule
   \end{tabular}
-  \caption{Components of the weighted attribute similarity score.
-    Weights sum to 1.0; category and tag overlap dominate.}
+  \caption{Components of the weighted attribute similarity
+  score.}
   \label{tab:found-sim-weights}
 \end{table}
 

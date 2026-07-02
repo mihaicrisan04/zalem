@@ -1,0 +1,23 @@
+{
+  "name": "context-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zalem defense — context-building loop (transparent webm)",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts ContextDemo out/context-demo.webm --scale=2",
+    "still": "remotion still src/index.ts ContextDemo out/context-demo-poster.png --frame=262 --scale=2"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@remotion/google-fonts": "^4.0.484",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.6.0"
+  }
+}
